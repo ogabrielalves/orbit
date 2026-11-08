@@ -1,5 +1,6 @@
 pub mod db;
 pub mod error;
+pub mod state;
 
 #[tauri::command]
 fn greet(name: &str) -> String {

@@ -15,6 +15,7 @@ use modules::boards::commands::{
     create_board, create_column, delete_board, delete_column, get_board, move_column, update_board,
     update_column,
 };
+use modules::dashboard::commands::get_dashboard_summary;
 use modules::projects::commands::{
     archive_project, create_project, delete_project, get_project, list_projects, restore_project,
     update_project,
@@ -43,6 +44,7 @@ pub fn bindings_builder() -> Builder<tauri::Wry> {
             update_column,
             move_column,
             delete_column,
+            get_dashboard_summary,
         ])
 }
 
@@ -110,6 +112,7 @@ mod tests {
             "updateColumn",
             "moveColumn",
             "deleteColumn",
+            "getDashboardSummary",
         ] {
             assert!(content.contains(command), "missing command {command}");
         }

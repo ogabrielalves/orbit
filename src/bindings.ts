@@ -22,6 +22,7 @@ export const commands = {
 	updateColumn: (id: string, input: UpdateColumnInput) => typedError<BoardColumn, ErrorPayload>(__TAURI_INVOKE("update_column", { id, input })),
 	moveColumn: (id: string, afterColumnId: string | null) => typedError<BoardColumn, ErrorPayload>(__TAURI_INVOKE("move_column", { id, afterColumnId })),
 	deleteColumn: (id: string) => typedError<null, ErrorPayload>(__TAURI_INVOKE("delete_column", { id })),
+	getDashboardSummary: (input: DashboardSummaryInput) => typedError<DashboardSummary, ErrorPayload>(__TAURI_INVOKE("get_dashboard_summary", { input })),
 };
 
 /* Types */
@@ -79,6 +80,19 @@ export type CreateProjectInput = {
 	color?: string | null,
 };
 
+export type DashboardSummary = {
+	tasks: TaskStateCounts,
+	activeProjectCount: number,
+	overdueTaskCount: number,
+	upcomingTasks: UpcomingTask[],
+};
+
+export type DashboardSummaryInput = {
+	today?: string | null,
+	upcomingDays?: number | null,
+	upcomingLimit?: number | null,
+};
+
 export type EntityType = "project" | "board" | "column" | "task" | "checklist_item" | "comment" | "tag" | "attachment" | "note" | "folder";
 
 export type ErrorPayload = {
@@ -132,6 +146,27 @@ export type ProjectStatus = "active" | "paused" | "completed";
 export type Settings = {
 	language: Language | null,
 	vaultPath: string | null,
+};
+
+export type TaskPriority = "low" | "medium" | "high" | "urgent";
+
+export type TaskStateCounts = {
+	total: number,
+	backlog: number,
+	pending: number,
+	inProgress: number,
+	completed: number,
+};
+
+export type UpcomingTask = {
+	taskId: string,
+	title: string,
+	dueDate: string,
+	priority: TaskPriority,
+	projectId: string,
+	projectName: string,
+	boardId: string | null,
+	columnId: string | null,
 };
 
 export type UpdateBoardInput = {

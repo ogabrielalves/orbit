@@ -14,6 +14,14 @@ export const commands = {
 	restoreProject: (id: string) => typedError<Project, ErrorPayload>(__TAURI_INVOKE("restore_project", { id })),
 	deleteProject: (id: string) => typedError<null, ErrorPayload>(__TAURI_INVOKE("delete_project", { id })),
 	listRecentActivity: (limit: number | null) => typedError<ActivityEntry[], ErrorPayload>(__TAURI_INVOKE("list_recent_activity", { limit })),
+	getBoard: (id: string) => typedError<BoardDetails, ErrorPayload>(__TAURI_INVOKE("get_board", { id })),
+	createBoard: (input: CreateBoardInput) => typedError<BoardDetails, ErrorPayload>(__TAURI_INVOKE("create_board", { input })),
+	updateBoard: (id: string, input: UpdateBoardInput) => typedError<Board, ErrorPayload>(__TAURI_INVOKE("update_board", { id, input })),
+	deleteBoard: (id: string) => typedError<null, ErrorPayload>(__TAURI_INVOKE("delete_board", { id })),
+	createColumn: (input: CreateColumnInput) => typedError<BoardColumn, ErrorPayload>(__TAURI_INVOKE("create_column", { input })),
+	updateColumn: (id: string, input: UpdateColumnInput) => typedError<BoardColumn, ErrorPayload>(__TAURI_INVOKE("update_column", { id, input })),
+	moveColumn: (id: string, afterColumnId: string | null) => typedError<BoardColumn, ErrorPayload>(__TAURI_INVOKE("move_column", { id, afterColumnId })),
+	deleteColumn: (id: string) => typedError<null, ErrorPayload>(__TAURI_INVOKE("delete_column", { id })),
 };
 
 /* Types */
@@ -26,6 +34,42 @@ export type ActivityEntry = {
 	action: ActivityAction,
 	changes: { [key in string]: FieldChange } | null,
 	createdAt: string,
+};
+
+export type Board = {
+	id: string,
+	projectId: string,
+	name: string,
+	createdAt: string,
+	updatedAt: string,
+};
+
+export type BoardColumn = {
+	id: string,
+	boardId: string,
+	name: string,
+	position: string,
+	color: string | null,
+	createdAt: string,
+	updatedAt: string,
+	taskCount: number,
+};
+
+export type BoardDetails = {
+	board: Board,
+	columns: BoardColumn[],
+};
+
+export type CreateBoardInput = {
+	projectId: string,
+	name: string,
+	columnNames?: string[] | null,
+};
+
+export type CreateColumnInput = {
+	boardId: string,
+	name: string,
+	color?: string | null,
 };
 
 export type CreateProjectInput = {
@@ -88,6 +132,15 @@ export type ProjectStatus = "active" | "paused" | "completed";
 export type Settings = {
 	language: Language | null,
 	vaultPath: string | null,
+};
+
+export type UpdateBoardInput = {
+	name?: string | null,
+};
+
+export type UpdateColumnInput = {
+	name?: string | null,
+	color?: string | null,
 };
 
 export type UpdateProjectInput = {

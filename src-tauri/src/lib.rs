@@ -11,6 +11,10 @@ use tauri::Manager;
 use tauri_specta::{Builder, collect_commands};
 
 use modules::activity::commands::list_recent_activity;
+use modules::boards::commands::{
+    create_board, create_column, delete_board, delete_column, get_board, move_column, update_board,
+    update_column,
+};
 use modules::projects::commands::{
     archive_project, create_project, delete_project, get_project, list_projects, restore_project,
     update_project,
@@ -31,6 +35,14 @@ pub fn bindings_builder() -> Builder<tauri::Wry> {
             restore_project,
             delete_project,
             list_recent_activity,
+            get_board,
+            create_board,
+            update_board,
+            delete_board,
+            create_column,
+            update_column,
+            move_column,
+            delete_column,
         ])
 }
 
@@ -90,6 +102,14 @@ mod tests {
             "restoreProject",
             "deleteProject",
             "listRecentActivity",
+            "getBoard",
+            "createBoard",
+            "updateBoard",
+            "deleteBoard",
+            "createColumn",
+            "updateColumn",
+            "moveColumn",
+            "deleteColumn",
         ] {
             assert!(content.contains(command), "missing command {command}");
         }

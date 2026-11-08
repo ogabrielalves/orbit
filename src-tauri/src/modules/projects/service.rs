@@ -1,7 +1,3 @@
-use std::ffi::OsStr;
-use std::io::ErrorKind;
-use std::path::Path;
-
 use super::models::{
     CreateProjectInput, ListProjectsInput, Project, ProjectDetails, ProjectStatus,
     UpdateProjectInput,
@@ -10,6 +6,7 @@ use super::repository::{self, ListFilter};
 use crate::error::{AppError, AppResult};
 use crate::modules::activity::models::{ActivityAction, ChangeSet, EntityType};
 use crate::modules::activity::service as activity;
+use crate::shared::files;
 use crate::shared::text::{optional_text, require_text, text_or_empty};
 use crate::shared::{id, time};
 use crate::state::AppState;
@@ -113,7 +110,7 @@ pub fn delete(state: &AppState, id: &str) -> AppResult<()> {
     };
 
     if let Some(directory) = state.attachments_directory() {
-        remove_attachment_files(directory, &stored_names);
+        files::remove_stored_files(directory, &stored_names);
     }
     Ok(())
 }
@@ -203,30 +200,13 @@ fn like_pattern(term: &str) -> String {
     format!("%{escaped}%")
 }
 
-fn remove_attachment_files(directory: &Path, stored_names: &[String]) {
-    for stored_name in stored_names {
-        let is_plain_file_name =
-            Path::new(stored_name).file_name() == Some(OsStr::new(stored_name));
-        if !is_plain_file_name {
-            log::warn!("skipping attachment with unsafe stored name '{stored_name}'");
-            continue;
-        }
-        if let Err(error) = std::fs::remove_file(directory.join(stored_name)) {
-            let was_already_gone = error.kind() == ErrorKind::NotFound;
-            if !was_already_gone {
-                log::warn!("could not remove attachment file '{stored_name}': {error}");
-            }
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::db::{connection::open_in_memory, migrations};
     use crate::modules::activity::models::ActivityEntry;
     use crate::modules::projects::models::ProjectScope;
-    use std::path::PathBuf;
+    use std::path::{Path, PathBuf};
     use std::time::Duration;
 
     const NOW: &str = "2026-11-08T10:00:00.000Z";

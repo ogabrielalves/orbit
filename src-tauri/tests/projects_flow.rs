@@ -1,5 +1,7 @@
 use orbit_lib::bootstrap::initialize_state;
 use orbit_lib::error::AppError;
+use orbit_lib::modules::activity::models::ActivityAction;
+use orbit_lib::modules::activity::service as activity;
 use orbit_lib::modules::projects::models::{
     CreateProjectInput, ListProjectsInput, ProjectScope, ProjectStatus, UpdateProjectInput,
 };
@@ -129,4 +131,35 @@ fn deleted_project_stays_deleted_after_a_restart() {
     )
     .expect("lists");
     assert!(all.is_empty());
+}
+
+#[test]
+fn project_history_survives_a_restart_and_the_deletion_of_the_project() {
+    let directory = tempfile::tempdir().expect("temp dir");
+    let first_run = initialize_state(directory.path()).expect("first start");
+    let project = service::create(&first_run, create_input("History")).expect("creates");
+    let patch = UpdateProjectInput {
+        name: Some("History v2".into()),
+        ..Default::default()
+    };
+    service::update(&first_run, &project.id, patch).expect("updates");
+    service::archive(&first_run, &project.id).expect("archives");
+    service::delete(&first_run, &project.id).expect("deletes");
+    drop(first_run);
+
+    let second_run = initialize_state(directory.path()).expect("second start");
+
+    let mut entries = activity::recent(&second_run, None).expect("reads");
+    entries.reverse();
+    let actions: Vec<ActivityAction> = entries.iter().map(|entry| entry.action).collect();
+    assert_eq!(
+        actions,
+        [
+            ActivityAction::Created,
+            ActivityAction::Updated,
+            ActivityAction::Archived,
+            ActivityAction::Deleted
+        ]
+    );
+    assert!(entries.iter().all(|entry| entry.entity_id == project.id));
 }

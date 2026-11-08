@@ -6,9 +6,23 @@ import { invoke as __TAURI_INVOKE } from "@tauri-apps/api/core";
 export const commands = {
 	getSettings: () => typedError<Settings, ErrorPayload>(__TAURI_INVOKE("get_settings")),
 	updateSettings: (input: UpdateSettingsInput) => typedError<Settings, ErrorPayload>(__TAURI_INVOKE("update_settings", { input })),
+	listProjects: (input: ListProjectsInput) => typedError<Project[], ErrorPayload>(__TAURI_INVOKE("list_projects", { input })),
+	getProject: (id: string) => typedError<ProjectDetails, ErrorPayload>(__TAURI_INVOKE("get_project", { id })),
+	createProject: (input: CreateProjectInput) => typedError<Project, ErrorPayload>(__TAURI_INVOKE("create_project", { input })),
+	updateProject: (id: string, input: UpdateProjectInput) => typedError<Project, ErrorPayload>(__TAURI_INVOKE("update_project", { id, input })),
+	archiveProject: (id: string) => typedError<Project, ErrorPayload>(__TAURI_INVOKE("archive_project", { id })),
+	restoreProject: (id: string) => typedError<Project, ErrorPayload>(__TAURI_INVOKE("restore_project", { id })),
+	deleteProject: (id: string) => typedError<null, ErrorPayload>(__TAURI_INVOKE("delete_project", { id })),
 };
 
 /* Types */
+export type CreateProjectInput = {
+	name: string,
+	description?: string | null,
+	icon?: string | null,
+	color?: string | null,
+};
+
 export type ErrorPayload = {
 	code: string,
 	message: string,
@@ -16,9 +30,53 @@ export type ErrorPayload = {
 
 export type Language = "en" | "pt-BR";
 
+export type ListProjectsInput = {
+	scope?: ProjectScope,
+	status?: ProjectStatus | null,
+	search?: string | null,
+};
+
+export type Project = {
+	id: string,
+	name: string,
+	description: string,
+	icon: string | null,
+	color: string | null,
+	status: ProjectStatus,
+	createdAt: string,
+	updatedAt: string,
+	archivedAt: string | null,
+};
+
+export type ProjectBoard = {
+	id: string,
+	name: string,
+	createdAt: string,
+	taskCount: number,
+};
+
+export type ProjectDetails = {
+	project: Project,
+	boards: ProjectBoard[],
+	taskCount: number,
+	backlogTaskCount: number,
+};
+
+export type ProjectScope = "active" | "archived" | "all";
+
+export type ProjectStatus = "active" | "paused" | "completed";
+
 export type Settings = {
 	language: Language | null,
 	vaultPath: string | null,
+};
+
+export type UpdateProjectInput = {
+	name?: string | null,
+	description?: string | null,
+	icon?: string | null,
+	color?: string | null,
+	status?: ProjectStatus | null,
 };
 
 export type UpdateSettingsInput = {

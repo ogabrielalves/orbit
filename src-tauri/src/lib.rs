@@ -10,12 +10,26 @@ use std::error::Error;
 use tauri::Manager;
 use tauri_specta::{Builder, collect_commands};
 
+use modules::projects::commands::{
+    archive_project, create_project, delete_project, get_project, list_projects, restore_project,
+    update_project,
+};
 use modules::settings::commands::{get_settings, update_settings};
 
 pub fn bindings_builder() -> Builder<tauri::Wry> {
     Builder::<tauri::Wry>::new()
         .disable_serde_phases()
-        .commands(collect_commands![get_settings, update_settings])
+        .commands(collect_commands![
+            get_settings,
+            update_settings,
+            list_projects,
+            get_project,
+            create_project,
+            update_project,
+            archive_project,
+            restore_project,
+            delete_project,
+        ])
 }
 
 #[cfg(debug_assertions)]
@@ -65,6 +79,17 @@ mod tests {
         let content = std::fs::read_to_string(&target).expect("reads bindings");
         assert!(content.contains("getSettings"));
         assert!(content.contains("updateSettings"));
+        for command in [
+            "listProjects",
+            "getProject",
+            "createProject",
+            "updateProject",
+            "archiveProject",
+            "restoreProject",
+            "deleteProject",
+        ] {
+            assert!(content.contains(command), "missing command {command}");
+        }
         assert!(content.contains("code"));
         assert!(content.contains("vaultPath"));
     }

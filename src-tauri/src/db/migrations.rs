@@ -3,7 +3,10 @@ use rusqlite_migration::{M, Migrations};
 
 use crate::error::AppResult;
 
-const MIGRATIONS: &[M<'static>] = &[M::up(include_str!("../../migrations/0001_init.sql"))];
+const MIGRATIONS: &[M<'static>] = &[
+    M::up(include_str!("../../migrations/0001_init.sql")),
+    M::up(include_str!("../../migrations/0002_projects.sql")),
+];
 
 pub fn run(connection: &mut Connection) -> AppResult<()> {
     Migrations::from_slice(MIGRATIONS).to_latest(connection)?;

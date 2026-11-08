@@ -10,20 +10,21 @@ use super::repository::{self, ListFilter};
 use crate::error::{AppError, AppResult};
 use crate::modules::activity::models::{ActivityAction, ChangeSet, EntityType};
 use crate::modules::activity::service as activity;
+use crate::shared::text::{optional_text, require_text, text_or_empty};
 use crate::shared::{id, time};
 use crate::state::AppState;
 
 const NAME_MAX_LENGTH: usize = 120;
 
 pub fn create(state: &AppState, input: CreateProjectInput) -> AppResult<Project> {
-    let name = normalize_name(&input.name)?;
+    let name = require_text("project name", &input.name, NAME_MAX_LENGTH)?;
     let now = time::now();
     let project = Project {
         id: id::new_id(),
         name,
-        description: normalize_text(input.description),
-        icon: normalize_optional(input.icon),
-        color: normalize_optional(input.color),
+        description: text_or_empty(input.description),
+        icon: optional_text(input.icon),
+        color: optional_text(input.color),
         status: ProjectStatus::Active,
         created_at: now.clone(),
         updated_at: now,
@@ -118,7 +119,7 @@ pub fn delete(state: &AppState, id: &str) -> AppResult<()> {
 }
 
 pub fn list(state: &AppState, input: ListProjectsInput) -> AppResult<Vec<Project>> {
-    let search_pattern = normalize_optional(input.search).map(|term| like_pattern(&term));
+    let search_pattern = optional_text(input.search).map(|term| like_pattern(&term));
     let filter = ListFilter {
         scope: input.scope.as_str(),
         status: input.status.map(ProjectStatus::as_str),
@@ -177,50 +178,21 @@ fn diff(before: &Project, after: &Project) -> ChangeSet {
 fn apply_update(current: &Project, input: UpdateProjectInput) -> AppResult<Project> {
     let mut project = current.clone();
     if let Some(name) = input.name {
-        project.name = normalize_name(&name)?;
+        project.name = require_text("project name", &name, NAME_MAX_LENGTH)?;
     }
     if let Some(description) = input.description {
-        project.description = normalize_text(Some(description));
+        project.description = text_or_empty(Some(description));
     }
     if let Some(icon) = input.icon {
-        project.icon = normalize_optional(icon);
+        project.icon = optional_text(icon);
     }
     if let Some(color) = input.color {
-        project.color = normalize_optional(color);
+        project.color = optional_text(color);
     }
     if let Some(status) = input.status {
         project.status = status;
     }
     Ok(project)
-}
-
-fn normalize_name(name: &str) -> AppResult<String> {
-    let trimmed = name.trim();
-    let is_blank = trimmed.is_empty();
-    if is_blank {
-        return Err(AppError::Validation("project name cannot be empty".into()));
-    }
-    let is_too_long = trimmed.chars().count() > NAME_MAX_LENGTH;
-    if is_too_long {
-        return Err(AppError::Validation(format!(
-            "project name cannot exceed {NAME_MAX_LENGTH} characters"
-        )));
-    }
-    Ok(trimmed.to_string())
-}
-
-fn normalize_text(text: Option<String>) -> String {
-    text.map(|value| value.trim().to_string())
-        .unwrap_or_default()
-}
-
-fn normalize_optional(value: Option<String>) -> Option<String> {
-    let trimmed = value.map(|text| text.trim().to_string())?;
-    let is_blank = trimmed.is_empty();
-    if is_blank {
-        return None;
-    }
-    Some(trimmed)
 }
 
 fn like_pattern(term: &str) -> String {

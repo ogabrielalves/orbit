@@ -1,6 +1,7 @@
-import { act, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { commands } from "@/bindings";
 import { i18next } from "@/i18n";
 import { renderApp } from "@/test/renderApp";
 
@@ -113,10 +114,11 @@ describe("ProjectsPage", () => {
   });
 
   it("follows the active language", async () => {
+    vi.mocked(commands.getSettings).mockResolvedValueOnce({
+      status: "ok",
+      data: { language: "pt-BR", vaultPath: null },
+    });
     renderApp("/projects");
-    await screen.findByRole("heading", { name: "No projects yet" });
-
-    await act(() => i18next.changeLanguage("pt-BR"));
 
     expect(
       await screen.findByRole("heading", { name: "Nenhum projeto ainda" }),

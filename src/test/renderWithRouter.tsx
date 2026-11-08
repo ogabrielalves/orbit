@@ -8,6 +8,7 @@ import {
 import { render } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { Providers } from "@/app/providers";
+import { createTestQueryClient } from "@/test/createTestQueryClient";
 
 const routePaths = [
   "/",
@@ -31,7 +32,7 @@ export function renderWithRouter(ui: ReactNode, initialPath = "/") {
   });
 
   return render(
-    <Providers>
+    <Providers queryClient={createTestQueryClient()}>
       <RouterProvider router={router} />
     </Providers>,
   );

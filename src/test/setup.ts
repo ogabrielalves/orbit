@@ -10,6 +10,13 @@ vi.mock("@/bindings", () => ({
       data: { language: null, vaultPath: null },
     }),
     updateSettings: vi.fn(),
+    listProjects: vi.fn().mockResolvedValue({ status: "ok", data: [] }),
+    getProject: vi.fn(),
+    createProject: vi.fn(),
+    updateProject: vi.fn(),
+    archiveProject: vi.fn(),
+    restoreProject: vi.fn(),
+    deleteProject: vi.fn(),
   },
 }));
 

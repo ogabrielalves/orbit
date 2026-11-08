@@ -1,12 +1,12 @@
 import * as RadixTooltip from "@radix-ui/react-tooltip";
-import { QueryClientProvider } from "@tanstack/react-query";
+import { type QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { I18nextProvider } from "react-i18next";
 import { Toaster } from "sonner";
 import { createQueryClient } from "@/app/queryClient";
 import { i18next } from "@/i18n";
 
-const queryClient = createQueryClient();
+const defaultQueryClient = createQueryClient();
 
 const toastClassNames = {
   toast: "flex w-[22rem] items-center gap-3 rounded-lg px-3.5 py-3 text-small shadow-toast",
@@ -19,9 +19,10 @@ const toastClassNames = {
 
 type ProvidersProps = {
   children: ReactNode;
+  queryClient?: QueryClient;
 };
 
-export function Providers({ children }: ProvidersProps) {
+export function Providers({ children, queryClient = defaultQueryClient }: ProvidersProps) {
   return (
     <I18nextProvider i18n={i18next}>
       <QueryClientProvider client={queryClient}>

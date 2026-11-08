@@ -1,0 +1,139 @@
+@theme static {
+  --color-*: initial;
+
+  --color-canvas: #f6f7f9;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f1f2f5;
+  --color-surface-column: #edeff3;
+  --color-surface-inverse: #12141c;
+  --color-skeleton: #eceef2;
+
+  --color-border: #e5e7ec;
+  --color-border-strong: #d2d5dd;
+  --color-border-soft: #eef0f3;
+
+  --color-fg: #12141c;
+  --color-fg-secondary: #4d5263;
+  --color-fg-muted: #646979;
+  --color-fg-subtle: #a3a7b3;
+  --color-fg-disabled: #8a8f9e;
+  --color-fg-on-primary: #ffffff;
+  --color-fg-on-inverse: #ffffff;
+  --color-fg-on-inverse-muted: #b7bbc8;
+
+  --color-primary: #3b4fe4;
+  --color-primary-hover: #2f40c7;
+  --color-primary-strong: #1f2a85;
+  --color-primary-soft: #eef0fd;
+  --color-primary-muted: #dce0fb;
+  --color-primary-border: #b9c1f7;
+  --color-primary-ring: #8e9bf1;
+  --color-primary-fg: #2f40c7;
+
+  --color-accent: #f2783a;
+  --color-accent-soft: #fef1ea;
+  --color-accent-muted: #fcdcc9;
+  --color-accent-border: #f7a57a;
+  --color-accent-fg: #b04b12;
+
+  --color-success: #18915a;
+  --color-success-soft: #e5f5ec;
+  --color-success-fg: #11744a;
+
+  --color-warning: #f0a020;
+  --color-warning-soft: #fff3df;
+  --color-warning-fg: #8f5100;
+
+  --color-danger: #e0453a;
+  --color-danger-solid: #d93a2f;
+  --color-danger-solid-hover: #b3271c;
+  --color-danger-soft: #fdebe9;
+  --color-danger-border: #f4c5c0;
+  --color-danger-ring: #f3a39c;
+  --color-danger-fg: #b3271c;
+  --color-danger-fg-strong: #7a2a22;
+  --color-danger-disabled: #f4d3d0;
+  --color-danger-disabled-fg: #9c5a55;
+
+  --color-info: #2f7fe0;
+  --color-info-soft: #e8f1fd;
+  --color-info-border: #c6daf7;
+  --color-info-fg: #1d5fb8;
+
+  --color-project-orbit: #3b4fe4;
+  --color-project-ember: #f2783a;
+  --color-project-lagoon: #12a39a;
+  --color-project-orchid: #d9488b;
+  --color-project-violet: #7c5ce0;
+  --color-project-moss: #4baa4f;
+  --color-project-amber: #e0a100;
+  --color-project-graphite: #5a6072;
+
+  --font-*: initial;
+  --font-sans: "Inter Variable", system-ui, sans-serif;
+  --font-display: "Space Grotesk Variable", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, monospace;
+
+  --text-*: initial;
+  --text-display: 2.5rem;
+  --text-display--line-height: 3rem;
+  --text-display--letter-spacing: -0.02em;
+  --text-heading-1: 1.75rem;
+  --text-heading-1--line-height: 2.25rem;
+  --text-heading-1--letter-spacing: -0.01em;
+  --text-heading-2: 1.25rem;
+  --text-heading-2--line-height: 1.75rem;
+  --text-heading-2--letter-spacing: -0.01em;
+  --text-heading-3: 1rem;
+  --text-heading-3--line-height: 1.5rem;
+  --text-body: 0.875rem;
+  --text-body--line-height: 1.375rem;
+  --text-small: 0.8125rem;
+  --text-small--line-height: 1.25rem;
+  --text-caption: 0.75rem;
+  --text-caption--line-height: 1rem;
+  --text-micro: 0.6875rem;
+  --text-micro--line-height: 1rem;
+  --text-stat: 2rem;
+  --text-stat--line-height: 2.5rem;
+  --text-stat--letter-spacing: -0.02em;
+
+  --radius-*: initial;
+  --radius-xs: 0.375rem;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 0.875rem;
+  --radius-2xl: 1rem;
+  --radius-3xl: 1.25rem;
+  --radius-full: 9999px;
+
+  --shadow-*: initial;
+  --shadow-sm: 0 1px 2px rgb(18 20 28 / 0.06);
+  --shadow-md: 0 6px 20px rgb(18 20 28 / 0.08);
+  --shadow-lg: 0 24px 48px -12px rgb(18 20 28 / 0.28);
+  --shadow-toast: 0 6px 20px rgb(18 20 28 / 0.16);
+  --shadow-focus: 0 0 0 2px var(--color-surface), 0 0 0 4px var(--color-primary-ring);
+  --shadow-focus-input: 0 0 0 3px var(--color-primary-muted);
+  --shadow-focus-danger: 0 0 0 2px var(--color-surface), 0 0 0 4px var(--color-danger-ring);
+
+  --breakpoint-*: initial;
+  --breakpoint-md: 834px;
+  --breakpoint-lg: 1280px;
+  --breakpoint-xl: 1600px;
+
+  --container-*: initial;
+  --container-content: 100rem;
+  --container-drawer: 35rem;
+
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --default-transition-duration: 180ms;
+  --default-transition-timing-function: var(--ease-standard);
+}
+
+:root {
+  --sidebar-width: 15.5rem;
+  --sidebar-width-collapsed: 4.5rem;
+  --topbar-height: 4rem;
+  --topbar-height-compact: 3.75rem;
+}

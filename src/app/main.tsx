@@ -1,15 +1,16 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { App } from "@/App";
+import "@/styles/global.css";
 
 const rootElement = document.getElementById("root");
+const isRootMissing = rootElement === null;
 
-if (rootElement === null) {
+if (isRootMissing) {
   throw new Error("Root element not found");
 }
 
 createRoot(rootElement).render(
   <StrictMode>
-    <App />
+    <div className="min-h-full bg-canvas font-sans text-fg" />
   </StrictMode>,
 );

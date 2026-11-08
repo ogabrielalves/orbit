@@ -1,0 +1,122 @@
+import {
+  createRootRoute,
+  createRoute,
+  createRouter,
+  type RouterHistory,
+} from "@tanstack/react-router";
+import type { ParseKeys } from "i18next";
+import { RootLayout } from "@/app/RootLayout";
+import { BacklogPage } from "@/pages/backlog/BacklogPage";
+import { BoardPage } from "@/pages/board/BoardPage";
+import { DashboardPage } from "@/pages/dashboard/DashboardPage";
+import { FavoritesPage } from "@/pages/favorites/FavoritesPage";
+import { GraphPage } from "@/pages/graph/GraphPage";
+import { NotFoundPage } from "@/pages/not-found/NotFoundPage";
+import { NotesPage } from "@/pages/notes/NotesPage";
+import { ProjectDetailPage } from "@/pages/projects/ProjectDetailPage";
+import { ProjectsPage } from "@/pages/projects/ProjectsPage";
+import { SettingsPage } from "@/pages/settings/SettingsPage";
+
+const rootRoute = createRootRoute({
+  component: RootLayout,
+  notFoundComponent: NotFoundPage,
+});
+
+const dashboardRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/",
+  component: DashboardPage,
+  staticData: { titleKey: "nav.dashboard" },
+});
+
+const projectsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/projects",
+  component: ProjectsPage,
+  staticData: { titleKey: "nav.projects" },
+});
+
+const projectDetailRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/projects/$projectId",
+  component: ProjectDetailPage,
+  staticData: { titleKey: "nav.projects" },
+});
+
+const boardRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/boards/$boardId",
+  component: BoardPage,
+  staticData: { titleKey: "nav.boards" },
+});
+
+const backlogRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/backlog",
+  component: BacklogPage,
+  staticData: { titleKey: "nav.backlog" },
+});
+
+const notesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/notes",
+  component: NotesPage,
+  staticData: { titleKey: "nav.notes" },
+});
+
+const noteDetailRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/notes/$noteId",
+  component: NotesPage,
+  staticData: { titleKey: "nav.notes" },
+});
+
+const graphRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/graph",
+  component: GraphPage,
+  staticData: { titleKey: "nav.graph" },
+});
+
+const favoritesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/favorites",
+  component: FavoritesPage,
+  staticData: { titleKey: "nav.favorites" },
+});
+
+const settingsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/settings",
+  component: SettingsPage,
+  staticData: { titleKey: "nav.settings" },
+});
+
+const routeTree = rootRoute.addChildren([
+  dashboardRoute,
+  projectsRoute,
+  projectDetailRoute,
+  boardRoute,
+  backlogRoute,
+  notesRoute,
+  noteDetailRoute,
+  graphRoute,
+  favoritesRoute,
+  settingsRoute,
+]);
+
+export function createAppRouter(history?: RouterHistory) {
+  return createRouter({ routeTree, history });
+}
+
+export const router = createAppRouter();
+
+declare module "@tanstack/react-router" {
+  interface Register {
+    router: ReturnType<typeof createAppRouter>;
+  }
+
+  interface StaticDataRouteOption {
+    titleKey?: ParseKeys;
+  }
+}

@@ -1,8 +1,12 @@
+import { RouterProvider } from "@tanstack/react-router";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
+import { Providers } from "@/app/providers";
+import { router } from "@/app/router";
 import "@/styles/global.css";
 
 const rootElement = document.getElementById("root");
+
 const isRootMissing = rootElement === null;
 
 if (isRootMissing) {
@@ -11,6 +15,8 @@ if (isRootMissing) {
 
 createRoot(rootElement).render(
   <StrictMode>
-    <div className="min-h-full bg-canvas font-sans text-fg" />
+    <Providers>
+      <RouterProvider router={router} />
+    </Providers>
   </StrictMode>,
 );

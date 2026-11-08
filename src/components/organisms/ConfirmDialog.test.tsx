@@ -182,6 +182,32 @@ describe("ConfirmDialog", () => {
     });
   });
 
+  it("can block confirming, for an action that is not allowed", async () => {
+    const { onConfirm } = renderDialog({ isConfirmDisabled: true });
+    const confirm = screen.getByRole("button", { name: "Delete" });
+
+    await userEvent.click(confirm);
+
+    expect(confirm).toBeDisabled();
+    expect(onConfirm).not.toHaveBeenCalled();
+  });
+
+  it("keeps cancelling available when confirming is blocked", async () => {
+    const { onCancel } = renderDialog({ isConfirmDisabled: true });
+
+    await userEvent.click(screen.getByRole("button", { name: "Cancel" }));
+
+    expect(onCancel).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not confirm with Enter while blocked, even if the typed text matches", async () => {
+    const { onConfirm } = renderDialog({ isConfirmDisabled: true, confirmationText: "Go" });
+
+    await userEvent.type(screen.getByRole("textbox"), "Go{Enter}");
+
+    expect(onConfirm).not.toHaveBeenCalled();
+  });
+
   it("asks for no text when none is required", () => {
     renderDialog();
 

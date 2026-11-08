@@ -17,6 +17,7 @@ type ConfirmDialogProps = {
   tone?: ConfirmTone;
   confirmationText?: string;
   isConfirming?: boolean;
+  isConfirmDisabled?: boolean;
   secondaryAction?: { label: string; onSelect: () => void };
 };
 
@@ -30,6 +31,7 @@ export function ConfirmDialog({
   tone = "default",
   confirmationText,
   isConfirming = false,
+  isConfirmDisabled = false,
   secondaryAction,
 }: ConfirmDialogProps) {
   const { t } = useTranslation();
@@ -39,7 +41,7 @@ export function ConfirmDialog({
   const isDanger = tone === "danger";
   const isTextRequired = confirmationText !== undefined;
   const isTextMatching = typedText === confirmationText;
-  const canConfirm = !isTextRequired || isTextMatching;
+  const canConfirm = !isConfirmDisabled && (!isTextRequired || isTextMatching);
   const hasSecondaryAction = secondaryAction !== undefined;
   const confirmVariant = isDanger ? "destructive" : "primary";
 

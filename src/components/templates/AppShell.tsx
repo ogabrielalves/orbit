@@ -12,7 +12,7 @@ export function AppShell({ sidebar, topbar, children }: AppShellProps) {
       {sidebar}
       <div className="flex min-w-0 flex-1 flex-col">
         {topbar}
-        <main className="mx-auto flex w-full max-w-content flex-1 flex-col gap-6 px-4 py-6 md:px-6 lg:px-8">
+        <main className="mx-auto flex w-full max-w-content flex-1 flex-col gap-6 px-4 py-6 md:px-6 lg:px-8 lg:py-8">
           {children}
         </main>
       </div>

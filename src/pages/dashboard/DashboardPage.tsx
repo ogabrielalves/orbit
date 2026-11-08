@@ -10,6 +10,7 @@ export function DashboardPage() {
 
   return (
     <PageHeader
+      variant="display"
       title={t(`greeting.${greetingPeriod}`)}
       subtitle={formatLongDate(now, i18n.language)}
     />

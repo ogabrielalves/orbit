@@ -8,6 +8,8 @@ use super::models::{
 };
 use super::repository::{self, ListFilter};
 use crate::error::{AppError, AppResult};
+use crate::modules::activity::models::{ActivityAction, ChangeSet, EntityType};
+use crate::modules::activity::service as activity;
 use crate::shared::{id, time};
 use crate::state::AppState;
 
@@ -27,17 +29,25 @@ pub fn create(state: &AppState, input: CreateProjectInput) -> AppResult<Project>
         updated_at: now,
         archived_at: None,
     };
-    let connection = state.database();
-    repository::insert(&connection, &project)?;
+
+    let mut connection = state.database();
+    let transaction = connection.transaction()?;
+    repository::insert(&transaction, &project)?;
+    let mut changes = ChangeSet::new();
+    changes.track("name", None, Some(project.name.as_str()));
+    record(&transaction, &project.id, ActivityAction::Created, changes)?;
+    transaction.commit()?;
     Ok(project)
 }
 
 pub fn update(state: &AppState, id: &str, input: UpdateProjectInput) -> AppResult<Project> {
-    let connection = state.database();
-    let current = find_existing(&connection, id)?;
+    let mut connection = state.database();
+    let transaction = connection.transaction()?;
+    let current = find_existing(&transaction, id)?;
     let changed = apply_update(&current, input)?;
+    let changes = diff(&current, &changed);
 
-    let has_changes = changed != current;
+    let has_changes = !changes.is_empty();
     if !has_changes {
         return Ok(current);
     }
@@ -46,13 +56,16 @@ pub fn update(state: &AppState, id: &str, input: UpdateProjectInput) -> AppResul
         updated_at: time::now(),
         ..changed
     };
-    repository::update(&connection, &updated)?;
+    repository::update(&transaction, &updated)?;
+    record(&transaction, id, ActivityAction::Updated, changes)?;
+    transaction.commit()?;
     Ok(updated)
 }
 
 pub fn archive(state: &AppState, id: &str) -> AppResult<Project> {
-    let connection = state.database();
-    let current = find_existing(&connection, id)?;
+    let mut connection = state.database();
+    let transaction = connection.transaction()?;
+    let current = find_existing(&transaction, id)?;
 
     let is_already_archived = current.archived_at.is_some();
     if is_already_archived {
@@ -60,30 +73,40 @@ pub fn archive(state: &AppState, id: &str) -> AppResult<Project> {
     }
 
     let now = time::now();
-    repository::set_archived_at(&connection, id, Some(&now), &now)?;
-    find_existing(&connection, id)
+    repository::set_archived_at(&transaction, id, Some(&now), &now)?;
+    record(&transaction, id, ActivityAction::Archived, ChangeSet::new())?;
+    let archived = find_existing(&transaction, id)?;
+    transaction.commit()?;
+    Ok(archived)
 }
 
 pub fn restore(state: &AppState, id: &str) -> AppResult<Project> {
-    let connection = state.database();
-    let current = find_existing(&connection, id)?;
+    let mut connection = state.database();
+    let transaction = connection.transaction()?;
+    let current = find_existing(&transaction, id)?;
 
     let is_archived = current.archived_at.is_some();
     if !is_archived {
         return Ok(current);
     }
 
-    repository::set_archived_at(&connection, id, None, &time::now())?;
-    find_existing(&connection, id)
+    repository::set_archived_at(&transaction, id, None, &time::now())?;
+    record(&transaction, id, ActivityAction::Restored, ChangeSet::new())?;
+    let restored = find_existing(&transaction, id)?;
+    transaction.commit()?;
+    Ok(restored)
 }
 
 pub fn delete(state: &AppState, id: &str) -> AppResult<()> {
     let stored_names = {
         let mut connection = state.database();
         let transaction = connection.transaction()?;
-        find_existing(&transaction, id)?;
+        let current = find_existing(&transaction, id)?;
         let stored_names = repository::find_attachment_stored_names(&transaction, id)?;
         repository::delete(&transaction, id)?;
+        let mut changes = ChangeSet::new();
+        changes.track("name", Some(current.name.as_str()), None);
+        record(&transaction, id, ActivityAction::Deleted, changes)?;
         transaction.commit()?;
         stored_names
     };
@@ -118,6 +141,37 @@ pub fn get(state: &AppState, id: &str) -> AppResult<ProjectDetails> {
 
 fn find_existing(connection: &rusqlite::Connection, id: &str) -> AppResult<Project> {
     repository::find_by_id(connection, id)?.ok_or_else(|| AppError::NotFound("project".into()))
+}
+
+fn record(
+    connection: &rusqlite::Connection,
+    project_id: &str,
+    action: ActivityAction,
+    changes: ChangeSet,
+) -> AppResult<()> {
+    activity::record(connection, EntityType::Project, project_id, action, changes)
+}
+
+fn diff(before: &Project, after: &Project) -> ChangeSet {
+    let mut changes = ChangeSet::new();
+    changes.track(
+        "name",
+        Some(before.name.as_str()),
+        Some(after.name.as_str()),
+    );
+    changes.track(
+        "description",
+        Some(before.description.as_str()),
+        Some(after.description.as_str()),
+    );
+    changes.track("icon", before.icon.as_deref(), after.icon.as_deref());
+    changes.track("color", before.color.as_deref(), after.color.as_deref());
+    changes.track(
+        "status",
+        Some(before.status.as_str()),
+        Some(after.status.as_str()),
+    );
+    changes
 }
 
 fn apply_update(current: &Project, input: UpdateProjectInput) -> AppResult<Project> {
@@ -198,6 +252,7 @@ fn remove_attachment_files(directory: &Path, stored_names: &[String]) {
 mod tests {
     use super::*;
     use crate::db::{connection::open_in_memory, migrations};
+    use crate::modules::activity::models::ActivityEntry;
     use crate::modules::projects::models::ProjectScope;
     use std::path::PathBuf;
     use std::time::Duration;
@@ -732,6 +787,198 @@ mod tests {
         let result = delete(&state, &project.id);
 
         assert!(result.is_ok());
+    }
+
+    fn entries_for(state: &AppState, project_id: &str) -> Vec<ActivityEntry> {
+        activity::recent(state, Some(100))
+            .expect("reads activity")
+            .into_iter()
+            .filter(|entry| entry.entity_id == project_id)
+            .collect()
+    }
+
+    fn actions_for(state: &AppState, project_id: &str) -> Vec<ActivityAction> {
+        let mut entries = entries_for(state, project_id);
+        entries.reverse();
+        entries.iter().map(|entry| entry.action).collect()
+    }
+
+    #[test]
+    fn create_logs_a_created_entry_carrying_the_name() {
+        let state = state();
+
+        let project = create_named(&state, "ORBIT");
+
+        let entries = entries_for(&state, &project.id);
+        assert_eq!(entries.len(), 1);
+        assert_eq!(entries[0].entity_type, EntityType::Project);
+        assert_eq!(entries[0].action, ActivityAction::Created);
+        let changes = entries[0].changes.as_ref().expect("has changes");
+        assert_eq!(changes["name"].from, None);
+        assert_eq!(changes["name"].to.as_deref(), Some("ORBIT"));
+    }
+
+    #[test]
+    fn update_logs_only_the_fields_that_changed() {
+        let state = state();
+        let project = create_named(&state, "Old");
+        let patch = UpdateProjectInput {
+            name: Some("New".into()),
+            status: Some(ProjectStatus::Paused),
+            description: Some(String::new()),
+            ..Default::default()
+        };
+
+        update(&state, &project.id, patch).expect("updates");
+
+        let entries = entries_for(&state, &project.id);
+        assert_eq!(entries[0].action, ActivityAction::Updated);
+        let changes = entries[0].changes.as_ref().expect("has changes");
+        let mut fields: Vec<&str> = changes.keys().map(String::as_str).collect();
+        fields.sort_unstable();
+        assert_eq!(fields, ["name", "status"]);
+        assert_eq!(changes["name"].from.as_deref(), Some("Old"));
+        assert_eq!(changes["name"].to.as_deref(), Some("New"));
+        assert_eq!(changes["status"].from.as_deref(), Some("active"));
+        assert_eq!(changes["status"].to.as_deref(), Some("paused"));
+    }
+
+    #[test]
+    fn update_logs_set_and_cleared_optional_fields() {
+        let state = state();
+        let project = create_named(&state, "A");
+        let set = UpdateProjectInput {
+            icon: Some(Some("rocket".into())),
+            ..Default::default()
+        };
+        update(&state, &project.id, set).expect("sets");
+        let clear = UpdateProjectInput {
+            icon: Some(None),
+            ..Default::default()
+        };
+        update(&state, &project.id, clear).expect("clears");
+
+        let entries = entries_for(&state, &project.id);
+        let cleared = entries[0].changes.as_ref().expect("has changes");
+        let set_entry = entries[1].changes.as_ref().expect("has changes");
+        assert_eq!(set_entry["icon"].from, None);
+        assert_eq!(set_entry["icon"].to.as_deref(), Some("rocket"));
+        assert_eq!(cleared["icon"].from.as_deref(), Some("rocket"));
+        assert_eq!(cleared["icon"].to, None);
+    }
+
+    #[test]
+    fn update_without_real_changes_logs_nothing() {
+        let state = state();
+        let project = create_named(&state, "Same");
+        let patch = UpdateProjectInput {
+            name: Some("Same".into()),
+            status: Some(ProjectStatus::Active),
+            ..Default::default()
+        };
+
+        update(&state, &project.id, patch).expect("updates");
+
+        assert_eq!(actions_for(&state, &project.id), [ActivityAction::Created]);
+    }
+
+    #[test]
+    fn rejected_update_logs_nothing() {
+        let state = state();
+        let project = create_named(&state, "Keep");
+        let patch = UpdateProjectInput {
+            name: Some("   ".into()),
+            ..Default::default()
+        };
+
+        let result = update(&state, &project.id, patch);
+
+        assert!(result.is_err());
+        assert_eq!(actions_for(&state, &project.id), [ActivityAction::Created]);
+    }
+
+    #[test]
+    fn archive_and_restore_are_logged_once_each() {
+        let state = state();
+        let project = create_named(&state, "A");
+
+        archive(&state, &project.id).expect("archives");
+        archive(&state, &project.id).expect("archives again");
+        restore(&state, &project.id).expect("restores");
+        restore(&state, &project.id).expect("restores again");
+
+        assert_eq!(
+            actions_for(&state, &project.id),
+            [
+                ActivityAction::Created,
+                ActivityAction::Archived,
+                ActivityAction::Restored
+            ]
+        );
+    }
+
+    #[test]
+    fn delete_logs_the_name_and_the_entry_outlives_the_project() {
+        let state = state();
+        let project = create_named(&state, "Doomed");
+
+        delete(&state, &project.id).expect("deletes");
+
+        let entries = entries_for(&state, &project.id);
+        assert_eq!(entries[0].action, ActivityAction::Deleted);
+        let changes = entries[0].changes.as_ref().expect("has changes");
+        assert_eq!(changes["name"].from.as_deref(), Some("Doomed"));
+        assert_eq!(changes["name"].to, None);
+        assert_eq!(entries.len(), 2);
+    }
+
+    #[test]
+    fn operations_on_unknown_projects_log_nothing() {
+        let state = state();
+
+        let _ = update(&state, "missing", UpdateProjectInput::default());
+        let _ = archive(&state, "missing");
+        let _ = restore(&state, "missing");
+        let _ = delete(&state, "missing");
+
+        assert!(activity::recent(&state, None).expect("reads").is_empty());
+    }
+
+    #[test]
+    fn a_failing_activity_write_rolls_the_project_write_back() {
+        let state = state();
+        state
+            .database()
+            .execute_batch("DROP TABLE activity_log;")
+            .expect("drops log table");
+
+        let result = create(&state, input("Ghost"));
+
+        assert!(result.is_err());
+        let projects = list(
+            &state,
+            ListProjectsInput {
+                scope: ProjectScope::All,
+                ..Default::default()
+            },
+        )
+        .expect("lists");
+        assert!(projects.is_empty());
+    }
+
+    #[test]
+    fn a_failing_activity_write_keeps_the_project_deletion_from_happening() {
+        let state = state();
+        let project = create_named(&state, "Survivor");
+        state
+            .database()
+            .execute_batch("DROP TABLE activity_log;")
+            .expect("drops log table");
+
+        let result = delete(&state, &project.id);
+
+        assert!(result.is_err());
+        assert!(get(&state, &project.id).is_ok());
     }
 
     #[test]

@@ -1,0 +1,53 @@
+export const ptBR = {
+  app: {
+    name: "ORBIT",
+    wordmark: "orbit",
+  },
+  nav: {
+    label: "Navegação principal",
+    dashboard: "Dashboard",
+    projects: "Meus projetos",
+    tasks: "Tarefas",
+    boards: "Quadros",
+    backlog: "Backlog",
+    notes: "Anotações",
+    graph: "Grafo",
+    favorites: "Favoritos",
+    archived: "Arquivados",
+    settings: "Configurações",
+  },
+  sidebar: {
+    newProject: "Novo projeto",
+    collapse: "Recolher menu",
+    expand: "Expandir menu",
+    favoritesTitle: "Favoritos",
+  },
+  topbar: {
+    breadcrumbLabel: "Trilha de navegação",
+    searchPlaceholder: "Buscar em tudo…",
+    create: "Criar",
+  },
+  greeting: {
+    morning: "Bom dia",
+    afternoon: "Boa tarde",
+    evening: "Boa noite",
+  },
+  common: {
+    save: "Salvar",
+    cancel: "Cancelar",
+    delete: "Excluir",
+    close: "Fechar",
+    retry: "Tentar novamente",
+    loading: "Carregando…",
+  },
+  errors: {
+    pageNotFound: "Página não encontrada",
+    unknown: "Algo deu errado. Tente novamente.",
+    notFound: "O item não foi encontrado. Ele pode ter sido removido.",
+    validation: "Os dados informados não são válidos.",
+    conflict: "O item foi alterado em outro lugar. Recarregue e tente novamente.",
+    invalidMove: "Essa movimentação não é permitida.",
+    io: "Não foi possível acessar os arquivos. Verifique as permissões da pasta.",
+    database: "Não foi possível acessar os dados do aplicativo.",
+  },
+};

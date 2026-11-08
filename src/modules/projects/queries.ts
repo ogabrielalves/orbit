@@ -29,10 +29,11 @@ export function useProjects(input: ListProjectsInput) {
   });
 }
 
-export function useProject(id: string) {
+export function useProject(id: string, isEnabled = true) {
   return useQuery({
     queryKey: projectKeys.detail(id),
     queryFn: () => fetchProject(id),
+    enabled: isEnabled,
   });
 }
 

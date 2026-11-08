@@ -111,6 +111,25 @@ export const ptBR = {
       create: "Criar projeto",
       save: "Salvar alterações",
     },
+    detail: {
+      back: "Voltar para projetos",
+      edit: "Editar",
+      archivedBadge: "Arquivado",
+      loadError: "Não foi possível carregar o projeto",
+      statsLabel: "Resumo do projeto",
+      stats: {
+        tasks: "Tarefas",
+        backlog: "No backlog",
+        boards: "Quadros",
+      },
+      boardsTitle: "Quadros",
+      boardTasks_one: "{{count}} tarefa",
+      boardTasks_other: "{{count}} tarefas",
+      noBoards: {
+        title: "Nenhum quadro ainda",
+        description: "Os quadros deste projeto aparecerão aqui.",
+      },
+    },
     toast: {
       created: "Projeto criado",
       updated: "Projeto atualizado",
@@ -157,5 +176,6 @@ export const ptBR = {
     invalidMove: "Essa movimentação não é permitida.",
     io: "Não foi possível acessar os arquivos. Verifique as permissões da pasta.",
     database: "Não foi possível acessar os dados do aplicativo.",
+    internal: "Ocorreu um erro interno. Tente novamente.",
   },
 };

@@ -126,6 +126,15 @@ describe("project queries", () => {
       expect(commands.getProject).toHaveBeenCalledWith("p1");
     });
 
+    it("does not load anything while disabled", async () => {
+      const { wrapper } = createWrapper();
+
+      const { result } = renderHook(() => useProject("p1", false), { wrapper });
+
+      expect(result.current.fetchStatus).toBe("idle");
+      expect(commands.getProject).not.toHaveBeenCalled();
+    });
+
     it("exposes a not found error", async () => {
       const payload = { code: "NOT_FOUND", message: "project not found" };
       commands.getProject.mockResolvedValue({ status: "error", error: payload });

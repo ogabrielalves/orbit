@@ -28,6 +28,7 @@ describe("getErrorMessageKey", () => {
     ["INVALID_MOVE", "errors.invalidMove"],
     ["IO", "errors.io"],
     ["DATABASE", "errors.database"],
+    ["INTERNAL", "errors.internal"],
   ] as const)("maps %s to %s", (code, expected) => {
     expect(getErrorMessageKey({ code, message: "details" })).toBe(expected);
   });

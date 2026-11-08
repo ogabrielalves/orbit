@@ -114,6 +114,25 @@ export const en: Widen<typeof ptBR> = {
       create: "Create project",
       save: "Save changes",
     },
+    detail: {
+      back: "Back to projects",
+      edit: "Edit",
+      archivedBadge: "Archived",
+      loadError: "Could not load the project",
+      statsLabel: "Project summary",
+      stats: {
+        tasks: "Tasks",
+        backlog: "In the backlog",
+        boards: "Boards",
+      },
+      boardsTitle: "Boards",
+      boardTasks_one: "{{count}} task",
+      boardTasks_other: "{{count}} tasks",
+      noBoards: {
+        title: "No boards yet",
+        description: "The boards of this project will appear here.",
+      },
+    },
     toast: {
       created: "Project created",
       updated: "Project updated",
@@ -160,5 +179,6 @@ export const en: Widen<typeof ptBR> = {
     invalidMove: "This move is not allowed.",
     io: "Could not access the files. Check the folder permissions.",
     database: "Could not access the application data.",
+    internal: "An internal error occurred. Please try again.",
   },
 };

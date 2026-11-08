@@ -34,6 +34,19 @@ describe("createQueryClient", () => {
     );
   });
 
+  it("shows a translated toast for an internal error without leaking its details", async () => {
+    await runFailingMutation({ code: "INTERNAL", message: "stack trace here" });
+
+    expect(toastError).toHaveBeenCalledWith("An internal error occurred. Please try again.");
+  });
+
+  it("translates the internal error in Portuguese", async () => {
+    await i18next.changeLanguage("pt-BR");
+    await runFailingMutation({ code: "INTERNAL", message: "x" });
+
+    expect(toastError).toHaveBeenCalledWith("Ocorreu um erro interno. Tente novamente.");
+  });
+
   it("shows the generic message for unknown failures", async () => {
     await runFailingMutation(new Error("boom"));
     expect(toastError).toHaveBeenCalledWith("Something went wrong. Please try again.");

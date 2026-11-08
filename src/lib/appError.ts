@@ -7,7 +7,8 @@ export type ErrorMessageKey =
   | "errors.conflict"
   | "errors.invalidMove"
   | "errors.io"
-  | "errors.database";
+  | "errors.database"
+  | "errors.internal";
 
 const messageKeyByCode: Record<string, ErrorMessageKey> = {
   NOT_FOUND: "errors.notFound",
@@ -16,6 +17,7 @@ const messageKeyByCode: Record<string, ErrorMessageKey> = {
   INVALID_MOVE: "errors.invalidMove",
   IO: "errors.io",
   DATABASE: "errors.database",
+  INTERNAL: "errors.internal",
 };
 
 export function isAppError(value: unknown): value is ErrorPayload {

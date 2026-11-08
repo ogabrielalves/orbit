@@ -1,8 +1,10 @@
 import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { commands } from "@/bindings";
 import { useUiStore } from "@/hooks/useUiStore";
 import { i18next } from "@/i18n";
+import { createProjectFixture } from "@/test/projectFixture";
 import { renderApp } from "@/test/renderApp";
 import { setViewportWidth } from "@/test/viewport";
 
@@ -18,7 +20,6 @@ describe("routes", () => {
 
   it.each([
     ["/projects", "My projects"],
-    ["/projects/abc", "My projects"],
     ["/boards/abc", "Boards"],
     ["/backlog", "Backlog"],
     ["/notes", "Notes"],
@@ -30,6 +31,21 @@ describe("routes", () => {
     renderApp(path);
 
     expect(await screen.findByRole("heading", { level: 1, name: title })).toBeInTheDocument();
+  });
+
+  it("renders the project detail route with the project name", async () => {
+    vi.mocked(commands.getProject).mockResolvedValue({
+      status: "ok",
+      data: {
+        project: createProjectFixture({ id: "abc", name: "Fintech" }),
+        boards: [],
+        taskCount: 0,
+        backlogTaskCount: 0,
+      },
+    });
+    renderApp("/projects/abc");
+
+    expect(await screen.findByRole("heading", { level: 1, name: "Fintech" })).toBeInTheDocument();
   });
 
   it("renders the not found page for unknown paths", async () => {

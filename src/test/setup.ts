@@ -18,6 +18,14 @@ vi.mock("@/bindings", () => ({
     archiveProject: vi.fn(),
     restoreProject: vi.fn(),
     deleteProject: vi.fn(),
+    getBoard: vi.fn(),
+    createBoard: vi.fn(),
+    updateBoard: vi.fn(),
+    deleteBoard: vi.fn(),
+    createColumn: vi.fn(),
+    updateColumn: vi.fn(),
+    moveColumn: vi.fn(),
+    deleteColumn: vi.fn(),
   },
 }));
 

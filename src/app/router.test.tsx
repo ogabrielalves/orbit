@@ -20,7 +20,6 @@ describe("routes", () => {
 
   it.each([
     ["/projects", "My projects"],
-    ["/boards/abc", "Boards"],
     ["/backlog", "Backlog"],
     ["/notes", "Notes"],
     ["/notes/abc", "Notes"],

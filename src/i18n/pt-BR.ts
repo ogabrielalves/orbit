@@ -74,6 +74,10 @@ export const ptBR = {
     close: "Fechar",
     retry: "Tentar novamente",
     loading: "Carregando…",
+    optional: "opcional",
+  },
+  confirm: {
+    typeToConfirm: "Digite <strong>{{text}}</strong> para confirmar",
   },
   errors: {
     pageNotFound: "Página não encontrada",

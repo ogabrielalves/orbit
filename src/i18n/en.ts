@@ -77,6 +77,10 @@ export const en: Widen<typeof ptBR> = {
     close: "Close",
     retry: "Try again",
     loading: "Loading…",
+    optional: "optional",
+  },
+  confirm: {
+    typeToConfirm: "Type <strong>{{text}}</strong> to confirm",
   },
   errors: {
     pageNotFound: "Page not found",

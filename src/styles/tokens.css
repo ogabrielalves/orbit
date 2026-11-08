@@ -7,6 +7,7 @@
   --color-surface-column: #edeff3;
   --color-surface-inverse: #12141c;
   --color-skeleton: #eceef2;
+  --color-overlay: rgb(18 20 28 / 0.42);
 
   --color-border: #e5e7ec;
   --color-border-strong: #d2d5dd;
@@ -132,6 +133,29 @@
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
   --default-transition-duration: 180ms;
   --default-transition-timing-function: var(--ease-standard);
+
+  --animate-fade-in: fade-in 150ms var(--ease-standard);
+  --animate-pop-in: pop-in 180ms var(--ease-standard);
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes pop-in {
+    from {
+      opacity: 0;
+      transform: translateY(-0.5rem) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
 }
 
 :root {

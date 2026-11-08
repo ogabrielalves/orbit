@@ -6,8 +6,9 @@ use super::service::{COLUMN_NAME_MAX_LENGTH, MAX_COLUMNS_PER_BOARD, find_existin
 use crate::error::{AppError, AppResult};
 use crate::modules::activity::models::{ActivityAction, ChangeSet, EntityType};
 use crate::modules::activity::service as activity;
+use crate::shared::position::{self, Slot};
 use crate::shared::text::{optional_text, require_text};
-use crate::shared::{position, time};
+use crate::shared::time;
 use crate::state::AppState;
 
 pub fn create(state: &AppState, input: CreateColumnInput) -> AppResult<BoardColumn> {
@@ -86,13 +87,19 @@ pub fn move_column(
     let current = find_column(&transaction, id)?;
     let slots = repository::list_column_slots(&transaction, &current.board_id)?;
 
-    let is_already_there = previous_slot_id(&slots, id) == after_column_id.as_deref();
+    let ordered = to_slots(&slots);
+    let is_already_there =
+        position::previous_sibling_id(&ordered, id) == after_column_id.as_deref();
     if is_already_there {
         return Ok(current);
     }
 
-    let siblings: Vec<&ColumnSlot> = slots.iter().filter(|slot| slot.id != id).collect();
-    let new_position = position_after(&siblings, after_column_id.as_deref())?;
+    let siblings: Vec<Slot<'_>> = ordered
+        .iter()
+        .filter(|slot| slot.id != id)
+        .copied()
+        .collect();
+    let new_position = position::place_after(&siblings, after_column_id.as_deref())?;
 
     let mut changes = ChangeSet::new();
     changes.track(
@@ -145,27 +152,14 @@ fn record(
     activity::record(connection, EntityType::Column, column_id, action, changes)
 }
 
-fn previous_slot_id<'a>(slots: &'a [ColumnSlot], id: &str) -> Option<&'a str> {
-    let index = slots.iter().position(|slot| slot.id == id)?;
-    let previous_index = index.checked_sub(1)?;
-    Some(slots[previous_index].id.as_str())
-}
-
-fn position_after(siblings: &[&ColumnSlot], after_column_id: Option<&str>) -> AppResult<String> {
-    let Some(target_id) = after_column_id else {
-        let first = siblings.first().ok_or(AppError::InvalidMove)?;
-        return position::before(&first.position);
-    };
-
-    let target_index = siblings
+fn to_slots(slots: &[ColumnSlot]) -> Vec<Slot<'_>> {
+    slots
         .iter()
-        .position(|slot| slot.id == target_id)
-        .ok_or(AppError::InvalidMove)?;
-    let target = siblings[target_index];
-    match siblings.get(target_index + 1) {
-        Some(next) => position::between(&target.position, &next.position),
-        None => position::after(&target.position),
-    }
+        .map(|slot| Slot {
+            id: slot.id.as_str(),
+            position: slot.position.as_str(),
+        })
+        .collect()
 }
 
 #[cfg(test)]

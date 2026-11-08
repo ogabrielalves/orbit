@@ -30,6 +30,37 @@ pub fn between(lower: &str, upper: &str) -> AppResult<String> {
     Ok(to_text(midpoint(lower.as_bytes(), Some(upper.as_bytes()))))
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Slot<'a> {
+    pub id: &'a str,
+    pub position: &'a str,
+}
+
+pub fn previous_sibling_id<'a>(ordered: &[Slot<'a>], id: &str) -> Option<&'a str> {
+    let index = ordered.iter().position(|slot| slot.id == id)?;
+    let previous_index = index.checked_sub(1)?;
+    Some(ordered[previous_index].id)
+}
+
+pub fn place_after(siblings: &[Slot<'_>], after_id: Option<&str>) -> AppResult<String> {
+    let Some(target_id) = after_id else {
+        return match siblings.first() {
+            Some(first_sibling) => before(first_sibling.position),
+            None => Ok(first()),
+        };
+    };
+
+    let target_index = siblings
+        .iter()
+        .position(|slot| slot.id == target_id)
+        .ok_or(AppError::InvalidMove)?;
+    let target = siblings[target_index];
+    match siblings.get(target_index + 1) {
+        Some(next) => between(target.position, next.position),
+        None => after(target.position),
+    }
+}
+
 fn validate(position: &str) -> AppResult<()> {
     let bytes = position.as_bytes();
     let is_empty = bytes.is_empty();
@@ -216,6 +247,70 @@ mod tests {
 
         assert_eq!(positions, sorted_copy(&positions));
         assert!(has_no_duplicates(&positions));
+    }
+
+    fn slots<'a>(entries: &'a [(&'a str, &'a str)]) -> Vec<Slot<'a>> {
+        entries
+            .iter()
+            .map(|(id, position)| Slot { id, position })
+            .collect()
+    }
+
+    #[test]
+    fn place_after_nothing_goes_before_the_first_sibling() {
+        let siblings = slots(&[("a", "V"), ("b", "k")]);
+
+        let position = place_after(&siblings, None).unwrap();
+
+        assert!(position.as_str() < "V");
+    }
+
+    #[test]
+    fn place_after_nothing_in_an_empty_list_is_the_first_position() {
+        assert_eq!(place_after(&[], None).unwrap(), first());
+    }
+
+    #[test]
+    fn place_after_a_sibling_goes_between_it_and_the_next() {
+        let siblings = slots(&[("a", "V"), ("b", "k")]);
+
+        let position = place_after(&siblings, Some("a")).unwrap();
+
+        assert!("V" < position.as_str());
+        assert!(position.as_str() < "k");
+    }
+
+    #[test]
+    fn place_after_the_last_sibling_goes_to_the_end() {
+        let siblings = slots(&[("a", "V"), ("b", "k")]);
+
+        let position = place_after(&siblings, Some("b")).unwrap();
+
+        assert!(position.as_str() > "k");
+    }
+
+    #[test]
+    fn place_after_an_unknown_sibling_is_an_invalid_move() {
+        let siblings = slots(&[("a", "V")]);
+
+        assert!(matches!(
+            place_after(&siblings, Some("missing")),
+            Err(AppError::InvalidMove)
+        ));
+        assert!(matches!(
+            place_after(&[], Some("a")),
+            Err(AppError::InvalidMove)
+        ));
+    }
+
+    #[test]
+    fn previous_sibling_id_finds_the_neighbour_before() {
+        let ordered = slots(&[("a", "A"), ("b", "B"), ("c", "C")]);
+
+        assert_eq!(previous_sibling_id(&ordered, "a"), None);
+        assert_eq!(previous_sibling_id(&ordered, "b"), Some("a"));
+        assert_eq!(previous_sibling_id(&ordered, "c"), Some("b"));
+        assert_eq!(previous_sibling_id(&ordered, "missing"), None);
     }
 
     #[test]

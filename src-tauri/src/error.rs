@@ -15,6 +15,8 @@ pub enum AppError {
     Io,
     #[error("a database operation failed")]
     Database,
+    #[error("an unexpected error occurred")]
+    Internal,
 }
 
 pub type AppResult<T> = Result<T, AppError>;
@@ -34,6 +36,7 @@ impl AppError {
             Self::InvalidMove => "INVALID_MOVE",
             Self::Io => "IO",
             Self::Database => "DATABASE",
+            Self::Internal => "INTERNAL",
         }
     }
 }
@@ -75,6 +78,13 @@ impl From<rusqlite_migration::Error> for AppError {
     }
 }
 
+impl From<serde_json::Error> for AppError {
+    fn from(source: serde_json::Error) -> Self {
+        log::error!("json error: {source}");
+        Self::Internal
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -101,6 +111,7 @@ mod tests {
             AppError::InvalidMove,
             AppError::Io,
             AppError::Database,
+            AppError::Internal,
         ];
 
         let mut codes: Vec<_> = errors.iter().map(AppError::code).collect();
@@ -117,6 +128,16 @@ mod tests {
         let payload = serialized(&error);
 
         assert_eq!(payload["message"], "a database operation failed");
+    }
+
+    #[test]
+    fn json_error_hides_internal_details() {
+        let source = serde_json::from_str::<serde_json::Value>("{ secret").unwrap_err();
+
+        let payload = serialized(&AppError::from(source));
+
+        assert_eq!(payload["code"], "INTERNAL");
+        assert_eq!(payload["message"], "an unexpected error occurred");
     }
 
     #[test]

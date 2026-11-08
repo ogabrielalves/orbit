@@ -1,5 +1,6 @@
 pub mod db;
 pub mod error;
+pub mod modules;
 pub mod shared;
 pub mod state;
 

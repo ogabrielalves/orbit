@@ -1,64 +1,67 @@
 import { type FormEvent, type KeyboardEvent, useId, useRef, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
-import { toast } from "sonner";
-import type { Project, ProjectStatus } from "@/bindings";
+import type { ProjectStatus } from "@/bindings";
 import { Button } from "@/components/atoms/Button";
 import { Input } from "@/components/atoms/Input";
 import { ProjectTile } from "@/components/atoms/ProjectTile";
 import { Select } from "@/components/atoms/Select";
 import { Textarea } from "@/components/atoms/Textarea";
+import { type ColorOption, ColorPicker } from "@/components/molecules/ColorPicker";
 import { FormField } from "@/components/molecules/FormField";
 import { Modal } from "@/components/organisms/Modal";
 import { matchesHotkey } from "@/lib/hotkey";
-import {
-  defaultProjectColorKey,
-  type ProjectColorKey,
-  projectColorKeys,
-  resolveProjectColor,
-} from "@/modules/projects/colors";
-import { useCreateProject, useUpdateProject } from "@/modules/projects/queries";
-import { ProjectColorPicker } from "@/pages/projects/ProjectColorPicker";
 
 const NAME_MAX_LENGTH = 120;
 
 const projectStatuses: ProjectStatus[] = ["active", "paused", "completed"];
 
-type ProjectFormModalProps = {
-  project?: Project;
-  onClose: () => void;
-  onSaved?: (project: Project) => void;
+export type ProjectFormValues = {
+  name: string;
+  description: string;
+  color: string;
+  status: ProjectStatus;
 };
 
-function pickInitialColor(color: string | null): ProjectColorKey {
-  const savedColor = projectColorKeys.find((key) => key === color);
-  return savedColor ?? defaultProjectColorKey;
+type ProjectFormModalProps = {
+  mode: "create" | "edit";
+  initialValues: ProjectFormValues;
+  colorOptions: ColorOption<string>[];
+  isSubmitting: boolean;
+  onSubmit: (values: ProjectFormValues) => Promise<void>;
+  onOpenChange: (isOpen: boolean) => void;
+};
+
+function keepOpenOnFailure(): undefined {
+  return undefined;
 }
 
-export function ProjectFormModal({ project, onClose, onSaved }: ProjectFormModalProps) {
+export function ProjectFormModal({
+  mode,
+  initialValues,
+  colorOptions,
+  isSubmitting,
+  onSubmit,
+  onOpenChange,
+}: ProjectFormModalProps) {
   const { t } = useTranslation();
   const formId = useId();
   const nameInputRef = useRef<HTMLInputElement>(null);
-  const createProject = useCreateProject();
-  const updateProject = useUpdateProject();
 
-  const [name, setName] = useState(project?.name ?? "");
-  const [description, setDescription] = useState(project?.description ?? "");
-  const [color, setColor] = useState(pickInitialColor(project?.color ?? null));
-  const [status, setStatus] = useState<ProjectStatus>(project?.status ?? "active");
+  const [name, setName] = useState(initialValues.name);
+  const [description, setDescription] = useState(initialValues.description);
+  const [color, setColor] = useState(initialValues.color);
+  const [status, setStatus] = useState(initialValues.status);
 
-  const isEditing = project !== undefined;
-  const isSaving = createProject.isPending || updateProject.isPending;
+  const isEditing = mode === "edit";
   const isNameBlank = name.trim() === "";
   const hasDescription = description.trim() !== "";
   const previewName = isNameBlank ? t("projects.form.previewPlaceholder") : name.trim();
+  const previewColor = colorOptions.find((option) => option.value === color)?.color ?? "";
   const titleKey = isEditing ? "projects.form.editTitle" : "projects.form.createTitle";
   const submitKey = isEditing ? "projects.form.save" : "projects.form.create";
-  const toastKey = isEditing ? "projects.toast.updated" : "projects.toast.created";
 
-  function handleSaved(saved: Project) {
-    toast.success(t(toastKey));
-    onSaved?.(saved);
-    onClose();
+  function handleClose() {
+    onOpenChange(false);
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -67,15 +70,9 @@ export function ProjectFormModal({ project, onClose, onSaved }: ProjectFormModal
       return;
     }
 
-    const input = { name: name.trim(), description: description.trim(), color };
-    if (isEditing) {
-      updateProject.mutate(
-        { id: project.id, input: { ...input, status } },
-        { onSuccess: handleSaved },
-      );
-      return;
-    }
-    createProject.mutate(input, { onSuccess: handleSaved });
+    onSubmit({ name: name.trim(), description: description.trim(), color, status }).catch(
+      keepOpenOnFailure,
+    );
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLFormElement>) {
@@ -89,7 +86,7 @@ export function ProjectFormModal({ project, onClose, onSaved }: ProjectFormModal
   return (
     <Modal
       isOpen
-      onClose={onClose}
+      onClose={handleClose}
       title={t(titleKey)}
       description={t("projects.form.subtitle")}
       closeLabel={t("common.close")}
@@ -107,10 +104,10 @@ export function ProjectFormModal({ project, onClose, onSaved }: ProjectFormModal
             />
           </span>
           <div className="ml-auto flex gap-2">
-            <Button variant="ghost" onClick={onClose}>
+            <Button variant="ghost" onClick={handleClose}>
               {t("common.cancel")}
             </Button>
-            <Button type="submit" form={formId} disabled={isNameBlank} isLoading={isSaving}>
+            <Button type="submit" form={formId} disabled={isNameBlank} isLoading={isSubmitting}>
               {t(submitKey)}
             </Button>
           </div>
@@ -149,8 +146,9 @@ export function ProjectFormModal({ project, onClose, onSaved }: ProjectFormModal
           </FormField>
           <div className="flex flex-col gap-2">
             <span className="text-small font-medium text-fg">{t("projects.form.colorLabel")}</span>
-            <ProjectColorPicker
+            <ColorPicker
               label={t("projects.form.colorLabel")}
+              options={colorOptions}
               value={color}
               onChange={setColor}
             />
@@ -180,7 +178,7 @@ export function ProjectFormModal({ project, onClose, onSaved }: ProjectFormModal
           </span>
           <div className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4">
             <div className="flex items-center gap-2.5">
-              <ProjectTile name={previewName} color={resolveProjectColor(color)} size="md" />
+              <ProjectTile name={previewName} color={previewColor} size="md" />
               <div className="flex min-w-0 flex-col">
                 <span className="truncate text-body font-semibold text-fg">{previewName}</span>
                 <span className="text-caption text-success-fg">

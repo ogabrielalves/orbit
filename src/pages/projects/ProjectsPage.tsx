@@ -6,15 +6,16 @@ import type { Project } from "@/bindings";
 import { Button } from "@/components/atoms/Button";
 import { ErrorState } from "@/components/molecules/ErrorState";
 import { PageHeader } from "@/components/molecules/PageHeader";
+import { ProjectFormModal } from "@/components/organisms/ProjectFormModal";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { getErrorMessageKey } from "@/lib/appError";
 import { useProjects } from "@/modules/projects/queries";
 import { sortProjects } from "@/modules/projects/sort";
+import { useProjectForm } from "@/modules/projects/useProjectForm";
 import {
   ProjectConfirmDialog,
   type ProjectConfirmKind,
 } from "@/pages/projects/ProjectConfirmDialog";
-import { ProjectFormModal } from "@/pages/projects/ProjectFormModal";
 import { ProjectsEmptyState } from "@/pages/projects/ProjectsEmptyState";
 import { ProjectsList } from "@/pages/projects/ProjectsList";
 import { ProjectsSkeleton } from "@/pages/projects/ProjectsSkeleton";
@@ -33,6 +34,8 @@ export function ProjectsPage() {
   const navigate = useNavigate({ from: "/projects" });
   const [formState, setFormState] = useState<FormState>(null);
   const [confirmState, setConfirmState] = useState<ConfirmState>(null);
+
+  const projectForm = useProjectForm(formState?.project, () => setFormState(null));
 
   const filters = resolveProjectsFilters(search);
   const debouncedQuery = useDebouncedValue(filters.q, SEARCH_DEBOUNCE_IN_MILLISECONDS);
@@ -110,8 +113,12 @@ export function ProjectsPage() {
       {isFormOpen && (
         <ProjectFormModal
           key={formState.project?.id ?? "new"}
-          project={formState.project}
-          onClose={() => setFormState(null)}
+          mode={projectForm.mode}
+          initialValues={projectForm.initialValues}
+          colorOptions={projectForm.colorOptions}
+          isSubmitting={projectForm.isSubmitting}
+          onSubmit={projectForm.submit}
+          onOpenChange={() => setFormState(null)}
         />
       )}
       {isConfirmOpen && (

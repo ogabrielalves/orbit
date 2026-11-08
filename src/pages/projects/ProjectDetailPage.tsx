@@ -3,8 +3,10 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import BackIcon from "@/assets/icons/linha/voltar.svg?react";
 import { ErrorState } from "@/components/molecules/ErrorState";
+import { ProjectFormModal } from "@/components/organisms/ProjectFormModal";
 import { getErrorMessageKey } from "@/lib/appError";
 import { useProject } from "@/modules/projects/queries";
+import { useProjectForm } from "@/modules/projects/useProjectForm";
 import { ProjectBoards } from "@/pages/projects/ProjectBoards";
 import {
   ProjectConfirmDialog,
@@ -12,7 +14,6 @@ import {
 } from "@/pages/projects/ProjectConfirmDialog";
 import { ProjectDetailHeader } from "@/pages/projects/ProjectDetailHeader";
 import { ProjectDetailSkeleton } from "@/pages/projects/ProjectDetailSkeleton";
-import { ProjectFormModal } from "@/pages/projects/ProjectFormModal";
 import { ProjectStats } from "@/pages/projects/ProjectStats";
 
 export function ProjectDetailPage() {
@@ -25,6 +26,7 @@ export function ProjectDetailPage() {
   const [confirmKind, setConfirmKind] = useState<ProjectConfirmKind | null>(null);
 
   const details = detailsQuery.data;
+  const projectForm = useProjectForm(details?.project, () => setIsFormOpen(false));
   const isLoading = detailsQuery.isPending;
   const hasFailed = detailsQuery.isError;
   const hasDetails = details !== undefined;
@@ -70,7 +72,14 @@ export function ProjectDetailPage() {
           />
           <ProjectBoards boards={details.boards} />
           {isFormOpen && (
-            <ProjectFormModal project={details.project} onClose={() => setIsFormOpen(false)} />
+            <ProjectFormModal
+              mode={projectForm.mode}
+              initialValues={projectForm.initialValues}
+              colorOptions={projectForm.colorOptions}
+              isSubmitting={projectForm.isSubmitting}
+              onSubmit={projectForm.submit}
+              onOpenChange={() => setIsFormOpen(false)}
+            />
           )}
           {isConfirmOpen && (
             <ProjectConfirmDialog

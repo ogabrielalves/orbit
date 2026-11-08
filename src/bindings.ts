@@ -23,6 +23,16 @@ export const commands = {
 	moveColumn: (id: string, afterColumnId: string | null) => typedError<BoardColumn, ErrorPayload>(__TAURI_INVOKE("move_column", { id, afterColumnId })),
 	deleteColumn: (id: string) => typedError<null, ErrorPayload>(__TAURI_INVOKE("delete_column", { id })),
 	getDashboardSummary: (input: DashboardSummaryInput) => typedError<DashboardSummary, ErrorPayload>(__TAURI_INVOKE("get_dashboard_summary", { input })),
+	createTask: (input: CreateTaskInput) => typedError<Task, ErrorPayload>(__TAURI_INVOKE("create_task", { input })),
+	getTask: (id: string) => typedError<Task, ErrorPayload>(__TAURI_INVOKE("get_task", { id })),
+	listBoardTasks: (boardId: string) => typedError<Task[], ErrorPayload>(__TAURI_INVOKE("list_board_tasks", { boardId })),
+	updateTask: (id: string, input: UpdateTaskInput) => typedError<Task, ErrorPayload>(__TAURI_INVOKE("update_task", { id, input })),
+	archiveTask: (id: string) => typedError<Task, ErrorPayload>(__TAURI_INVOKE("archive_task", { id })),
+	restoreTask: (id: string) => typedError<Task, ErrorPayload>(__TAURI_INVOKE("restore_task", { id })),
+	deleteTask: (id: string) => typedError<null, ErrorPayload>(__TAURI_INVOKE("delete_task", { id })),
+	moveTask: (id: string, columnId: string, afterTaskId: string | null) => typedError<Task, ErrorPayload>(__TAURI_INVOKE("move_task", { id, columnId, afterTaskId })),
+	sendTaskToBoard: (id: string, boardId: string, columnId: string | null) => typedError<Task, ErrorPayload>(__TAURI_INVOKE("send_task_to_board", { id, boardId, columnId })),
+	sendTaskToBacklog: (id: string) => typedError<Task, ErrorPayload>(__TAURI_INVOKE("send_task_to_backlog", { id })),
 };
 
 /* Types */
@@ -78,6 +88,15 @@ export type CreateProjectInput = {
 	description?: string | null,
 	icon?: string | null,
 	color?: string | null,
+};
+
+export type CreateTaskInput = {
+	projectId: string,
+	title: string,
+	description?: string | null,
+	priority?: TaskPriority | null,
+	dueDate?: string | null,
+	columnId?: string | null,
 };
 
 export type DashboardSummary = {
@@ -148,6 +167,23 @@ export type Settings = {
 	vaultPath: string | null,
 };
 
+export type Task = {
+	id: string,
+	projectId: string,
+	boardId: string | null,
+	columnId: string | null,
+	parentTaskId: string | null,
+	title: string,
+	description: string,
+	priority: TaskPriority,
+	dueDate: string | null,
+	position: string,
+	createdAt: string,
+	updatedAt: string,
+	completedAt: string | null,
+	archivedAt: string | null,
+};
+
 export type TaskPriority = "low" | "medium" | "high" | "urgent";
 
 export type TaskStateCounts = {
@@ -189,6 +225,13 @@ export type UpdateProjectInput = {
 export type UpdateSettingsInput = {
 	language?: Language | null,
 	vaultPath?: string | null,
+};
+
+export type UpdateTaskInput = {
+	title?: string | null,
+	description?: string | null,
+	priority?: TaskPriority | null,
+	dueDate?: string | null,
 };
 
 /* Tauri Specta runtime */

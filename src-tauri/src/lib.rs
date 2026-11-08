@@ -21,6 +21,10 @@ use modules::projects::commands::{
     update_project,
 };
 use modules::settings::commands::{get_settings, update_settings};
+use modules::tasks::commands::{
+    archive_task, create_task, delete_task, get_task, list_board_tasks, move_task, restore_task,
+    send_task_to_backlog, send_task_to_board, update_task,
+};
 
 pub fn bindings_builder() -> Builder<tauri::Wry> {
     Builder::<tauri::Wry>::new()
@@ -45,6 +49,16 @@ pub fn bindings_builder() -> Builder<tauri::Wry> {
             move_column,
             delete_column,
             get_dashboard_summary,
+            create_task,
+            get_task,
+            list_board_tasks,
+            update_task,
+            archive_task,
+            restore_task,
+            delete_task,
+            move_task,
+            send_task_to_board,
+            send_task_to_backlog,
         ])
 }
 
@@ -113,6 +127,16 @@ mod tests {
             "moveColumn",
             "deleteColumn",
             "getDashboardSummary",
+            "createTask",
+            "getTask",
+            "listBoardTasks",
+            "updateTask",
+            "archiveTask",
+            "restoreTask",
+            "deleteTask",
+            "moveTask",
+            "sendTaskToBoard",
+            "sendTaskToBacklog",
         ] {
             assert!(content.contains(command), "missing command {command}");
         }

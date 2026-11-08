@@ -1,7 +1,9 @@
 use std::collections::HashMap;
 
-use serde::{Deserialize, Deserializer, Serialize};
+use serde::{Deserialize, Serialize};
 use specta::Type;
+
+use crate::shared::patch::distinguish_null_from_absent;
 
 pub const KEY_LANGUAGE: &str = "language";
 pub const KEY_VAULT_PATH: &str = "vault_path";
@@ -56,14 +58,6 @@ pub struct UpdateSettingsInput {
     #[specta(type = Option<Language>)]
     pub language: Option<Option<Language>>,
     pub vault_path: Option<String>,
-}
-
-fn distinguish_null_from_absent<'de, T, D>(deserializer: D) -> Result<Option<Option<T>>, D::Error>
-where
-    T: Deserialize<'de>,
-    D: Deserializer<'de>,
-{
-    Option::<T>::deserialize(deserializer).map(Some)
 }
 
 #[cfg(test)]

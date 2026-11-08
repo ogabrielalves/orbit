@@ -27,6 +27,41 @@ export const ptBR = {
     searchPlaceholder: "Buscar em tudo…",
     create: "Criar",
   },
+  projects: {
+    searchLabel: "Pesquisar projetos",
+    searchPlaceholder: "Pesquisar projetos…",
+    scopeLabel: "Quais projetos mostrar",
+    scope: {
+      active: "Ativos",
+      archived: "Arquivados",
+    },
+    statusLabel: "Filtrar por status",
+    status: {
+      all: "Todos",
+      active: "Ativos",
+      paused: "Pausados",
+      completed: "Concluídos",
+    },
+    sortLabel: "Ordenar por",
+    sort: {
+      updated: "Atualizados recentemente",
+      name: "Nome",
+      created: "Data de criação",
+    },
+    viewLabel: "Modo de visualização",
+    view: {
+      grid: "Visualizar em grade",
+      list: "Visualizar em lista",
+    },
+    empty: {
+      title: "Nenhum projeto ainda",
+      description: "Seus projetos aparecerão aqui.",
+    },
+    emptyArchived: {
+      title: "Nenhum projeto arquivado",
+      description: "Os projetos que você arquivar aparecerão aqui.",
+    },
+  },
   greeting: {
     morning: "Bom dia",
     afternoon: "Boa tarde",

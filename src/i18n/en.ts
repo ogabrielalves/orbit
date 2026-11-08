@@ -30,6 +30,41 @@ export const en: Widen<typeof ptBR> = {
     searchPlaceholder: "Search everything…",
     create: "Create",
   },
+  projects: {
+    searchLabel: "Search projects",
+    searchPlaceholder: "Search projects…",
+    scopeLabel: "Which projects to show",
+    scope: {
+      active: "Active",
+      archived: "Archived",
+    },
+    statusLabel: "Filter by status",
+    status: {
+      all: "All",
+      active: "Active",
+      paused: "Paused",
+      completed: "Completed",
+    },
+    sortLabel: "Sort by",
+    sort: {
+      updated: "Recently updated",
+      name: "Name",
+      created: "Date created",
+    },
+    viewLabel: "View mode",
+    view: {
+      grid: "Grid view",
+      list: "List view",
+    },
+    empty: {
+      title: "No projects yet",
+      description: "Your projects will appear here.",
+    },
+    emptyArchived: {
+      title: "No archived projects",
+      description: "Projects you archive will appear here.",
+    },
+  },
   greeting: {
     morning: "Good morning",
     afternoon: "Good afternoon",

@@ -15,6 +15,7 @@ import { NotFoundPage } from "@/pages/not-found/NotFoundPage";
 import { NotesPage } from "@/pages/notes/NotesPage";
 import { ProjectDetailPage } from "@/pages/projects/ProjectDetailPage";
 import { ProjectsPage } from "@/pages/projects/ProjectsPage";
+import { parseProjectsSearch } from "@/pages/projects/projectsSearch";
 import { SettingsPage } from "@/pages/settings/SettingsPage";
 
 const rootRoute = createRootRoute({
@@ -33,6 +34,7 @@ const projectsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/projects",
   component: ProjectsPage,
+  validateSearch: parseProjectsSearch,
   staticData: { titleKey: "nav.projects" },
 });
 

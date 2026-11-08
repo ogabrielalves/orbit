@@ -1,5 +1,5 @@
 import * as Dialog from "@radix-ui/react-dialog";
-import type { ReactNode } from "react";
+import type { ReactNode, RefObject } from "react";
 import CloseIcon from "@/assets/icons/linha/fechar.svg?react";
 import { IconButton } from "@/components/atoms/IconButton";
 
@@ -12,6 +12,7 @@ type ModalProps = {
   closeLabel: string;
   description?: string;
   size?: ModalSize;
+  initialFocusRef?: RefObject<HTMLElement | null>;
   footer?: ReactNode;
   children: ReactNode;
 };
@@ -28,12 +29,22 @@ export function Modal({
   closeLabel,
   description,
   size = "lg",
+  initialFocusRef,
   footer,
   children,
 }: ModalProps) {
   const hasDescription = description !== undefined;
   const hasFooter = footer !== undefined;
   const descriptionProps = hasDescription ? {} : { "aria-describedby": undefined };
+
+  function handleOpenAutoFocus(event: Event) {
+    const initialElement = initialFocusRef?.current;
+    const hasInitialElement = initialElement !== null && initialElement !== undefined;
+    if (hasInitialElement) {
+      event.preventDefault();
+      initialElement.focus();
+    }
+  }
 
   function handleOpenChange(nextIsOpen: boolean) {
     const shouldClose = !nextIsOpen;
@@ -48,6 +59,7 @@ export function Modal({
         <Dialog.Overlay className="fixed inset-0 z-40 animate-fade-in bg-overlay motion-reduce:animate-none" />
         <Dialog.Content
           {...descriptionProps}
+          onOpenAutoFocus={handleOpenAutoFocus}
           className={`fixed top-18 left-1/2 z-50 flex max-h-[calc(100vh-6rem)] w-[calc(100%-2rem)] -translate-x-1/2 animate-pop-in flex-col overflow-hidden rounded-3xl bg-surface shadow-lg motion-reduce:animate-none ${sizeClasses[size]}`}
         >
           <div className="flex items-center justify-between gap-4 border-b border-border px-6 py-5">

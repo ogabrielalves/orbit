@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { ComponentProps } from "react";
+import { type ComponentProps, createRef } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { Modal } from "@/components/organisms/Modal";
 
@@ -70,6 +70,40 @@ describe("Modal", () => {
 
   it("moves focus into the dialog", () => {
     renderModal();
+
+    expect(screen.getByRole("dialog").contains(document.activeElement)).toBe(true);
+  });
+
+  it("focuses the element given as the initial focus", () => {
+    const initialFocusRef = createRef<HTMLInputElement>();
+    render(
+      <Modal
+        isOpen
+        onClose={() => undefined}
+        title="A"
+        closeLabel="Close"
+        initialFocusRef={initialFocusRef}
+      >
+        <input aria-label="Name" ref={initialFocusRef} />
+      </Modal>,
+    );
+
+    expect(screen.getByRole("textbox", { name: "Name" })).toHaveFocus();
+  });
+
+  it("falls back to the default focus when the initial element is missing", () => {
+    const initialFocusRef = createRef<HTMLInputElement>();
+    render(
+      <Modal
+        isOpen
+        onClose={() => undefined}
+        title="A"
+        closeLabel="Close"
+        initialFocusRef={initialFocusRef}
+      >
+        <p>x</p>
+      </Modal>,
+    );
 
     expect(screen.getByRole("dialog").contains(document.activeElement)).toBe(true);
   });

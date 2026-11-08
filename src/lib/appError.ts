@@ -1,7 +1,4 @@
-export type AppError = {
-  code: string;
-  message: string;
-};
+import type { ErrorPayload } from "@/bindings";
 
 export type ErrorMessageKey =
   | "errors.unknown"
@@ -21,7 +18,7 @@ const messageKeyByCode: Record<string, ErrorMessageKey> = {
   DATABASE: "errors.database",
 };
 
-export function isAppError(value: unknown): value is AppError {
+export function isAppError(value: unknown): value is ErrorPayload {
   const isObject = typeof value === "object" && value !== null;
   if (!isObject) {
     return false;

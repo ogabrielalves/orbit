@@ -1,0 +1,70 @@
+import { type ComponentType, type SVGProps, useId } from "react";
+
+type SegmentedVariant = "pill" | "bordered";
+
+export type SegmentedOption<TValue extends string> = {
+  value: TValue;
+  label: string;
+  icon?: ComponentType<SVGProps<SVGSVGElement>>;
+};
+
+type SegmentedControlProps<TValue extends string> = {
+  label: string;
+  options: SegmentedOption<TValue>[];
+  value: TValue;
+  onChange: (value: TValue) => void;
+  variant?: SegmentedVariant;
+  isIconOnly?: boolean;
+};
+
+const groupClasses: Record<SegmentedVariant, string> = {
+  pill: "inline-flex gap-0.5 rounded-md bg-surface-muted p-0.75",
+  bordered: "inline-flex overflow-hidden rounded-md border border-border-strong bg-surface",
+};
+
+const optionClasses: Record<SegmentedVariant, string> = {
+  pill: "flex cursor-pointer items-center gap-1.5 rounded-sm px-3 py-1.5 text-small text-fg-secondary transition-colors has-checked:bg-surface has-checked:font-medium has-checked:text-fg has-checked:shadow-sm has-focus-visible:shadow-focus",
+  bordered:
+    "flex h-9 w-9.5 cursor-pointer items-center justify-center text-fg-muted transition-colors has-checked:bg-surface-muted has-checked:text-fg has-focus-visible:shadow-focus",
+};
+
+export function SegmentedControl<TValue extends string>({
+  label,
+  options,
+  value,
+  onChange,
+  variant = "pill",
+  isIconOnly = false,
+}: SegmentedControlProps<TValue>) {
+  const groupName = useId();
+  const labelClass = isIconOnly ? "sr-only" : "";
+
+  return (
+    <div role="radiogroup" aria-label={label} className={groupClasses[variant]}>
+      {options.map((option) => {
+        const Icon = option.icon;
+        const hasIcon = Icon !== undefined;
+        const isSelected = option.value === value;
+
+        return (
+          <label
+            key={option.value}
+            title={isIconOnly ? option.label : undefined}
+            className={optionClasses[variant]}
+          >
+            <input
+              type="radio"
+              name={groupName}
+              value={option.value}
+              checked={isSelected}
+              onChange={() => onChange(option.value)}
+              className="sr-only focus-visible:shadow-none"
+            />
+            {hasIcon && <Icon aria-hidden="true" className="size-4 shrink-0" />}
+            <span className={labelClass}>{option.label}</span>
+          </label>
+        );
+      })}
+    </div>
+  );
+}

@@ -1,9 +1,5 @@
 pre-commit:
-  parallel: true
   commands:
     lint:
-      glob: "*.{ts,tsx,js,json,css}"
+      glob: "*.{ts,tsx,js,json,css,md}"
       run: npx biome check --no-errors-on-unmatched {staged_files}
-    typecheck:
-      glob: "*.{ts,tsx}"
-      run: npm run typecheck

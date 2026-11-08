@@ -17,7 +17,7 @@ export type ErrorPayload = {
 export type Language = "en" | "pt-BR";
 
 export type Settings = {
-	language: Language,
+	language: Language | null,
 	vaultPath: string | null,
 };
 

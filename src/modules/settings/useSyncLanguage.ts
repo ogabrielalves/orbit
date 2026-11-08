@@ -1,15 +1,18 @@
 import { useEffect } from "react";
 import { i18next } from "@/i18n";
+import { resolveLanguage } from "@/i18n/resolveLanguage";
 import { useSettings } from "@/modules/settings/queries";
 
 export function useSyncLanguage(): void {
   const { data: settings } = useSettings();
-  const language = settings?.language;
+  const areSettingsLoaded = settings !== undefined;
+  const savedLanguage = settings?.language ?? null;
 
   useEffect(() => {
-    const hasLanguage = language !== undefined;
-    if (hasLanguage) {
-      void i18next.changeLanguage(language);
+    if (!areSettingsLoaded) {
+      return;
     }
-  }, [language]);
+    const targetLanguage = savedLanguage ?? resolveLanguage(navigator.language);
+    void i18next.changeLanguage(targetLanguage);
+  }, [areSettingsLoaded, savedLanguage]);
 }

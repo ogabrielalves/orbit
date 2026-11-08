@@ -20,8 +20,12 @@ pub fn update(state: &AppState, input: UpdateSettingsInput) -> AppResult<Setting
     let settings = {
         let mut connection = state.database();
         let transaction = connection.transaction()?;
-        if let Some(language) = input.language {
-            repository::upsert(&transaction, KEY_LANGUAGE, language.as_str(), &now)?;
+        match input.language {
+            Some(Some(language)) => {
+                repository::upsert(&transaction, KEY_LANGUAGE, language.as_str(), &now)?;
+            }
+            Some(None) => repository::delete(&transaction, KEY_LANGUAGE)?,
+            None => {}
         }
         if let Some(path) = &vault_path {
             repository::upsert(&transaction, KEY_VAULT_PATH, path, &now)?;
@@ -82,29 +86,94 @@ mod tests {
     fn partial_update_changes_only_given_fields() {
         let state = fresh_state();
         let input = UpdateSettingsInput {
-            language: Some(Language::PtBr),
+            language: Some(Some(Language::PtBr)),
             ..Default::default()
         };
 
         let settings = update(&state, input).expect("updates");
 
-        assert_eq!(settings.language, Language::PtBr);
+        assert_eq!(settings.language, Some(Language::PtBr));
         assert_eq!(settings.vault_path, None);
         assert_eq!(get(&state).expect("reads"), settings);
+    }
+
+    #[test]
+    fn fresh_database_follows_the_system_language() {
+        let state = fresh_state();
+
+        let settings = get(&state).expect("reads");
+
+        assert_eq!(settings.language, None);
+    }
+
+    #[test]
+    fn language_can_be_cleared_back_to_following_the_system() {
+        let state = fresh_state();
+        let choose = UpdateSettingsInput {
+            language: Some(Some(Language::En)),
+            ..Default::default()
+        };
+        update(&state, choose).expect("chooses");
+        let clear = UpdateSettingsInput {
+            language: Some(None),
+            ..Default::default()
+        };
+
+        let settings = update(&state, clear).expect("clears");
+
+        assert_eq!(settings.language, None);
+        assert_eq!(get(&state).expect("reads").language, None);
+    }
+
+    #[test]
+    fn clearing_the_language_keeps_the_vault_path() {
+        let state = fresh_state();
+        let setup = UpdateSettingsInput {
+            language: Some(Some(Language::PtBr)),
+            vault_path: Some("my-vault".into()),
+        };
+        update(&state, setup).expect("sets both");
+        let clear = UpdateSettingsInput {
+            language: Some(None),
+            ..Default::default()
+        };
+
+        let settings = update(&state, clear).expect("clears");
+
+        assert_eq!(settings.vault_path.as_deref(), Some("my-vault"));
+        assert_eq!(state.vault_path(), Some(PathBuf::from("my-vault")));
+    }
+
+    #[test]
+    fn update_without_language_keeps_the_chosen_one() {
+        let state = fresh_state();
+        let choose = UpdateSettingsInput {
+            language: Some(Some(Language::PtBr)),
+            ..Default::default()
+        };
+        update(&state, choose).expect("chooses");
+        let only_vault = UpdateSettingsInput {
+            vault_path: Some("my-vault".into()),
+            ..Default::default()
+        };
+
+        let settings = update(&state, only_vault).expect("updates vault");
+
+        assert_eq!(settings.language, Some(Language::PtBr));
     }
 
     #[test]
     fn update_persists_every_field() {
         let state = fresh_state();
         let input = UpdateSettingsInput {
-            language: Some(Language::PtBr),
+            language: Some(Some(Language::PtBr)),
             vault_path: Some("  my-vault  ".into()),
         };
 
         update(&state, input).expect("updates");
 
         let settings = get(&state).expect("reads");
-        assert_eq!(settings.language, Language::PtBr);
+        assert_eq!(settings.language, Some(Language::PtBr));
         assert_eq!(settings.vault_path.as_deref(), Some("my-vault"));
     }
 
@@ -125,7 +194,7 @@ mod tests {
     fn rejects_blank_vault_path_without_changing_anything() {
         let state = fresh_state();
         let input = UpdateSettingsInput {
-            language: Some(Language::PtBr),
+            language: Some(Some(Language::PtBr)),
             vault_path: Some("   ".into()),
         };
 

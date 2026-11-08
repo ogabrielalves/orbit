@@ -7,7 +7,7 @@ vi.mock("@/bindings", () => ({
   commands: {
     getSettings: vi.fn().mockResolvedValue({
       status: "ok",
-      data: { language: "en", vaultPath: null },
+      data: { language: null, vaultPath: null },
     }),
     updateSettings: vi.fn(),
   },

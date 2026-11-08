@@ -39,6 +39,31 @@ describe("settings api", () => {
     expect(saved.language).toBe("en");
   });
 
+  it("returns a null language when the system language is followed", async () => {
+    getSettings.mockResolvedValue({ status: "ok", data: { language: null, vaultPath: null } });
+
+    const loaded = await fetchSettings();
+
+    expect(loaded.language).toBeNull();
+  });
+
+  it("sends a null language to clear the saved one", async () => {
+    updateSettings.mockResolvedValue({ status: "ok", data: { language: null, vaultPath: null } });
+
+    const saved = await saveSettings({ language: null });
+
+    expect(updateSettings).toHaveBeenCalledWith({ language: null });
+    expect(saved.language).toBeNull();
+  });
+
+  it("does not send a language when only the vault path changes", async () => {
+    updateSettings.mockResolvedValue({ status: "ok", data: { ...settings, vaultPath: "/vault" } });
+
+    await saveSettings({ vaultPath: "/vault" });
+
+    expect(updateSettings).toHaveBeenCalledWith({ vaultPath: "/vault" });
+  });
+
   it("rejects with the backend error payload when update fails", async () => {
     const payload = { code: "VALIDATION", message: "invalid vault path" };
     updateSettings.mockResolvedValue({ status: "error", error: payload });

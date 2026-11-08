@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 use specta::Type;
 
 pub const KEY_LANGUAGE: &str = "language";
@@ -31,40 +31,39 @@ impl Language {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Type)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct Settings {
-    pub language: Language,
+    pub language: Option<Language>,
     pub vault_path: Option<String>,
-}
-
-impl Default for Settings {
-    fn default() -> Self {
-        Self {
-            language: Language::En,
-            vault_path: None,
-        }
-    }
 }
 
 impl Settings {
     pub fn from_stored(stored: &HashMap<String, String>) -> Self {
-        let defaults = Self::default();
         Self {
             language: stored
                 .get(KEY_LANGUAGE)
-                .and_then(|value| Language::parse(value))
-                .unwrap_or(defaults.language),
+                .and_then(|value| Language::parse(value)),
             vault_path: stored.get(KEY_VAULT_PATH).cloned(),
         }
     }
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize, Type)]
+#[derive(Debug, Clone, Default, Deserialize, Type)]
 #[serde(rename_all = "camelCase", default)]
 pub struct UpdateSettingsInput {
-    pub language: Option<Language>,
+    #[serde(deserialize_with = "distinguish_null_from_absent")]
+    #[specta(type = Option<Language>)]
+    pub language: Option<Option<Language>>,
     pub vault_path: Option<String>,
+}
+
+fn distinguish_null_from_absent<'de, T, D>(deserializer: D) -> Result<Option<Option<T>>, D::Error>
+where
+    T: Deserialize<'de>,
+    D: Deserializer<'de>,
+{
+    Option::<T>::deserialize(deserializer).map(Some)
 }
 
 #[cfg(test)]
@@ -79,12 +78,21 @@ mod tests {
     }
 
     #[test]
-    fn falls_back_to_default_for_unknown_stored_language() {
+    fn follows_the_system_language_for_unknown_stored_language() {
         let stored = HashMap::from([(KEY_LANGUAGE.to_string(), "klingon".to_string())]);
 
         let settings = Settings::from_stored(&stored);
 
-        assert_eq!(settings.language, Language::En);
+        assert_eq!(settings.language, None);
+    }
+
+    #[test]
+    fn reads_a_stored_language() {
+        let stored = HashMap::from([(KEY_LANGUAGE.to_string(), "pt-BR".to_string())]);
+
+        let settings = Settings::from_stored(&stored);
+
+        assert_eq!(settings.language, Some(Language::PtBr));
     }
 
     #[test]
@@ -99,7 +107,7 @@ mod tests {
     #[test]
     fn serializes_with_camel_case_and_wire_values() {
         let settings = Settings {
-            language: Language::PtBr,
+            language: Some(Language::PtBr),
             vault_path: Some("vault".into()),
         };
 
@@ -112,11 +120,37 @@ mod tests {
     }
 
     #[test]
-    fn update_input_accepts_partial_payload() {
+    fn serializes_a_missing_language_as_null() {
+        let json = serde_json::to_value(Settings::default()).expect("serializes");
+
+        assert_eq!(
+            json,
+            serde_json::json!({ "language": null, "vaultPath": null })
+        );
+    }
+
+    #[test]
+    fn update_input_with_a_language_sets_it() {
         let input: UpdateSettingsInput =
             serde_json::from_str(r#"{ "language": "en" }"#).expect("deserializes");
 
-        assert_eq!(input.language, Some(Language::En));
+        assert_eq!(input.language, Some(Some(Language::En)));
         assert_eq!(input.vault_path, None);
+    }
+
+    #[test]
+    fn update_input_with_null_language_clears_it() {
+        let input: UpdateSettingsInput =
+            serde_json::from_str(r#"{ "language": null }"#).expect("deserializes");
+
+        assert_eq!(input.language, Some(None));
+    }
+
+    #[test]
+    fn update_input_without_language_leaves_it_unchanged() {
+        let input: UpdateSettingsInput =
+            serde_json::from_str(r#"{ "vaultPath": "vault" }"#).expect("deserializes");
+
+        assert_eq!(input.language, None);
     }
 }

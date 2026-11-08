@@ -8,7 +8,7 @@ fn settings_survive_a_restart_on_a_real_database_file() {
     let directory = tempfile::tempdir().expect("creates temp dir");
     let first_run = initialize_state(directory.path()).expect("first start");
     let input = UpdateSettingsInput {
-        language: Some(Language::PtBr),
+        language: Some(Some(Language::PtBr)),
         vault_path: Some("notes-vault".into()),
     };
     service::update(&first_run, input).expect("updates");
@@ -17,7 +17,7 @@ fn settings_survive_a_restart_on_a_real_database_file() {
     let second_run = initialize_state(directory.path()).expect("second start");
 
     let settings = service::get(&second_run).expect("reads");
-    assert_eq!(settings.language, Language::PtBr);
+    assert_eq!(settings.language, Some(Language::PtBr));
     assert_eq!(settings.vault_path.as_deref(), Some("notes-vault"));
 }
 
@@ -36,7 +36,7 @@ fn invalid_update_is_rejected_and_leaves_stored_settings_untouched() {
     let directory = tempfile::tempdir().expect("creates temp dir");
     let state = initialize_state(directory.path()).expect("starts");
     let input = UpdateSettingsInput {
-        language: Some(Language::PtBr),
+        language: Some(Some(Language::PtBr)),
         vault_path: Some("  ".into()),
     };
 
@@ -44,4 +44,25 @@ fn invalid_update_is_rejected_and_leaves_stored_settings_untouched() {
 
     assert!(matches!(result, Err(AppError::Validation(_))));
     assert_eq!(service::get(&state).expect("reads"), Settings::default());
+}
+
+#[test]
+fn clearing_the_language_survives_a_restart() {
+    let directory = tempfile::tempdir().expect("creates temp dir");
+    let first_run = initialize_state(directory.path()).expect("first start");
+    let choose = UpdateSettingsInput {
+        language: Some(Some(Language::En)),
+        ..Default::default()
+    };
+    service::update(&first_run, choose).expect("chooses");
+    let clear = UpdateSettingsInput {
+        language: Some(None),
+        ..Default::default()
+    };
+    service::update(&first_run, clear).expect("clears");
+    drop(first_run);
+
+    let second_run = initialize_state(directory.path()).expect("second start");
+
+    assert_eq!(service::get(&second_run).expect("reads").language, None);
 }

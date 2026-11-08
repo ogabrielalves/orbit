@@ -20,6 +20,11 @@ pub fn upsert(connection: &Connection, key: &str, value: &str, updated_at: &str)
     Ok(())
 }
 
+pub fn delete(connection: &Connection, key: &str) -> AppResult<()> {
+    connection.execute("DELETE FROM settings WHERE key = ?1", [key])?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -50,5 +55,33 @@ mod tests {
         let entries = find_all(&connection).expect("reads");
         assert_eq!(entries.len(), 1);
         assert_eq!(entries.get("language").map(String::as_str), Some("pt-BR"));
+    }
+
+    #[test]
+    fn delete_removes_only_the_given_key() {
+        let connection = migrated_connection();
+        upsert(&connection, "language", "en", "2026-01-01T00:00:00.000Z").expect("inserts");
+        upsert(
+            &connection,
+            "vault_path",
+            "vault",
+            "2026-01-01T00:00:00.000Z",
+        )
+        .expect("inserts");
+
+        delete(&connection, "language").expect("deletes");
+
+        let entries = find_all(&connection).expect("reads");
+        assert_eq!(entries.len(), 1);
+        assert!(entries.contains_key("vault_path"));
+    }
+
+    #[test]
+    fn delete_of_a_missing_key_is_not_an_error() {
+        let connection = migrated_connection();
+
+        let result = delete(&connection, "language");
+
+        assert!(result.is_ok());
     }
 }

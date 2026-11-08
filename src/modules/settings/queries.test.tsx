@@ -38,6 +38,16 @@ describe("settings queries", () => {
     expect(result.current.data).toEqual(settings);
   });
 
+  it("loads settings that follow the system language", async () => {
+    getSettings.mockResolvedValue({ status: "ok", data: { language: null, vaultPath: null } });
+    const { wrapper } = createWrapper();
+
+    const { result } = renderHook(() => useSettings(), { wrapper });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data?.language).toBeNull();
+  });
+
   it("exposes the backend error when loading fails", async () => {
     const payload = { code: "IO", message: "a file operation failed" };
     getSettings.mockResolvedValue({ status: "error", error: payload });

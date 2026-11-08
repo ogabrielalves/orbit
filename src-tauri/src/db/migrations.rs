@@ -8,6 +8,7 @@ const MIGRATIONS: &[M<'static>] = &[
     M::up(include_str!("../../migrations/0002_projects.sql")),
     M::up(include_str!("../../migrations/0003_boards_columns.sql")),
     M::up(include_str!("../../migrations/0004_tasks.sql")),
+    M::up(include_str!("../../migrations/0005_task_details.sql")),
 ];
 
 pub fn run(connection: &mut Connection) -> AppResult<()> {

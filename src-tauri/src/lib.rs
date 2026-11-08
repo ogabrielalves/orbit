@@ -10,6 +10,7 @@ use std::error::Error;
 use tauri::Manager;
 use tauri_specta::{Builder, collect_commands};
 
+use modules::activity::commands::list_recent_activity;
 use modules::projects::commands::{
     archive_project, create_project, delete_project, get_project, list_projects, restore_project,
     update_project,
@@ -29,6 +30,7 @@ pub fn bindings_builder() -> Builder<tauri::Wry> {
             archive_project,
             restore_project,
             delete_project,
+            list_recent_activity,
         ])
 }
 
@@ -87,6 +89,7 @@ mod tests {
             "archiveProject",
             "restoreProject",
             "deleteProject",
+            "listRecentActivity",
         ] {
             assert!(content.contains(command), "missing command {command}");
         }

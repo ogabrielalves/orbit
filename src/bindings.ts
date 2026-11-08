@@ -13,9 +13,21 @@ export const commands = {
 	archiveProject: (id: string) => typedError<Project, ErrorPayload>(__TAURI_INVOKE("archive_project", { id })),
 	restoreProject: (id: string) => typedError<Project, ErrorPayload>(__TAURI_INVOKE("restore_project", { id })),
 	deleteProject: (id: string) => typedError<null, ErrorPayload>(__TAURI_INVOKE("delete_project", { id })),
+	listRecentActivity: (limit: number | null) => typedError<ActivityEntry[], ErrorPayload>(__TAURI_INVOKE("list_recent_activity", { limit })),
 };
 
 /* Types */
+export type ActivityAction = "created" | "updated" | "deleted" | "archived" | "restored" | "moved" | "completed" | "reopened" | "duplicated";
+
+export type ActivityEntry = {
+	id: string,
+	entityType: EntityType,
+	entityId: string,
+	action: ActivityAction,
+	changes: { [key in string]: FieldChange } | null,
+	createdAt: string,
+};
+
 export type CreateProjectInput = {
 	name: string,
 	description?: string | null,
@@ -23,9 +35,16 @@ export type CreateProjectInput = {
 	color?: string | null,
 };
 
+export type EntityType = "project" | "board" | "column" | "task" | "checklist_item" | "comment" | "tag" | "attachment" | "note" | "folder";
+
 export type ErrorPayload = {
 	code: string,
 	message: string,
+};
+
+export type FieldChange = {
+	from: string | null,
+	to: string | null,
 };
 
 export type Language = "en" | "pt-BR";

@@ -8,6 +8,7 @@ import type {
 } from "@/bindings";
 import { applyReorder, type Reorder } from "@/lib/reorder";
 import { activityKeys } from "@/modules/activity/queries";
+import { backlogKeys } from "@/modules/backlog/queries";
 import { boardKeys } from "@/modules/boards/queries";
 import { dashboardKeys } from "@/modules/dashboard/queries";
 import { projectKeys } from "@/modules/projects/queries";
@@ -74,6 +75,7 @@ export function useInvalidateTasks() {
       queryClient.invalidateQueries({ queryKey: projectKeys.all }),
       queryClient.invalidateQueries({ queryKey: dashboardKeys.all }),
       queryClient.invalidateQueries({ queryKey: activityKeys.all }),
+      queryClient.invalidateQueries({ queryKey: backlogKeys.all }),
     ]);
 }
 

@@ -24,6 +24,8 @@ vi.mock("@/bindings", () => ({
     listProjects: vi.fn().mockResolvedValue({ status: "ok", data: [] }),
     listRecentActivity: vi.fn().mockResolvedValue({ status: "ok", data: [] }),
     getTaskHistory: vi.fn().mockResolvedValue({ status: "ok", data: [] }),
+    listBacklog: vi.fn().mockResolvedValue({ status: "ok", data: [] }),
+    listBacklogByProject: vi.fn().mockResolvedValue({ status: "ok", data: [] }),
     getDashboardSummary: vi.fn().mockResolvedValue({
       status: "ok",
       data: {

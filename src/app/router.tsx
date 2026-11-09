@@ -7,6 +7,7 @@ import {
 import type { ParseKeys } from "i18next";
 import { RootLayout } from "@/app/RootLayout";
 import { BacklogPage } from "@/pages/backlog/BacklogPage";
+import { parseBacklogSearch } from "@/pages/backlog/backlogSearch";
 import { BoardPage } from "@/pages/board/BoardPage";
 import { parseBoardSearch } from "@/pages/board/boardSearch";
 import { DashboardPage } from "@/pages/dashboard/DashboardPage";
@@ -58,6 +59,7 @@ const backlogRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/backlog",
   component: BacklogPage,
+  validateSearch: parseBacklogSearch,
   staticData: { titleKey: "nav.backlog" },
 });
 

@@ -12,6 +12,15 @@ vi.mock("@/bindings", () => ({
     updateSettings: vi.fn(),
     listProjects: vi.fn().mockResolvedValue({ status: "ok", data: [] }),
     listRecentActivity: vi.fn().mockResolvedValue({ status: "ok", data: [] }),
+    getDashboardSummary: vi.fn().mockResolvedValue({
+      status: "ok",
+      data: {
+        tasks: { total: 0, backlog: 0, pending: 0, inProgress: 0, completed: 0 },
+        activeProjectCount: 0,
+        overdueTaskCount: 0,
+        upcomingTasks: [],
+      },
+    }),
     getProject: vi.fn(),
     createProject: vi.fn(),
     updateProject: vi.fn(),

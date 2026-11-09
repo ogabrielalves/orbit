@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { formatLongDate, formatRelativeTime, formatShortDate } from "@/lib/dates";
+import {
+  formatDueDate,
+  formatLongDate,
+  formatRelativeTime,
+  formatShortDate,
+  parseLocalIsoDate,
+  toLocalIsoDate,
+} from "@/lib/dates";
 
 const sunday = new Date(2026, 10, 8);
 
@@ -61,5 +68,30 @@ describe("formatRelativeTime", () => {
 
   it("treats the same instant as now", () => {
     expect(formatRelativeTime(now, now, "en")).toBe("now");
+  });
+});
+
+describe("toLocalIsoDate", () => {
+  it("uses the local calendar day with zero padding", () => {
+    expect(toLocalIsoDate(new Date(2026, 0, 5, 23, 59))).toBe("2026-01-05");
+  });
+});
+
+describe("parseLocalIsoDate", () => {
+  it("round-trips with toLocalIsoDate", () => {
+    expect(toLocalIsoDate(parseLocalIsoDate("2026-11-08"))).toBe("2026-11-08");
+  });
+});
+
+describe("formatDueDate", () => {
+  const now = new Date(2026, 10, 8, 15, 0);
+
+  it("says today and tomorrow in words", () => {
+    expect(formatDueDate("2026-11-08", now, "en")).toBe("Today");
+    expect(formatDueDate("2026-11-09", now, "pt-BR")).toBe("Amanhã");
+  });
+
+  it("uses a short weekday and date further out", () => {
+    expect(formatDueDate("2026-11-12", now, "en")).toBe("Thu, Nov 12");
   });
 });

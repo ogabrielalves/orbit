@@ -1,5 +1,6 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ListProjectsInput, UpdateProjectInput } from "@/bindings";
+import { dashboardKeys } from "@/modules/dashboard/queries";
 import {
   archiveProject,
   createProject,
@@ -39,7 +40,11 @@ export function useProject(id: string, isEnabled = true) {
 
 function useInvalidateProjects() {
   const queryClient = useQueryClient();
-  return () => queryClient.invalidateQueries({ queryKey: projectKeys.all });
+  return () =>
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: projectKeys.all }),
+      queryClient.invalidateQueries({ queryKey: dashboardKeys.all }),
+    ]);
 }
 
 export function useCreateProject() {

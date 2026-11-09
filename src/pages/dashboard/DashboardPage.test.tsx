@@ -1,13 +1,20 @@
 import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { type ActivityEntry, commands, type Project } from "@/bindings";
+import {
+  type ActivityEntry,
+  commands,
+  type DashboardSummary,
+  type Project,
+  type UpcomingTask,
+} from "@/bindings";
 import { i18next } from "@/i18n";
 import { createProjectFixture } from "@/test/projectFixture";
 import { renderApp } from "@/test/renderApp";
 
 const listProjects = vi.mocked(commands.listProjects);
 const listRecentActivity = vi.mocked(commands.listRecentActivity);
+const getDashboardSummary = vi.mocked(commands.getDashboardSummary);
 
 function createEntry(overrides: Partial<ActivityEntry> = {}): ActivityEntry {
   return {
@@ -19,6 +26,34 @@ function createEntry(overrides: Partial<ActivityEntry> = {}): ActivityEntry {
     createdAt: "2026-11-08T12:00:00Z",
     ...overrides,
   };
+}
+
+function createSummary(overrides: Partial<DashboardSummary> = {}): DashboardSummary {
+  return {
+    tasks: { total: 0, backlog: 0, pending: 0, inProgress: 0, completed: 0 },
+    activeProjectCount: 0,
+    overdueTaskCount: 0,
+    upcomingTasks: [],
+    ...overrides,
+  };
+}
+
+function createUpcoming(overrides: Partial<UpcomingTask> = {}): UpcomingTask {
+  return {
+    taskId: "t1",
+    title: "Write the spec",
+    dueDate: "2026-11-09",
+    priority: "high",
+    projectId: "p1",
+    projectName: "Website 2.0",
+    boardId: "b1",
+    columnId: "c1",
+    ...overrides,
+  };
+}
+
+function mockSummary(summary: DashboardSummary) {
+  getDashboardSummary.mockResolvedValue({ status: "ok", data: summary });
 }
 
 function mockProjects(projects: Project[]) {
@@ -39,8 +74,10 @@ describe("DashboardPage", () => {
     await i18next.changeLanguage("en");
     listProjects.mockReset();
     listRecentActivity.mockReset();
+    getDashboardSummary.mockReset();
     mockProjects([]);
     mockActivity([]);
+    mockSummary(createSummary());
   });
 
   afterEach(() => {
@@ -158,6 +195,136 @@ describe("DashboardPage", () => {
       await userEvent.click(within(alert).getByRole("button", { name: "Try again" }));
 
       expect(await within(card).findByRole("link", { name: /Fintech/ })).toBeInTheDocument();
+    });
+  });
+
+  describe("new project", () => {
+    it("creates a project from the header button and refreshes the dashboard", async () => {
+      const created = createProjectFixture({ id: "new", name: "Alpha" });
+      vi.mocked(commands.createProject).mockResolvedValue({ status: "ok", data: created });
+      renderApp("/");
+      await findCard("Active projects");
+
+      await userEvent.click(screen.getByRole("button", { name: "New project" }));
+      await userEvent.type(await screen.findByRole("textbox", { name: "Project name" }), "Alpha");
+      mockProjects([created]);
+      mockSummary(createSummary({ activeProjectCount: 1 }));
+      await userEvent.click(screen.getByRole("button", { name: "Create project" }));
+
+      expect(await screen.findByRole("link", { name: /Alpha/ })).toBeInTheDocument();
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+      expect(commands.createProject).toHaveBeenCalledWith({
+        name: "Alpha",
+        description: "",
+        color: "orbit",
+      });
+      expect(getDashboardSummary).toHaveBeenCalledTimes(2);
+    });
+
+    it("closes the form without creating anything", async () => {
+      vi.mocked(commands.createProject).mockReset();
+      renderApp("/");
+      await userEvent.click(await screen.findByRole("button", { name: "New project" }));
+
+      await userEvent.click(await screen.findByRole("button", { name: "Cancel" }));
+
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+      expect(commands.createProject).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("summary strip", () => {
+    it("asks for the summary with the local date", async () => {
+      vi.useFakeTimers({ toFake: ["Date"] });
+      vi.setSystemTime(new Date(2026, 10, 8, 23, 30));
+
+      renderApp("/");
+      await findCard("Active projects");
+
+      expect(getDashboardSummary).toHaveBeenCalledWith({ today: "2026-11-08" });
+    });
+
+    it("shows the counters", async () => {
+      mockSummary(
+        createSummary({
+          activeProjectCount: 4,
+          overdueTaskCount: 2,
+          tasks: { total: 12, backlog: 3, pending: 2, inProgress: 5, completed: 2 },
+        }),
+      );
+      renderApp("/");
+
+      const todo = await screen.findByText("To do");
+
+      expect(todo.nextElementSibling).toHaveTextContent("5");
+      expect(screen.getByText("In progress").nextElementSibling).toHaveTextContent("5");
+      expect(screen.getByText("Completed").nextElementSibling).toHaveTextContent("2");
+      expect(screen.getByText("Overdue").nextElementSibling).toHaveTextContent("2");
+      expect(screen.getAllByText("Active projects")[0]?.closest("div")).toHaveTextContent("4");
+    });
+
+    it("offers a retry when the summary fails", async () => {
+      getDashboardSummary.mockResolvedValueOnce({
+        status: "error",
+        error: { code: "DATABASE", message: "x" },
+      });
+      renderApp("/");
+
+      expect(await screen.findByText("Could not load the summary")).toBeInTheDocument();
+      await userEvent.click(screen.getAllByRole("button", { name: "Try again" })[0] as HTMLElement);
+
+      expect(await screen.findByText("Overdue")).toBeInTheDocument();
+    });
+  });
+
+  describe("upcoming deadlines", () => {
+    it("shows an empty state when nothing is due", async () => {
+      renderApp("/");
+
+      const card = await findCard("Upcoming deadlines");
+
+      expect(await within(card).findByText("Nothing due soon")).toBeInTheDocument();
+    });
+
+    it("lists the tasks with project, priority and due date", async () => {
+      vi.useFakeTimers({ toFake: ["Date"] });
+      vi.setSystemTime(new Date(2026, 10, 8, 10, 0));
+      mockSummary(createSummary({ upcomingTasks: [createUpcoming()] }));
+      renderApp("/");
+
+      const card = await findCard("Upcoming deadlines");
+      const link = await within(card).findByRole("link", { name: /Write the spec/ });
+
+      expect(link).toHaveAttribute("href", "/boards/b1");
+      expect(link).toHaveTextContent("Website 2.0");
+      expect(link).toHaveTextContent("High");
+      expect(link).toHaveTextContent("Tomorrow");
+    });
+
+    it("links to the project when the task has no board", async () => {
+      mockSummary(
+        createSummary({ upcomingTasks: [createUpcoming({ boardId: null, columnId: null })] }),
+      );
+      renderApp("/");
+
+      const card = await findCard("Upcoming deadlines");
+
+      expect(await within(card).findByRole("link", { name: /Write the spec/ })).toHaveAttribute(
+        "href",
+        "/projects/p1",
+      );
+    });
+
+    it("shows an error with retry when the summary fails", async () => {
+      getDashboardSummary.mockResolvedValue({
+        status: "error",
+        error: { code: "DATABASE", message: "x" },
+      });
+      renderApp("/");
+
+      const card = await findCard("Upcoming deadlines");
+
+      expect(await within(card).findByText("Could not load the deadlines")).toBeInTheDocument();
     });
   });
 
@@ -293,7 +460,6 @@ describe("DashboardPage", () => {
     expect(
       screen.queryByRole("button", { name: /new task|new board|new note/i }),
     ).not.toBeInTheDocument();
-    expect(screen.queryByText(/pending|overdue|due soon/i)).not.toBeInTheDocument();
   });
 
   it("follows the language saved in the settings", async () => {

@@ -58,6 +58,15 @@ export const commands = {
 	listBacklog: (input: ListBacklogInput) => typedError<BacklogItem[], ErrorPayload>(__TAURI_INVOKE("list_backlog", { input })),
 	listBacklogByProject: (input: ListBacklogInput) => typedError<BacklogGroup[], ErrorPayload>(__TAURI_INVOKE("list_backlog_by_project", { input })),
 	moveBacklogTask: (id: string, afterTaskId: string | null) => typedError<Task, ErrorPayload>(__TAURI_INVOKE("move_backlog_task", { id, afterTaskId })),
+	importAttachment: (taskId: string, sourcePath: string) => typedError<Attachment, ErrorPayload>(__TAURI_INVOKE("import_attachment", { taskId, sourcePath })),
+	listAttachments: (taskId: string) => typedError<Attachment[], ErrorPayload>(__TAURI_INVOKE("list_attachments", { taskId })),
+	removeAttachment: (id: string) => typedError<null, ErrorPayload>(__TAURI_INVOKE("remove_attachment", { id })),
+	/**
+	 *  Opens the stored file with the system default app. The path comes from the database, never
+	 *  from the webview, and the opener plugin is used from Rust only, so no `opener:*` permission
+	 *  is granted to the frontend.
+	 */
+	openAttachment: (id: string) => typedError<null, ErrorPayload>(__TAURI_INVOKE("open_attachment", { id })),
 };
 
 /* Types */
@@ -69,6 +78,15 @@ export type ActivityEntry = {
 	entityId: string,
 	action: ActivityAction,
 	changes: { [key in string]: FieldChange } | null,
+	createdAt: string,
+};
+
+export type Attachment = {
+	id: string,
+	taskId: string,
+	fileName: string,
+	mimeType: string,
+	sizeBytes: number,
 	createdAt: string,
 };
 

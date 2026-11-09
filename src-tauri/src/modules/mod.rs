@@ -1,4 +1,5 @@
 pub mod activity;
+pub mod attachments;
 pub mod backlog;
 pub mod boards;
 pub mod checklist;

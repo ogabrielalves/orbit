@@ -11,6 +11,9 @@ use tauri::Manager;
 use tauri_specta::{Builder, collect_commands};
 
 use modules::activity::commands::{get_task_history, list_recent_activity};
+use modules::attachments::commands::{
+    import_attachment, list_attachments, open_attachment, remove_attachment,
+};
 use modules::backlog::commands::{list_backlog, list_backlog_by_project, move_backlog_task};
 use modules::boards::commands::{
     create_board, create_column, delete_board, delete_column, get_board, move_column, update_board,
@@ -97,6 +100,10 @@ pub fn bindings_builder() -> Builder<tauri::Wry> {
             list_backlog,
             list_backlog_by_project,
             move_backlog_task,
+            import_attachment,
+            list_attachments,
+            remove_attachment,
+            open_attachment,
         ])
 }
 
@@ -119,6 +126,11 @@ pub fn run() -> tauri::Result<()> {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_log::Builder::new().build())
+        .plugin(
+            tauri_plugin_opener::Builder::new()
+                .open_js_links_on_click(false)
+                .build(),
+        )
         .invoke_handler(builder.invoke_handler())
         .setup(move |app| {
             builder.mount_events(app);

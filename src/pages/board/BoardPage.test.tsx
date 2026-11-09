@@ -30,6 +30,7 @@ const deleteColumn = vi.mocked(commands.deleteColumn);
 const updateBoard = vi.mocked(commands.updateBoard);
 const deleteBoard = vi.mocked(commands.deleteBoard);
 const listBoardTasks = vi.mocked(commands.listBoardTasks);
+const createTask = vi.mocked(commands.createTask);
 
 function mockBoard(details: BoardDetails = createBoardDetailsFixture()) {
   getBoard.mockResolvedValue({ status: "ok", data: details });
@@ -65,6 +66,7 @@ describe("BoardPage", () => {
       updateBoard,
       deleteBoard,
       listBoardTasks,
+      createTask,
     ]) {
       command.mockReset();
     }
@@ -278,6 +280,120 @@ describe("BoardPage", () => {
       await userEvent.click(screen.getByRole("button", { name: "Try again" }));
 
       expect(await screen.findByText("Recovered")).toBeInTheDocument();
+    });
+  });
+
+  describe("quick add", () => {
+    async function openQuickAdd(columnName = "To do") {
+      await userEvent.click(
+        await screen.findByRole("button", { name: `Add a card to ${columnName}` }),
+      );
+      return screen.findByRole("textbox", { name: "Card title" });
+    }
+
+    it("offers an add button in every column", async () => {
+      renderApp("/boards/b1");
+
+      expect(await screen.findAllByRole("button", { name: /^Add a card to / })).toHaveLength(3);
+    });
+
+    it("opens a focused field and keeps Add disabled until there is a title", async () => {
+      renderApp("/boards/b1");
+
+      const field = await openQuickAdd();
+
+      expect(field).toHaveFocus();
+      expect(screen.getByRole("button", { name: "Add card" })).toBeDisabled();
+      await userEvent.type(field, "   ");
+      expect(screen.getByRole("button", { name: "Add card" })).toBeDisabled();
+    });
+
+    it("limits the title to 200 characters", async () => {
+      renderApp("/boards/b1");
+
+      expect(await openQuickAdd()).toHaveAttribute("maxlength", "200");
+    });
+
+    it("creates the card in that column and stays open for the next one", async () => {
+      createTask.mockResolvedValue({
+        status: "ok",
+        data: createTaskFixture({ id: "t9", title: "Ship it", columnId: "c2" }),
+      });
+      renderApp("/boards/b1");
+      const field = await openQuickAdd("In progress");
+
+      await userEvent.type(field, "  Ship it  ");
+      listBoardTasks.mockResolvedValue({
+        status: "ok",
+        data: [createTaskFixture({ id: "t9", title: "Ship it", columnId: "c2" })],
+      });
+      await userEvent.click(screen.getByRole("button", { name: "Add card" }));
+
+      expect(await screen.findByText("Ship it")).toBeInTheDocument();
+      expect(createTask).toHaveBeenCalledWith({
+        projectId: "p1",
+        columnId: "c2",
+        title: "Ship it",
+      });
+      await waitFor(() =>
+        expect(screen.getByRole("textbox", { name: "Card title" })).toHaveValue(""),
+      );
+      expect(screen.getByRole("textbox", { name: "Card title" })).toHaveFocus();
+    });
+
+    it("submits with Enter", async () => {
+      createTask.mockResolvedValue({ status: "ok", data: createTaskFixture() });
+      renderApp("/boards/b1");
+      const field = await openQuickAdd();
+
+      await userEvent.type(field, "Quick{Enter}");
+
+      await waitFor(() => expect(createTask).toHaveBeenCalledTimes(1));
+    });
+
+    it("closes with Escape without creating anything", async () => {
+      renderApp("/boards/b1");
+      const field = await openQuickAdd();
+
+      await userEvent.type(field, "Nope{Escape}");
+
+      expect(screen.queryByRole("textbox", { name: "Card title" })).not.toBeInTheDocument();
+      expect(createTask).not.toHaveBeenCalled();
+    });
+
+    it("closes with Cancel and forgets the draft", async () => {
+      renderApp("/boards/b1");
+      await userEvent.type(await openQuickAdd(), "Draft");
+
+      await userEvent.click(screen.getByRole("button", { name: "Cancel" }));
+      const reopened = await openQuickAdd();
+
+      expect(reopened).toHaveValue("");
+      expect(createTask).not.toHaveBeenCalled();
+    });
+
+    it("keeps the typed title when the backend refuses", async () => {
+      createTask.mockResolvedValue({
+        status: "error",
+        error: { code: "VALIDATION", message: "x" },
+      });
+      renderApp("/boards/b1");
+      await userEvent.type(await openQuickAdd(), "Keep me{Enter}");
+
+      await waitFor(() => expect(createTask).toHaveBeenCalledTimes(1));
+
+      expect(screen.getByRole("textbox", { name: "Card title" })).toHaveValue("Keep me");
+    });
+
+    it("refreshes the column counter after adding", async () => {
+      createTask.mockResolvedValue({ status: "ok", data: createTaskFixture() });
+      renderApp("/boards/b1");
+      await userEvent.type(await openQuickAdd(), "Count me");
+      getBoard.mockClear();
+
+      await userEvent.click(screen.getByRole("button", { name: "Add card" }));
+
+      await waitFor(() => expect(getBoard).toHaveBeenCalled());
     });
   });
 

@@ -198,6 +198,7 @@ export function BoardPage() {
                   {columns.map((column, index) => (
                     <BoardColumn
                       key={column.id}
+                      projectId={details.board.projectId}
                       column={column}
                       tasks={
                         tasksByColumn === undefined

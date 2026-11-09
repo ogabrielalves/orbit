@@ -7,9 +7,11 @@ import { IconButton } from "@/components/atoms/IconButton";
 import { Skeleton } from "@/components/atoms/Skeleton";
 import { DropdownMenu } from "@/components/molecules/DropdownMenu";
 import { resolveProjectColor } from "@/modules/projects/colors";
+import { QuickAddTask } from "@/pages/board/QuickAddTask";
 import { TaskCard } from "@/pages/board/TaskCard";
 
 type BoardColumnProps = {
+  projectId: string;
   column: BoardColumnData;
   tasks: Task[] | undefined;
   index: number;
@@ -21,6 +23,7 @@ type BoardColumnProps = {
 };
 
 export function BoardColumn({
+  projectId,
   column,
   tasks,
   index,
@@ -119,6 +122,7 @@ export function BoardColumn({
           ))}
         </ul>
       )}
+      <QuickAddTask projectId={projectId} columnId={column.id} columnName={column.name} />
     </li>
   );
 }

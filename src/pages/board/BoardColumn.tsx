@@ -1,4 +1,4 @@
-import { useSortable } from "@dnd-kit/sortable";
+import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useTranslation } from "react-i18next";
 import MoreIcon from "@/assets/icons/linha/mais-opcoes.svg?react";
@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/atoms/Skeleton";
 import { DropdownMenu } from "@/components/molecules/DropdownMenu";
 import { resolveProjectColor } from "@/modules/projects/colors";
 import { QuickAddTask } from "@/pages/board/QuickAddTask";
-import { TaskCard } from "@/pages/board/TaskCard";
+import { SortableTaskCard } from "@/pages/board/SortableTaskCard";
 
 type BoardColumnProps = {
   projectId: string;
@@ -16,6 +16,7 @@ type BoardColumnProps = {
   tasks: Task[] | undefined;
   index: number;
   total: number;
+  isDropTarget: boolean;
   onEdit: (column: BoardColumnData) => void;
   onMoveLeft: (column: BoardColumnData) => void;
   onMoveRight: (column: BoardColumnData) => void;
@@ -28,6 +29,7 @@ export function BoardColumn({
   tasks,
   index,
   total,
+  isDropTarget,
   onEdit,
   onMoveLeft,
   onMoveRight,
@@ -36,6 +38,7 @@ export function BoardColumn({
   const { t } = useTranslation();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: column.id,
+    data: { type: "column" },
   });
 
   const isFirst = index === 0;
@@ -43,6 +46,7 @@ export function BoardColumn({
   const hasColor = column.color !== null;
   const dotColor = hasColor ? resolveProjectColor(column.color) : "var(--color-fg-subtle)";
   const draggingClass = isDragging ? "opacity-60" : "";
+  const dropClass = isDropTarget ? "ring-2 ring-primary" : "";
   const isLoadingTasks = tasks === undefined;
   const hasTasks = tasks !== undefined && tasks.length > 0;
   const hasNoTasks = tasks !== undefined && tasks.length === 0;
@@ -51,7 +55,7 @@ export function BoardColumn({
     <li
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={`flex w-75 shrink-0 flex-col gap-2.5 rounded-xl bg-surface-column p-2.5 ${draggingClass}`}
+      className={`flex w-75 shrink-0 flex-col gap-2.5 rounded-xl bg-surface-column p-2.5 ${draggingClass} ${dropClass}`}
     >
       <div className="flex items-center gap-1">
         <button
@@ -113,14 +117,19 @@ export function BoardColumn({
         </p>
       )}
       {hasTasks && (
-        <ul
-          aria-label={t("boards.column.tasksLabel", { name: column.name })}
-          className="flex flex-col gap-2"
+        <SortableContext
+          items={tasks.map((task) => task.id)}
+          strategy={verticalListSortingStrategy}
         >
-          {tasks.map((task) => (
-            <TaskCard key={task.id} task={task} />
-          ))}
-        </ul>
+          <ul
+            aria-label={t("boards.column.tasksLabel", { name: column.name })}
+            className="flex flex-col gap-2"
+          >
+            {tasks.map((task) => (
+              <SortableTaskCard key={task.id} task={task} />
+            ))}
+          </ul>
+        </SortableContext>
       )}
       <QuickAddTask projectId={projectId} columnId={column.id} columnName={column.name} />
     </li>

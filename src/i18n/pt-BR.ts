@@ -248,11 +248,15 @@ export const ptBR = {
     },
     dnd: {
       instructions:
-        "Para reordenar, pressione espaço, use as setas para mover a coluna e pressione espaço de novo para soltar.",
+        "Para mover, pressione espaço, use as setas e pressione espaço de novo para soltar.",
       picked: "Coluna {{name}} selecionada. Posição {{position}} de {{total}}.",
       moved: "Coluna {{name}} movida para a posição {{position}} de {{total}}.",
       dropped: "Coluna {{name}} solta na posição {{position}} de {{total}}.",
       cancelled: "Reordenação cancelada. A coluna {{name}} voltou à posição original.",
+      taskPicked: "Card {{title}} selecionado.",
+      taskOver: "Card {{title}} sobre {{column}}.",
+      taskDropped: "Card {{title}} solto em {{column}}.",
+      taskCancelled: "Movimento cancelado. O card {{title}} voltou ao lugar original.",
     },
   },
   tasks: {

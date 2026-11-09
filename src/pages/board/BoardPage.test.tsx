@@ -732,7 +732,7 @@ describe("BoardPage", () => {
 
       expect(screen.getByRole("button", { name: "Reorder column To do" })).toBeInTheDocument();
       expect(dnd.props?.accessibility?.screenReaderInstructions?.draggable).toBe(
-        "To reorder, press space, use the arrow keys to move the column and press space again to drop it.",
+        "To move, press space, use the arrow keys and press space again to drop it.",
       );
     });
 

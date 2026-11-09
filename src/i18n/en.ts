@@ -250,12 +250,15 @@ export const en: Widen<typeof ptBR> = {
       deleteBoardConfirm: "Delete",
     },
     dnd: {
-      instructions:
-        "To reorder, press space, use the arrow keys to move the column and press space again to drop it.",
+      instructions: "To move, press space, use the arrow keys and press space again to drop it.",
       picked: "Column {{name}} picked up. Position {{position}} of {{total}}.",
       moved: "Column {{name}} moved to position {{position}} of {{total}}.",
       dropped: "Column {{name}} dropped at position {{position}} of {{total}}.",
       cancelled: "Reordering cancelled. Column {{name}} returned to its original position.",
+      taskPicked: "Card {{title}} picked up.",
+      taskOver: "Card {{title}} is over {{column}}.",
+      taskDropped: "Card {{title}} dropped in {{column}}.",
+      taskCancelled: "Moving cancelled. Card {{title}} returned to its original place.",
     },
   },
   tasks: {

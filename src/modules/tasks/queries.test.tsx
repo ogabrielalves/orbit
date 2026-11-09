@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { BoardDetails, Task } from "@/bindings";
 import { boardKeys } from "@/modules/boards/queries";
 import { dashboardKeys } from "@/modules/dashboard/queries";
 import { projectKeys } from "@/modules/projects/queries";
@@ -11,12 +12,14 @@ import {
   useBoardTasks,
   useCreateTask,
   useDeleteTask,
+  useMoveTask,
   useRestoreTask,
   useSendTaskToBacklog,
   useSendTaskToBoard,
   useTask,
   useUpdateTask,
 } from "@/modules/tasks/queries";
+import { createBoardDetailsFixture } from "@/test/boardFixture";
 import { createTaskFixture } from "@/test/taskFixture";
 
 const commands = vi.hoisted(() => ({
@@ -27,6 +30,7 @@ const commands = vi.hoisted(() => ({
   archiveTask: vi.fn(),
   restoreTask: vi.fn(),
   deleteTask: vi.fn(),
+  moveTask: vi.fn(),
   sendTaskToBoard: vi.fn(),
   sendTaskToBacklog: vi.fn(),
 }));
@@ -159,6 +163,77 @@ describe("task queries", () => {
       });
 
       expect(invalidate).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("moving", () => {
+    const first = createTaskFixture({ id: "t1", columnId: "c1", position: "a0" });
+    const second = createTaskFixture({ id: "t2", columnId: "c1", position: "a1" });
+
+    function seed(queryClient: QueryClient) {
+      queryClient.setQueryData<Task[]>(taskKeys.board("b1"), [first, second]);
+      queryClient.setQueryData<BoardDetails>(boardKeys.detail("b1"), createBoardDetailsFixture());
+    }
+
+    function ids(queryClient: QueryClient, columnId: string): string[] {
+      const tasks = queryClient.getQueryData<Task[]>(taskKeys.board("b1")) ?? [];
+      return tasks
+        .filter((task) => task.columnId === columnId)
+        .sort((a, b) => a.position.localeCompare(b.position))
+        .map((task) => task.id);
+    }
+
+    it("moves the card in the cache and shifts the counters before the backend answers", async () => {
+      commands.moveTask.mockReturnValue(new Promise(() => undefined));
+      const { queryClient, wrapper } = createWrapper();
+      seed(queryClient);
+      const { result } = renderHook(() => useMoveTask("b1"), { wrapper });
+
+      act(() => result.current.mutate({ id: "t1", columnId: "c2", afterTaskId: null }));
+
+      await waitFor(() => expect(ids(queryClient, "c2")).toEqual(["t1"]));
+      expect(ids(queryClient, "c1")).toEqual(["t2"]);
+      const columns = queryClient.getQueryData<BoardDetails>(boardKeys.detail("b1"))?.columns;
+      expect(columns?.map((column) => column.taskCount)).toEqual([1, 4, 0]);
+      expect(commands.moveTask).toHaveBeenCalledWith("t1", "c2", null);
+    });
+
+    it("restores the tasks and the counters when the backend refuses", async () => {
+      commands.moveTask.mockResolvedValue({ status: "error", error: { code: "X", message: "x" } });
+      const { queryClient, wrapper } = createWrapper();
+      seed(queryClient);
+      const before = queryClient.getQueryData(boardKeys.detail("b1"));
+      const { result } = renderHook(() => useMoveTask("b1"), { wrapper });
+
+      await act(async () => {
+        await result.current
+          .mutateAsync({ id: "t1", columnId: "c2", afterTaskId: null })
+          .catch(() => undefined);
+      });
+
+      expect(ids(queryClient, "c1")).toEqual(["t1", "t2"]);
+      expect(ids(queryClient, "c2")).toEqual([]);
+      expect(queryClient.getQueryData(boardKeys.detail("b1"))).toEqual(before);
+    });
+
+    it("refreshes tasks, boards, projects and the dashboard when it settles", async () => {
+      const { queryClient, wrapper } = createWrapper();
+      seed(queryClient);
+      const invalidate = vi.spyOn(queryClient, "invalidateQueries");
+      const { result } = renderHook(() => useMoveTask("b1"), { wrapper });
+
+      await act(() => result.current.mutateAsync({ id: "t1", columnId: "c2", afterTaskId: null }));
+
+      expect(invalidatedKeys(invalidate)).toEqual(expect.arrayContaining(everyKey));
+    });
+
+    it("still calls the backend when the board is not in the cache", async () => {
+      const { wrapper } = createWrapper();
+      const { result } = renderHook(() => useMoveTask("b1"), { wrapper });
+
+      await act(() => result.current.mutateAsync({ id: "t1", columnId: "c2", afterTaskId: "t9" }));
+
+      expect(commands.moveTask).toHaveBeenCalledWith("t1", "c2", "t9");
     });
   });
 });

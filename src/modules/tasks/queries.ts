@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { CreateTaskInput, UpdateTaskInput } from "@/bindings";
+import type { BoardDetails, CreateTaskInput, Task, UpdateTaskInput } from "@/bindings";
 import { boardKeys } from "@/modules/boards/queries";
 import { dashboardKeys } from "@/modules/dashboard/queries";
 import { projectKeys } from "@/modules/projects/queries";
@@ -9,11 +9,13 @@ import {
   deleteTask,
   fetchBoardTasks,
   fetchTask,
+  moveTask,
   restoreTask,
   sendTaskToBacklog,
   sendTaskToBoard,
   updateTask,
 } from "@/modules/tasks/api";
+import { applyTaskMove, shiftTaskCount } from "@/modules/tasks/moves";
 
 export const taskKeys = {
   all: ["tasks"] as const,
@@ -23,6 +25,11 @@ export const taskKeys = {
 
 type UpdateTaskVariables = { id: string; input: UpdateTaskInput };
 type SendTaskToBoardVariables = { id: string; boardId: string; columnId: string | null };
+type MoveTaskVariables = { id: string; columnId: string; afterTaskId: string | null };
+type MoveTaskContext = {
+  previousTasks: Task[] | undefined;
+  previousBoard: BoardDetails | undefined;
+};
 
 export function useBoardTasks(boardId: string, isEnabled = true) {
   return useQuery({
@@ -114,5 +121,50 @@ export function useSendTaskToBacklog() {
   return useMutation({
     mutationFn: (id: string) => sendTaskToBacklog(id),
     onSuccess: invalidateTasks,
+  });
+}
+
+export function useMoveTask(boardId: string) {
+  const queryClient = useQueryClient();
+  const invalidateTasks = useInvalidateTasks();
+  const tasksKey = taskKeys.board(boardId);
+  const boardKey = boardKeys.detail(boardId);
+
+  return useMutation<Task, unknown, MoveTaskVariables, MoveTaskContext>({
+    mutationFn: ({ id, columnId, afterTaskId }) => moveTask(id, columnId, afterTaskId),
+    onMutate: async ({ id, columnId, afterTaskId }) => {
+      await Promise.all([
+        queryClient.cancelQueries({ queryKey: tasksKey }),
+        queryClient.cancelQueries({ queryKey: boardKey }),
+      ]);
+      const previousTasks = queryClient.getQueryData<Task[]>(tasksKey);
+      const previousBoard = queryClient.getQueryData<BoardDetails>(boardKey);
+
+      const moved = previousTasks?.find((task) => task.id === id);
+      if (previousTasks !== undefined && moved !== undefined) {
+        queryClient.setQueryData<Task[]>(
+          tasksKey,
+          applyTaskMove(previousTasks, { taskId: id, columnId, afterTaskId }),
+        );
+        const origin = moved.columnId;
+        if (previousBoard !== undefined && origin !== null) {
+          queryClient.setQueryData<BoardDetails>(boardKey, {
+            ...previousBoard,
+            columns: shiftTaskCount(previousBoard.columns, origin, columnId),
+          });
+        }
+      }
+
+      return { previousTasks, previousBoard };
+    },
+    onError: (_error, _variables, context) => {
+      if (context?.previousTasks !== undefined) {
+        queryClient.setQueryData(tasksKey, context.previousTasks);
+      }
+      if (context?.previousBoard !== undefined) {
+        queryClient.setQueryData(boardKey, context.previousBoard);
+      }
+    },
+    onSettled: invalidateTasks,
   });
 }

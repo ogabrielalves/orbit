@@ -1,19 +1,5 @@
-import {
-  type Announcements,
-  closestCenter,
-  DndContext,
-  type DragEndEvent,
-  KeyboardSensor,
-  PointerSensor,
-  type UniqueIdentifier,
-  useSensor,
-  useSensors,
-} from "@dnd-kit/core";
-import {
-  horizontalListSortingStrategy,
-  SortableContext,
-  sortableKeyboardCoordinates,
-} from "@dnd-kit/sortable";
+import { DndContext, DragOverlay } from "@dnd-kit/core";
+import { horizontalListSortingStrategy, SortableContext } from "@dnd-kit/sortable";
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -25,16 +11,18 @@ import { Skeleton } from "@/components/atoms/Skeleton";
 import { EmptyState } from "@/components/molecules/EmptyState";
 import { ErrorState } from "@/components/molecules/ErrorState";
 import { getErrorMessageKey } from "@/lib/appError";
-import { getColumnMove } from "@/modules/boards/columns";
-import { useBoard, useMoveColumn } from "@/modules/boards/queries";
+import { useBoard } from "@/modules/boards/queries";
 import { groupTasksByColumn } from "@/modules/tasks/grouping";
 import { useBoardTasks } from "@/modules/tasks/queries";
 import { BoardColumn } from "@/pages/board/BoardColumn";
 import { BoardDeleteDialog } from "@/pages/board/BoardDeleteDialog";
 import { BoardHeader } from "@/pages/board/BoardHeader";
 import { BoardRenameModal } from "@/pages/board/BoardRenameModal";
+import { boardCollisionDetection } from "@/pages/board/boardCollision";
 import { ColumnDeleteDialog } from "@/pages/board/ColumnDeleteDialog";
 import { ColumnFormModal } from "@/pages/board/ColumnFormModal";
+import { TaskCard } from "@/pages/board/TaskCard";
+import { useBoardDnd } from "@/pages/board/useBoardDnd";
 
 type ColumnFormState = { column: BoardColumnData | undefined } | null;
 
@@ -47,22 +35,17 @@ export function BoardPage() {
   const [isDeleted, setIsDeleted] = useState(false);
   const boardQuery = useBoard(boardId, !isDeleted);
   const tasksQuery = useBoardTasks(boardId, !isDeleted);
-  const moveColumn = useMoveColumn(boardId);
   const [columnForm, setColumnForm] = useState<ColumnFormState>(null);
   const [columnToDelete, setColumnToDelete] = useState<BoardColumnData | null>(null);
   const [isRenaming, setIsRenaming] = useState(false);
   const [isDeletingBoard, setIsDeletingBoard] = useState(false);
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
-  );
 
   const details = boardQuery.data;
   const columns = details?.columns ?? [];
   const tasksByColumn =
     tasksQuery.data === undefined ? undefined : groupTasksByColumn(tasksQuery.data);
   const haveTasksFailed = tasksQuery.isError;
+  const dnd = useBoardDnd({ boardId, columns, tasksByColumn });
   const isLoading = boardQuery.isPending;
   const hasFailed = boardQuery.isError;
   const hasDetails = details !== undefined;
@@ -70,51 +53,6 @@ export function BoardPage() {
   const taskCount = columns.reduce((total, column) => total + column.taskCount, 0);
   const isColumnFormOpen = columnForm !== null;
   const isColumnDeleteOpen = columnToDelete !== null;
-
-  function requestMove(activeId: string, overId: string) {
-    const move = getColumnMove(columns, activeId, overId);
-    const hasMove = move !== null;
-    if (hasMove) {
-      moveColumn.mutate({ id: move.columnId, afterColumnId: move.afterColumnId });
-    }
-  }
-
-  function handleDragEnd({ active, over }: DragEndEvent) {
-    const hasTarget = over !== null;
-    if (hasTarget) {
-      requestMove(String(active.id), String(over.id));
-    }
-  }
-
-  function moveBy(column: BoardColumnData, offset: number) {
-    const index = columns.findIndex((item) => item.id === column.id);
-    const neighbor = columns[index + offset];
-    const hasNeighbor = neighbor !== undefined;
-    if (hasNeighbor) {
-      requestMove(column.id, neighbor.id);
-    }
-  }
-
-  function describe(id: UniqueIdentifier, targetId: UniqueIdentifier = id) {
-    const column = columns.find((item) => item.id === id);
-    const position = columns.findIndex((item) => item.id === targetId) + 1;
-    return { name: column?.name ?? "", position, total: columns.length };
-  }
-
-  const announcements: Announcements = {
-    onDragStart: ({ active }) => t("boards.dnd.picked", describe(active.id)),
-    onDragOver: ({ active, over }) => {
-      const hasTarget = over !== null;
-      return hasTarget ? t("boards.dnd.moved", describe(active.id, over.id)) : undefined;
-    },
-    onDragEnd: ({ active, over }) => {
-      const hasTarget = over !== null;
-      return hasTarget
-        ? t("boards.dnd.dropped", describe(active.id, over.id))
-        : t("boards.dnd.cancelled", describe(active.id));
-    },
-    onDragCancel: ({ active }) => t("boards.dnd.cancelled", describe(active.id)),
-  };
 
   function handleBoardDeleted() {
     setIsDeleted(true);
@@ -179,11 +117,11 @@ export function BoardPage() {
 
           {hasColumns ? (
             <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={handleDragEnd}
+              sensors={dnd.sensors}
+              collisionDetection={boardCollisionDetection}
+              {...dnd.handlers}
               accessibility={{
-                announcements,
+                announcements: dnd.announcements,
                 screenReaderInstructions: { draggable: t("boards.dnd.instructions") },
               }}
             >
@@ -208,13 +146,21 @@ export function BoardPage() {
                       index={index}
                       total={columns.length}
                       onEdit={(target) => setColumnForm({ column: target })}
-                      onMoveLeft={(target) => moveBy(target, -1)}
-                      onMoveRight={(target) => moveBy(target, 1)}
+                      isDropTarget={dnd.activeTask !== undefined && dnd.overColumnId === column.id}
+                      onMoveLeft={(target) => dnd.moveColumnBy(target, -1)}
+                      onMoveRight={(target) => dnd.moveColumnBy(target, 1)}
                       onDelete={setColumnToDelete}
                     />
                   ))}
                 </ol>
               </SortableContext>
+              <DragOverlay>
+                {dnd.activeTask !== undefined && (
+                  <ul className="rotate-1 shadow-lg">
+                    <TaskCard task={dnd.activeTask} />
+                  </ul>
+                )}
+              </DragOverlay>
             </DndContext>
           ) : (
             <EmptyState

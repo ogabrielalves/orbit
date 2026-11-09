@@ -1,8 +1,10 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { toast } from "sonner";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { commands, type ProjectDetails } from "@/bindings";
 import { i18next } from "@/i18n";
+import { createBoardDetailsFixture } from "@/test/boardFixture";
 import { createProjectFixture } from "@/test/projectFixture";
 import { renderApp } from "@/test/renderApp";
 
@@ -31,6 +33,9 @@ async function openMenu(item: string) {
   await userEvent.click(await screen.findByRole("menuitem", { name: item }));
 }
 
+const createBoard = vi.mocked(commands.createBoard);
+const getBoard = vi.mocked(commands.getBoard);
+
 describe("ProjectDetailPage", () => {
   beforeEach(async () => {
     await i18next.changeLanguage("en");
@@ -40,6 +45,8 @@ describe("ProjectDetailPage", () => {
       archiveProject,
       restoreProject,
       deleteProject,
+      createBoard,
+      getBoard,
     ]) {
       command.mockReset();
     }
@@ -49,6 +56,7 @@ describe("ProjectDetailPage", () => {
   });
 
   afterEach(() => {
+    toast.dismiss();
     vi.useRealTimers();
   });
 
@@ -230,6 +238,85 @@ describe("ProjectDetailPage", () => {
 
       expect(await screen.findByRole("heading", { name: "No boards yet" })).toBeInTheDocument();
       expect(screen.getByText("The boards of this project will appear here.")).toBeInTheDocument();
+    });
+  });
+
+  describe("new board", () => {
+    it("creates a board from the sprint template and opens it", async () => {
+      mockDetails(createDetails());
+      const created = createBoardDetailsFixture();
+      createBoard.mockResolvedValue({ status: "ok", data: created });
+      getBoard.mockResolvedValue({ status: "ok", data: created });
+      renderApp("/projects/p1");
+
+      await userEvent.click(await screen.findByRole("button", { name: "New board" }));
+      expect(await screen.findByRole("radio", { name: /Sprint/ })).toBeChecked();
+      await userEvent.type(screen.getByRole("textbox", { name: "Board name" }), "Sprint 14");
+      await userEvent.click(screen.getByRole("button", { name: "Create board" }));
+
+      expect(await screen.findByRole("heading", { name: "Sprint 14" })).toBeInTheDocument();
+      expect(createBoard).toHaveBeenCalledWith({
+        projectId: "p1",
+        name: "Sprint 14",
+        columns: [
+          { name: "Backlog", kind: "todo" },
+          { name: "To do", kind: "todo" },
+          { name: "In progress", kind: "in_progress" },
+          { name: "In review", kind: "in_progress" },
+          { name: "Done", kind: "done" },
+        ],
+      });
+    });
+
+    it("sends the column names in the current language", async () => {
+      vi.mocked(commands.getSettings).mockResolvedValueOnce({
+        status: "ok",
+        data: { language: "pt-BR", vaultPath: null },
+      });
+      mockDetails(createDetails());
+      createBoard.mockResolvedValue({ status: "ok", data: createBoardDetailsFixture() });
+      renderApp("/projects/p1");
+
+      await userEvent.click(await screen.findByRole("button", { name: "Novo quadro" }));
+      await userEvent.type(await screen.findByRole("textbox", { name: "Nome do quadro" }), "X");
+      await userEvent.click(screen.getByRole("button", { name: "Criar quadro" }));
+
+      await waitFor(() => expect(createBoard).toHaveBeenCalledTimes(1));
+      expect(createBoard.mock.calls[0]?.[0].columns?.map((column) => column.name)).toEqual([
+        "Backlog",
+        "A fazer",
+        "Em progresso",
+        "Em revisão",
+        "Concluído",
+      ]);
+    });
+
+    it("keeps the form open and the typed name when creation fails", async () => {
+      mockDetails(createDetails());
+      createBoard.mockResolvedValue({
+        status: "error",
+        error: { code: "DATABASE", message: "x" },
+      });
+      renderApp("/projects/p1");
+
+      await userEvent.click(await screen.findByRole("button", { name: "New board" }));
+      await userEvent.type(await screen.findByRole("textbox", { name: "Board name" }), "Keep");
+      await userEvent.click(screen.getByRole("button", { name: "Create board" }));
+
+      await waitFor(() => expect(createBoard).toHaveBeenCalledTimes(1));
+      expect(screen.getByRole("dialog", { name: "New board" })).toBeInTheDocument();
+      expect(screen.getByRole("textbox", { name: "Board name" })).toHaveValue("Keep");
+    });
+
+    it("closes the form without creating anything", async () => {
+      mockDetails(createDetails());
+      renderApp("/projects/p1");
+      await userEvent.click(await screen.findByRole("button", { name: "New board" }));
+
+      await userEvent.click(await screen.findByRole("button", { name: "Cancel" }));
+
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+      expect(createBoard).not.toHaveBeenCalled();
     });
   });
 

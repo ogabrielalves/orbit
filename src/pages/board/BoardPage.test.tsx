@@ -214,7 +214,12 @@ describe("BoardPage", () => {
       await userEvent.click(screen.getByRole("button", { name: "Create column" }));
 
       await waitFor(() => expect(columnNames()).toContain("QA0"));
-      expect(createColumn).toHaveBeenCalledWith({ boardId: "b1", name: "QA", color: "lagoon" });
+      expect(createColumn).toHaveBeenCalledWith({
+        boardId: "b1",
+        name: "QA",
+        color: "lagoon",
+        kind: "todo",
+      });
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
 
@@ -227,7 +232,49 @@ describe("BoardPage", () => {
       await userEvent.click(screen.getByRole("button", { name: "Create column" }));
 
       await waitFor(() => expect(createColumn).toHaveBeenCalledTimes(1));
-      expect(createColumn).toHaveBeenCalledWith({ boardId: "b1", name: "QA", color: null });
+      expect(createColumn).toHaveBeenCalledWith({
+        boardId: "b1",
+        name: "QA",
+        color: null,
+        kind: "todo",
+      });
+    });
+
+    it("creates a column of the chosen kind", async () => {
+      createColumn.mockResolvedValue({ status: "ok", data: createColumnFixture("c4", "QA") });
+      renderApp("/boards/b1");
+      await userEvent.click(await screen.findByRole("button", { name: "New column" }));
+
+      await userEvent.type(await screen.findByRole("textbox", { name: "Column name" }), "QA");
+      expect(screen.getByRole("combobox", { name: "Column type" })).toHaveValue("todo");
+      await userEvent.selectOptions(screen.getByRole("combobox", { name: "Column type" }), "Done");
+      await userEvent.click(screen.getByRole("button", { name: "Create column" }));
+
+      await waitFor(() => expect(createColumn).toHaveBeenCalledTimes(1));
+      expect(createColumn).toHaveBeenCalledWith({
+        boardId: "b1",
+        name: "QA",
+        color: null,
+        kind: "done",
+      });
+    });
+
+    it("shows the current kind when editing and sends the new one", async () => {
+      updateColumn.mockResolvedValue({ status: "ok", data: createColumnFixture("c3", "x") });
+      renderApp("/boards/b1");
+      await openColumnMenu("Done", "Edit column");
+
+      const kindField = await screen.findByRole("combobox", { name: "Column type" });
+      expect(kindField).toHaveValue("done");
+      await userEvent.selectOptions(kindField, "In progress");
+      await userEvent.click(screen.getByRole("button", { name: "Save" }));
+
+      await waitFor(() => expect(updateColumn).toHaveBeenCalledTimes(1));
+      expect(updateColumn).toHaveBeenCalledWith("c3", {
+        name: "Done",
+        color: null,
+        kind: "in_progress",
+      });
     });
 
     it("keeps the create button disabled until the name has content", async () => {
@@ -261,7 +308,11 @@ describe("BoardPage", () => {
       await userEvent.click(screen.getByRole("button", { name: "Save" }));
 
       await waitFor(() => expect(updateColumn).toHaveBeenCalledTimes(1));
-      expect(updateColumn).toHaveBeenCalledWith("c1", { name: "Backlog", color: "violet" });
+      expect(updateColumn).toHaveBeenCalledWith("c1", {
+        name: "Backlog",
+        color: "violet",
+        kind: "todo",
+      });
     });
 
     it("shows the current color when editing and clears it with No color", async () => {
@@ -274,7 +325,11 @@ describe("BoardPage", () => {
       await userEvent.click(screen.getByRole("button", { name: "Save" }));
 
       await waitFor(() => expect(updateColumn).toHaveBeenCalledTimes(1));
-      expect(updateColumn).toHaveBeenCalledWith("c2", { name: "In progress", color: null });
+      expect(updateColumn).toHaveBeenCalledWith("c2", {
+        name: "In progress",
+        color: null,
+        kind: "in_progress",
+      });
     });
 
     it("shows the translated error and keeps the form open when the backend refuses", async () => {

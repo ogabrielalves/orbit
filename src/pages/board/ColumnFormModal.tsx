@@ -1,9 +1,10 @@
 import { type FormEvent, type KeyboardEvent, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import type { BoardColumn } from "@/bindings";
+import type { BoardColumn, ColumnKind } from "@/bindings";
 import { Button } from "@/components/atoms/Button";
 import { Input } from "@/components/atoms/Input";
+import { Select } from "@/components/atoms/Select";
 import { type ColorOption, ColorPicker } from "@/components/molecules/ColorPicker";
 import { FormField } from "@/components/molecules/FormField";
 import { Modal } from "@/components/organisms/Modal";
@@ -17,6 +18,8 @@ import {
 } from "@/modules/projects/colors";
 
 const NO_COLOR = "none";
+
+const columnKinds: ColumnKind[] = ["todo", "in_progress", "done"];
 
 type ColumnColorValue = ProjectColorKey | typeof NO_COLOR;
 
@@ -40,6 +43,7 @@ export function ColumnFormModal({ boardId, column, onClose }: ColumnFormModalPro
 
   const [name, setName] = useState(column?.name ?? "");
   const [color, setColor] = useState<ColumnColorValue>(pickInitialColor(column?.color ?? null));
+  const [kind, setKind] = useState<ColumnKind>(column?.kind ?? "todo");
 
   const isEditing = column !== undefined;
   const isSaving = createColumn.isPending || updateColumn.isPending;
@@ -73,12 +77,12 @@ export function ColumnFormModal({ boardId, column, onClose }: ColumnFormModalPro
     const trimmedName = name.trim();
     if (isEditing) {
       updateColumn.mutate(
-        { id: column.id, input: { name: trimmedName, color: savedColor } },
+        { id: column.id, input: { name: trimmedName, color: savedColor, kind } },
         { onSuccess: handleSaved },
       );
       return;
     }
-    createColumn.mutate({ name: trimmedName, color: savedColor }, { onSuccess: handleSaved });
+    createColumn.mutate({ name: trimmedName, color: savedColor, kind }, { onSuccess: handleSaved });
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLFormElement>) {
@@ -125,6 +129,22 @@ export function ColumnFormModal({ boardId, column, onClose }: ColumnFormModalPro
               placeholder={t("boards.form.columnNamePlaceholder")}
               onChange={(event) => setName(event.target.value)}
             />
+          )}
+        </FormField>
+        <FormField label={t("boards.form.columnKindLabel")}>
+          {({ id, "aria-describedby": describedBy }) => (
+            <Select
+              id={id}
+              aria-describedby={describedBy}
+              value={kind}
+              onChange={(event) => setKind(event.target.value as ColumnKind)}
+            >
+              {columnKinds.map((option) => (
+                <option key={option} value={option}>
+                  {t(`boards.kind.${option}`)}
+                </option>
+              ))}
+            </Select>
           )}
         </FormField>
         <div className="flex flex-col gap-2">

@@ -1,22 +1,30 @@
 import { Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
+import PlusIcon from "@/assets/icons/linha/mais.svg?react";
 import type { ProjectBoard } from "@/bindings";
+import { Button } from "@/components/atoms/Button";
 import { EmptyState } from "@/components/molecules/EmptyState";
 import { formatShortDate } from "@/lib/dates";
 
 type ProjectBoardsProps = {
   boards: ProjectBoard[];
+  onCreate: () => void;
 };
 
-export function ProjectBoards({ boards }: ProjectBoardsProps) {
+export function ProjectBoards({ boards, onCreate }: ProjectBoardsProps) {
   const { t, i18n } = useTranslation();
   const hasBoards = boards.length > 0;
 
   return (
     <section className="flex flex-col gap-3">
-      <h2 className="font-display text-heading-2 font-semibold text-fg">
-        {t("projects.detail.boardsTitle")}
-      </h2>
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="font-display text-heading-2 font-semibold text-fg">
+          {t("projects.detail.boardsTitle")}
+        </h2>
+        <Button variant="secondary" icon={PlusIcon} onClick={onCreate}>
+          {t("projects.detail.newBoard")}
+        </Button>
+      </div>
       {hasBoards ? (
         <ul className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
           {boards.map((board) => (

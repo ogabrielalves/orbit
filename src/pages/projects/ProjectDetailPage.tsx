@@ -3,8 +3,10 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import BackIcon from "@/assets/icons/linha/voltar.svg?react";
 import { ErrorState } from "@/components/molecules/ErrorState";
+import { BoardFormModal } from "@/components/organisms/BoardFormModal";
 import { ProjectFormModal } from "@/components/organisms/ProjectFormModal";
 import { getErrorMessageKey } from "@/lib/appError";
+import { useBoardForm } from "@/modules/boards/useBoardForm";
 import { useProject } from "@/modules/projects/queries";
 import { useProjectForm } from "@/modules/projects/useProjectForm";
 import { ProjectBoards } from "@/pages/projects/ProjectBoards";
@@ -23,10 +25,15 @@ export function ProjectDetailPage() {
   const [isDeleted, setIsDeleted] = useState(false);
   const detailsQuery = useProject(projectId, !isDeleted);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isBoardFormOpen, setIsBoardFormOpen] = useState(false);
   const [confirmKind, setConfirmKind] = useState<ProjectConfirmKind | null>(null);
 
   const details = detailsQuery.data;
   const projectForm = useProjectForm(details?.project, () => setIsFormOpen(false));
+  const boardForm = useBoardForm(projectId, (created) => {
+    setIsBoardFormOpen(false);
+    void navigate({ to: "/boards/$boardId", params: { boardId: created.board.id } });
+  });
   const isLoading = detailsQuery.isPending;
   const hasFailed = detailsQuery.isError;
   const hasDetails = details !== undefined;
@@ -70,7 +77,16 @@ export function ProjectDetailPage() {
             backlogTaskCount={details.backlogTaskCount}
             boardCount={details.boards.length}
           />
-          <ProjectBoards boards={details.boards} />
+          <ProjectBoards boards={details.boards} onCreate={() => setIsBoardFormOpen(true)} />
+          {isBoardFormOpen && (
+            <BoardFormModal
+              templates={boardForm.templates}
+              defaultTemplateId={boardForm.defaultTemplateId}
+              isSubmitting={boardForm.isSubmitting}
+              onSubmit={boardForm.submit}
+              onOpenChange={() => setIsBoardFormOpen(false)}
+            />
+          )}
           {isFormOpen && (
             <ProjectFormModal
               mode={projectForm.mode}

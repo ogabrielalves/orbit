@@ -30,8 +30,12 @@ export function createBoardDetailsFixture(overrides: Partial<BoardDetails> = {})
     },
     columns: [
       createColumnFixture("c1", "To do", { taskCount: 2 }),
-      createColumnFixture("c2", "In progress", { taskCount: 3, color: "ember" }),
-      createColumnFixture("c3", "Done"),
+      createColumnFixture("c2", "In progress", {
+        taskCount: 3,
+        color: "ember",
+        kind: "in_progress",
+      }),
+      createColumnFixture("c3", "Done", { kind: "done" }),
     ],
     ...overrides,
   };

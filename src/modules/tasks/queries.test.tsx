@@ -12,6 +12,7 @@ import {
   useBoardTasks,
   useCreateTask,
   useDeleteTask,
+  useDuplicateTask,
   useMoveTask,
   useRestoreTask,
   useSendTaskToBacklog,
@@ -30,6 +31,7 @@ const commands = vi.hoisted(() => ({
   archiveTask: vi.fn(),
   restoreTask: vi.fn(),
   deleteTask: vi.fn(),
+  duplicateTask: vi.fn(),
   moveTask: vi.fn(),
   sendTaskToBoard: vi.fn(),
   sendTaskToBacklog: vi.fn(),
@@ -138,6 +140,10 @@ describe("task queries", () => {
 
     it("refreshes them after deleting", async () => {
       await expectRefresh(useDeleteTask, "t1", "deleteTask");
+    });
+
+    it("refreshes them after duplicating", async () => {
+      await expectRefresh(useDuplicateTask, { id: "t1", title: "Copy" }, "duplicateTask");
     });
 
     it("refreshes them after sending to a board or to the backlog", async () => {

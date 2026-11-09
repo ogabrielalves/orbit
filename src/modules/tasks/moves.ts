@@ -23,9 +23,6 @@ function locate(groups: Map<string, Task[]>, taskId: string): Location | null {
   return null;
 }
 
-// Turns "dropped here" into the (column, afterTaskId) pair the backend expects.
-// `isBelow` only matters when the card changes column; inside one column the direction of
-// the drag decides, like an array move.
 export function getTaskMove(
   groups: Map<string, Task[]>,
   activeId: string,
@@ -72,8 +69,6 @@ function syntheticPosition(index: number): string {
   return String(index).padStart(6, "0");
 }
 
-// Optimistic version of the move. The real fractional positions only come back from the
-// backend, so the target column gets throwaway positions that keep the order until the refetch.
 export function applyTaskMove(tasks: Task[], move: TaskMove): Task[] {
   const groups = groupTasksByColumn(tasks);
   const moved = tasks.find((task) => task.id === move.taskId);

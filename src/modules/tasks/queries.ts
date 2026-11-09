@@ -1,18 +1,31 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { BoardDetails, CreateTaskInput, Task, UpdateTaskInput } from "@/bindings";
+import type {
+  BoardDetails,
+  CreateSubtaskInput,
+  CreateTaskInput,
+  Task,
+  UpdateTaskInput,
+} from "@/bindings";
+import { applyReorder, type Reorder } from "@/lib/reorder";
+import { activityKeys } from "@/modules/activity/queries";
 import { boardKeys } from "@/modules/boards/queries";
 import { dashboardKeys } from "@/modules/dashboard/queries";
 import { projectKeys } from "@/modules/projects/queries";
 import {
   archiveTask,
+  createSubtask,
   createTask,
   deleteTask,
+  duplicateTask,
   fetchBoardTasks,
+  fetchSubtasks,
   fetchTask,
+  moveSubtask,
   moveTask,
   restoreTask,
   sendTaskToBacklog,
   sendTaskToBoard,
+  setSubtaskDone,
   updateTask,
 } from "@/modules/tasks/api";
 import { applyTaskMove, shiftTaskCount } from "@/modules/tasks/moves";
@@ -21,10 +34,14 @@ export const taskKeys = {
   all: ["tasks"] as const,
   board: (boardId: string) => ["tasks", "board", boardId] as const,
   detail: (id: string) => ["tasks", "detail", id] as const,
+  subtasks: (parentTaskId: string) => ["tasks", "subtasks", parentTaskId] as const,
 };
 
 type UpdateTaskVariables = { id: string; input: UpdateTaskInput };
 type SendTaskToBoardVariables = { id: string; boardId: string; columnId: string | null };
+type DuplicateTaskVariables = { id: string; title: string | null };
+type SetSubtaskDoneVariables = { id: string; isDone: boolean };
+type MoveSubtaskContext = { previous: Task[] | undefined };
 type MoveTaskVariables = { id: string; columnId: string; afterTaskId: string | null };
 type MoveTaskContext = {
   previousTasks: Task[] | undefined;
@@ -47,7 +64,6 @@ export function useTask(id: string, isEnabled = true) {
   });
 }
 
-// Tasks feed the column counters of the board, the project stats and the dashboard.
 export function useInvalidateTasks() {
   const queryClient = useQueryClient();
 
@@ -57,6 +73,7 @@ export function useInvalidateTasks() {
       queryClient.invalidateQueries({ queryKey: boardKeys.all }),
       queryClient.invalidateQueries({ queryKey: projectKeys.all }),
       queryClient.invalidateQueries({ queryKey: dashboardKeys.all }),
+      queryClient.invalidateQueries({ queryKey: activityKeys.all }),
     ]);
 }
 
@@ -101,6 +118,15 @@ export function useDeleteTask() {
 
   return useMutation({
     mutationFn: (id: string) => deleteTask(id),
+    onSuccess: invalidateTasks,
+  });
+}
+
+export function useDuplicateTask() {
+  const invalidateTasks = useInvalidateTasks();
+
+  return useMutation({
+    mutationFn: ({ id, title }: DuplicateTaskVariables) => duplicateTask(id, title),
     onSuccess: invalidateTasks,
   });
 }
@@ -163,6 +189,63 @@ export function useMoveTask(boardId: string) {
       }
       if (context?.previousBoard !== undefined) {
         queryClient.setQueryData(boardKey, context.previousBoard);
+      }
+    },
+    onSettled: invalidateTasks,
+  });
+}
+
+export function useSubtasks(parentTaskId: string, isEnabled = true) {
+  return useQuery({
+    queryKey: taskKeys.subtasks(parentTaskId),
+    queryFn: () => fetchSubtasks(parentTaskId),
+    enabled: isEnabled,
+  });
+}
+
+export function useCreateSubtask(parentTaskId: string) {
+  const invalidateTasks = useInvalidateTasks();
+
+  return useMutation({
+    mutationFn: (title: string) => {
+      const input: CreateSubtaskInput = { parentTaskId, title };
+      return createSubtask(input);
+    },
+    onSuccess: invalidateTasks,
+  });
+}
+
+export function useSetSubtaskDone() {
+  const invalidateTasks = useInvalidateTasks();
+
+  return useMutation({
+    mutationFn: ({ id, isDone }: SetSubtaskDoneVariables) => setSubtaskDone(id, isDone),
+    onSuccess: invalidateTasks,
+  });
+}
+
+export function useMoveSubtask(parentTaskId: string) {
+  const queryClient = useQueryClient();
+  const invalidateTasks = useInvalidateTasks();
+  const queryKey = taskKeys.subtasks(parentTaskId);
+
+  return useMutation<Task, unknown, Reorder, MoveSubtaskContext>({
+    mutationFn: ({ id, afterId }) => moveSubtask(id, afterId),
+    onMutate: async (reorder) => {
+      await queryClient.cancelQueries({ queryKey });
+      const previous = queryClient.getQueryData<Task[]>(queryKey);
+
+      const hasPrevious = previous !== undefined;
+      if (hasPrevious) {
+        queryClient.setQueryData<Task[]>(queryKey, applyReorder(previous, reorder));
+      }
+
+      return { previous };
+    },
+    onError: (_error, _variables, context) => {
+      const hasSnapshot = context?.previous !== undefined;
+      if (hasSnapshot) {
+        queryClient.setQueryData(queryKey, context.previous);
       }
     },
     onSettled: invalidateTasks,

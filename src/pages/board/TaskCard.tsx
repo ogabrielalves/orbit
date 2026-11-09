@@ -1,4 +1,4 @@
-import type { CSSProperties, HTMLAttributes, Ref } from "react";
+import type { CSSProperties, HTMLAttributes, KeyboardEvent, Ref } from "react";
 import { useTranslation } from "react-i18next";
 import type { Task } from "@/bindings";
 import { Badge } from "@/components/atoms/Badge";
@@ -11,9 +11,17 @@ type TaskCardProps = {
   innerRef?: Ref<HTMLLIElement>;
   style?: CSSProperties;
   dragProps?: HTMLAttributes<HTMLLIElement>;
+  onOpen?: () => void;
 };
 
-export function TaskCard({ task, isDragging = false, innerRef, style, dragProps }: TaskCardProps) {
+export function TaskCard({
+  task,
+  isDragging = false,
+  innerRef,
+  style,
+  dragProps,
+  onOpen,
+}: TaskCardProps) {
   const { t, i18n } = useTranslation();
   const now = new Date();
 
@@ -27,12 +35,25 @@ export function TaskCard({ task, isDragging = false, innerRef, style, dragProps 
     ? "cursor-grab touch-manipulation active:cursor-grabbing focus-visible:shadow-focus"
     : "";
   const draggingClass = isDragging ? "opacity-40" : "";
+  const dragKeyDown = dragProps?.onKeyDown;
+
+  function handleKeyDown(event: KeyboardEvent<HTMLLIElement>) {
+    dragKeyDown?.(event);
+    const isEnter = event.key === "Enter";
+    const isOwnEvent = event.target === event.currentTarget;
+    const canOpen = isEnter && isOwnEvent && !isDragging && onOpen !== undefined;
+    if (canOpen) {
+      onOpen();
+    }
+  }
 
   return (
     <li
       ref={innerRef}
       style={style}
       {...dragProps}
+      onClick={onOpen}
+      onKeyDown={handleKeyDown}
       className={`flex flex-col gap-2 rounded-lg border border-border bg-surface p-3 shadow-xs ${dragClass} ${draggingClass}`}
     >
       <span className="text-small font-medium break-words text-fg">{task.title}</span>

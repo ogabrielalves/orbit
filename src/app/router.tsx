@@ -8,6 +8,7 @@ import type { ParseKeys } from "i18next";
 import { RootLayout } from "@/app/RootLayout";
 import { BacklogPage } from "@/pages/backlog/BacklogPage";
 import { BoardPage } from "@/pages/board/BoardPage";
+import { parseBoardSearch } from "@/pages/board/boardSearch";
 import { DashboardPage } from "@/pages/dashboard/DashboardPage";
 import { FavoritesPage } from "@/pages/favorites/FavoritesPage";
 import { GraphPage } from "@/pages/graph/GraphPage";
@@ -49,6 +50,7 @@ const boardRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/boards/$boardId",
   component: BoardPage,
+  validateSearch: parseBoardSearch,
   staticData: { titleKey: "nav.boards" },
 });
 

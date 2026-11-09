@@ -3,6 +3,7 @@ import {
   archiveTask,
   createTask,
   deleteTask,
+  duplicateTask,
   fetchBoardTasks,
   fetchTask,
   moveTask,
@@ -21,6 +22,7 @@ const commands = vi.hoisted(() => ({
   archiveTask: vi.fn(),
   restoreTask: vi.fn(),
   deleteTask: vi.fn(),
+  duplicateTask: vi.fn(),
   moveTask: vi.fn(),
   sendTaskToBoard: vi.fn(),
   sendTaskToBacklog: vi.fn(),
@@ -80,6 +82,14 @@ describe("tasks api", () => {
     await expect(deleteTask("t1")).resolves.toBeNull();
 
     expect(commands.deleteTask).toHaveBeenCalledWith("t1");
+  });
+
+  it("duplicates a task with an optional title", async () => {
+    await duplicateTask("t1", "Copy");
+    await duplicateTask("t1", null);
+
+    expect(commands.duplicateTask).toHaveBeenNthCalledWith(1, "t1", "Copy");
+    expect(commands.duplicateTask).toHaveBeenNthCalledWith(2, "t1", null);
   });
 
   it("moves a task after another one or to the top of a column", async () => {

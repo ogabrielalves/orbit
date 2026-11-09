@@ -3,9 +3,8 @@ import { useTranslation } from "react-i18next";
 import PlusIcon from "@/assets/icons/linha/mais.svg?react";
 import { Button } from "@/components/atoms/Button";
 import { Input } from "@/components/atoms/Input";
+import { TASK_TITLE_MAX_LENGTH } from "@/modules/tasks/limits";
 import { useCreateTask } from "@/modules/tasks/queries";
-
-const TITLE_MAX_LENGTH = 200;
 
 type QuickAddTaskProps = {
   projectId: string;
@@ -82,7 +81,7 @@ export function QuickAddTask({ projectId, columnId, columnName }: QuickAddTaskPr
         ref={inputRef}
         size="compact"
         value={title}
-        maxLength={TITLE_MAX_LENGTH}
+        maxLength={TASK_TITLE_MAX_LENGTH}
         aria-label={t("boards.quickAdd.label")}
         placeholder={t("boards.quickAdd.placeholder")}
         onChange={(event) => setTitle(event.target.value)}

@@ -295,7 +295,7 @@ describe("DashboardPage", () => {
       const card = await findCard("Upcoming deadlines");
       const link = await within(card).findByRole("link", { name: /Write the spec/ });
 
-      expect(link).toHaveAttribute("href", "/boards/b1");
+      expect(link).toHaveAttribute("href", "/boards/b1?task=t1");
       expect(link).toHaveTextContent("Website 2.0");
       expect(link).toHaveTextContent("High");
       expect(link).toHaveTextContent("Tomorrow");

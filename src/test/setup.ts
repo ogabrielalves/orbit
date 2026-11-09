@@ -43,6 +43,16 @@ vi.mock("@/bindings", () => ({
     archiveTask: vi.fn(),
     restoreTask: vi.fn(),
     deleteTask: vi.fn(),
+    duplicateTask: vi.fn(),
+    listSubtasks: vi.fn().mockResolvedValue({ status: "ok", data: [] }),
+    createSubtask: vi.fn(),
+    setSubtaskDone: vi.fn(),
+    moveSubtask: vi.fn(),
+    listChecklistItems: vi.fn().mockResolvedValue({ status: "ok", data: [] }),
+    createChecklistItem: vi.fn(),
+    updateChecklistItem: vi.fn(),
+    moveChecklistItem: vi.fn(),
+    deleteChecklistItem: vi.fn(),
     moveTask: vi.fn(),
     sendTaskToBoard: vi.fn(),
     sendTaskToBacklog: vi.fn(),
@@ -55,7 +65,6 @@ class ResizeObserverStub {
   disconnect() {}
 }
 
-// The 1s default for findBy*/waitFor is too tight when the whole suite saturates the CPU.
 configure({ asyncUtilTimeout: 5000 });
 
 beforeAll(() => {

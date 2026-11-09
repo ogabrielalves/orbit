@@ -10,7 +10,6 @@ function comparePosition(a: Task, b: Task): number {
   return 0;
 }
 
-// Same order as the backend: by position, ties broken by id (plain code unit comparison).
 export function groupTasksByColumn(tasks: Task[]): Map<string, Task[]> {
   const groups = new Map<string, Task[]>();
 

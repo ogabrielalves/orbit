@@ -1,4 +1,10 @@
-import { type CreateTaskInput, commands, type Task, type UpdateTaskInput } from "@/bindings";
+import {
+  type CreateSubtaskInput,
+  type CreateTaskInput,
+  commands,
+  type Task,
+  type UpdateTaskInput,
+} from "@/bindings";
 import { unwrapResult } from "@/lib/unwrapResult";
 
 export async function fetchBoardTasks(boardId: string): Promise<Task[]> {
@@ -29,6 +35,10 @@ export async function deleteTask(id: string): Promise<null> {
   return unwrapResult(await commands.deleteTask(id));
 }
 
+export async function duplicateTask(id: string, title: string | null): Promise<Task> {
+  return unwrapResult(await commands.duplicateTask(id, title));
+}
+
 export async function moveTask(
   id: string,
   columnId: string,
@@ -47,4 +57,20 @@ export async function sendTaskToBoard(
 
 export async function sendTaskToBacklog(id: string): Promise<Task> {
   return unwrapResult(await commands.sendTaskToBacklog(id));
+}
+
+export async function fetchSubtasks(parentTaskId: string): Promise<Task[]> {
+  return unwrapResult(await commands.listSubtasks(parentTaskId));
+}
+
+export async function createSubtask(input: CreateSubtaskInput): Promise<Task> {
+  return unwrapResult(await commands.createSubtask(input));
+}
+
+export async function setSubtaskDone(id: string, isDone: boolean): Promise<Task> {
+  return unwrapResult(await commands.setSubtaskDone(id, isDone));
+}
+
+export async function moveSubtask(id: string, afterSubtaskId: string | null): Promise<Task> {
+  return unwrapResult(await commands.moveSubtask(id, afterSubtaskId));
 }

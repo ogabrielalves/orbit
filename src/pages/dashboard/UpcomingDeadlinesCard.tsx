@@ -56,7 +56,11 @@ export function UpcomingDeadlinesCard({ today, now }: UpcomingDeadlinesCardProps
             <li key={task.taskId}>
               <Link
                 {...(task.boardId
-                  ? { to: "/boards/$boardId", params: { boardId: task.boardId } }
+                  ? {
+                      to: "/boards/$boardId",
+                      params: { boardId: task.boardId },
+                      search: { task: task.taskId },
+                    }
                   : { to: "/projects/$projectId", params: { projectId: task.projectId } })}
                 className="-mx-2 flex items-center gap-3 rounded-md px-2 py-2.5 transition-colors hover:bg-surface-muted"
               >

@@ -11,9 +11,6 @@ function ofType(containers: DroppableContainer[], type: BoardDragType): Droppabl
   return containers.filter((container) => container.data.current?.type === type);
 }
 
-// Columns only collide with columns. A card follows the pointer to the column under it and then
-// picks the nearest card in that column (or the column itself when it has none).
-// With the keyboard there is no pointer, so the nearest column or card wins.
 export const boardCollisionDetection: CollisionDetection = (args) => {
   const { active, droppableContainers, pointerCoordinates } = args;
   const isDraggingColumn = active.data.current?.type === "column";

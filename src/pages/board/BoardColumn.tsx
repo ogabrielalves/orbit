@@ -17,6 +17,7 @@ type BoardColumnProps = {
   index: number;
   total: number;
   isDropTarget: boolean;
+  onOpenTask: (taskId: string) => void;
   onEdit: (column: BoardColumnData) => void;
   onMoveLeft: (column: BoardColumnData) => void;
   onMoveRight: (column: BoardColumnData) => void;
@@ -30,6 +31,7 @@ export function BoardColumn({
   index,
   total,
   isDropTarget,
+  onOpenTask,
   onEdit,
   onMoveLeft,
   onMoveRight,
@@ -126,7 +128,7 @@ export function BoardColumn({
             className="flex flex-col gap-2"
           >
             {tasks.map((task) => (
-              <SortableTaskCard key={task.id} task={task} />
+              <SortableTaskCard key={task.id} task={task} onOpen={onOpenTask} />
             ))}
           </ul>
         </SortableContext>

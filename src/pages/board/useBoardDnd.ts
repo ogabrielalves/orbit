@@ -33,7 +33,10 @@ export function useBoardDnd({ boardId, columns, tasksByColumn }: BoardDndParams)
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+      keyboardCodes: { start: ["Space"], cancel: ["Escape"], end: ["Space"] },
+    }),
   );
 
   const tasksById = new Map<string, Task>();

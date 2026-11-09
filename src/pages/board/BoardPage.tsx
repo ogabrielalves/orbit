@@ -1,6 +1,6 @@
 import { DndContext, DragOverlay } from "@dnd-kit/core";
 import { horizontalListSortingStrategy, SortableContext } from "@dnd-kit/sortable";
-import { Link, useNavigate, useParams } from "@tanstack/react-router";
+import { Link, useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import PlusIcon from "@/assets/icons/linha/mais.svg?react";
@@ -23,6 +23,7 @@ import { ColumnDeleteDialog } from "@/pages/board/ColumnDeleteDialog";
 import { ColumnFormModal } from "@/pages/board/ColumnFormModal";
 import { TaskCard } from "@/pages/board/TaskCard";
 import { useBoardDnd } from "@/pages/board/useBoardDnd";
+import { TaskDrawer } from "@/pages/task/TaskDrawer";
 
 type ColumnFormState = { column: BoardColumnData | undefined } | null;
 
@@ -31,6 +32,7 @@ const placeholderIds = ["a", "b", "c"];
 export function BoardPage() {
   const { t } = useTranslation();
   const { boardId } = useParams({ from: "/boards/$boardId" });
+  const { task: openTaskId } = useSearch({ from: "/boards/$boardId" });
   const navigate = useNavigate();
   const [isDeleted, setIsDeleted] = useState(false);
   const boardQuery = useBoard(boardId, !isDeleted);
@@ -53,6 +55,20 @@ export function BoardPage() {
   const taskCount = columns.reduce((total, column) => total + column.taskCount, 0);
   const isColumnFormOpen = columnForm !== null;
   const isColumnDeleteOpen = columnToDelete !== null;
+  const isTaskOpen = openTaskId !== undefined;
+
+  function openTask(taskId: string) {
+    void navigate({ to: "/boards/$boardId", params: { boardId }, search: { task: taskId } });
+  }
+
+  function closeTask() {
+    void navigate({
+      to: "/boards/$boardId",
+      params: { boardId },
+      search: { task: undefined },
+      replace: true,
+    });
+  }
 
   function handleBoardDeleted() {
     setIsDeleted(true);
@@ -146,6 +162,7 @@ export function BoardPage() {
                       index={index}
                       total={columns.length}
                       onEdit={(target) => setColumnForm({ column: target })}
+                      onOpenTask={openTask}
                       isDropTarget={dnd.activeTask !== undefined && dnd.overColumnId === column.id}
                       onMoveLeft={(target) => dnd.moveColumnBy(target, -1)}
                       onMoveRight={(target) => dnd.moveColumnBy(target, 1)}
@@ -196,6 +213,7 @@ export function BoardPage() {
           {isRenaming && (
             <BoardRenameModal board={details.board} onClose={() => setIsRenaming(false)} />
           )}
+          {isTaskOpen && <TaskDrawer key={openTaskId} taskId={openTaskId} onClose={closeTask} />}
           {isDeletingBoard && (
             <BoardDeleteDialog
               board={details.board}

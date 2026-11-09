@@ -78,11 +78,11 @@ pub fn delete(state: &AppState, id: &str) -> AppResult<()> {
     let mut connection = state.database();
     let transaction = connection.transaction()?;
     let current = find_existing(&transaction, id)?;
-    repository::delete(&transaction, id)?;
     let mut changes = ChangeSet::new();
     let body_preview = preview(&current.body);
     changes.track("body", Some(body_preview.as_str()), None);
     record(&transaction, id, ActivityAction::Deleted, changes)?;
+    repository::delete(&transaction, id)?;
     transaction.commit()?;
     Ok(())
 }

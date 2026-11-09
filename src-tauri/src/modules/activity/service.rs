@@ -11,6 +11,8 @@ pub const MAX_RECENT_LIMIT: u32 = 100;
 pub const DEFAULT_HISTORY_LIMIT: u32 = 50;
 pub const MAX_HISTORY_LIMIT: u32 = 200;
 
+/// Records an entry. Entries about tasks, checklist items, comments and attachments are linked
+/// to their top-level task, so the entity must still exist: record deletions *before* deleting.
 pub fn record(
     connection: &Connection,
     entity_type: EntityType,
@@ -21,12 +23,14 @@ pub fn record(
     let changes_json = serialize_changes(changes)?;
     let entry_id = id::new_id();
     let created_at = time::now();
+    let task_id = repository::find_task_id(connection, entity_type.as_str(), entity_id)?;
     let row = NewRow {
         id: &entry_id,
         entity_type: entity_type.as_str(),
         entity_id,
         action: action.as_str(),
         changes: changes_json.as_deref(),
+        task_id: task_id.as_deref(),
         created_at: &created_at,
     };
     repository::insert(connection, &row)
@@ -59,6 +63,22 @@ pub fn history(
         entity_id,
         effective_limit,
     )?;
+    rows.into_iter().map(to_entry).collect()
+}
+
+/// Full history of a top-level task, newest first: its own entries plus those of its subtasks,
+/// checklist items, comments and attachments. Asking for a subtask returns that subtask's own
+/// entries. The log outlives the task, so a deleted task's history is still readable.
+pub fn task_history(
+    state: &AppState,
+    task_id: &str,
+    limit: Option<u32>,
+) -> AppResult<Vec<ActivityEntry>> {
+    let effective_limit = limit
+        .unwrap_or(DEFAULT_HISTORY_LIMIT)
+        .clamp(1, MAX_HISTORY_LIMIT);
+    let connection = state.database();
+    let rows = repository::find_for_task(&connection, task_id, effective_limit)?;
     rows.into_iter().map(to_entry).collect()
 }
 

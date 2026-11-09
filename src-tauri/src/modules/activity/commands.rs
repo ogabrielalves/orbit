@@ -1,6 +1,6 @@
 use tauri::State;
 
-use super::models::{ActivityEntry, EntityType};
+use super::models::ActivityEntry;
 use super::service;
 use crate::error::AppResult;
 use crate::state::AppState;
@@ -21,5 +21,5 @@ pub async fn get_task_history(
     task_id: String,
     limit: Option<u32>,
 ) -> AppResult<Vec<ActivityEntry>> {
-    service::history(&state, EntityType::Task, &task_id, limit)
+    service::task_history(&state, &task_id, limit)
 }

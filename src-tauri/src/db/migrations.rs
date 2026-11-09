@@ -11,6 +11,7 @@ const MIGRATIONS: &[M<'static>] = &[
     M::up(include_str!("../../migrations/0005_task_details.sql")),
     M::up(include_str!("../../migrations/0006_activity_log.sql")),
     M::up(include_str!("../../migrations/0007_column_kind.sql")),
+    M::up(include_str!("../../migrations/0008_activity_task_id.sql")),
 ];
 
 pub fn run(connection: &mut Connection) -> AppResult<()> {
@@ -107,5 +108,55 @@ mod tests {
         );
         assert_eq!(kinds_of(&connection, "single"), ["todo"]);
         assert!(kinds_of(&connection, "empty").is_empty());
+    }
+
+    #[test]
+    fn activity_task_id_migration_links_existing_entries_to_their_top_level_task() {
+        let mut connection = open_in_memory().expect("opens");
+        let migrations = Migrations::from_slice(MIGRATIONS);
+        migrations.to_version(&mut connection, 7).expect("up to 7");
+        connection
+            .execute_batch(
+                "INSERT INTO projects (id, name, created_at, updated_at) VALUES ('p', 'P', 'x', 'x');
+                 INSERT INTO tasks (id, project_id, title, position, created_at, updated_at) VALUES ('top', 'p', 'T', 'V', 'x', 'x');
+                 INSERT INTO tasks (id, project_id, parent_task_id, title, position, created_at, updated_at) VALUES ('sub', 'p', 'top', 'S', 'V', 'x', 'x');
+                 INSERT INTO checklist_items (id, task_id, text, position, created_at, updated_at) VALUES ('item-top', 'top', 'a', 'V', 'x', 'x');
+                 INSERT INTO checklist_items (id, task_id, text, position, created_at, updated_at) VALUES ('item-sub', 'sub', 'b', 'V', 'x', 'x');
+                 INSERT INTO comments (id, task_id, body, created_at, updated_at) VALUES ('note', 'sub', 'c', 'x', 'x');
+                 INSERT INTO activity_log (id, entity_type, entity_id, action, created_at) VALUES ('l1', 'task', 'top', 'created', 'x');
+                 INSERT INTO activity_log (id, entity_type, entity_id, action, created_at) VALUES ('l2', 'task', 'sub', 'created', 'x');
+                 INSERT INTO activity_log (id, entity_type, entity_id, action, created_at) VALUES ('l3', 'checklist_item', 'item-top', 'created', 'x');
+                 INSERT INTO activity_log (id, entity_type, entity_id, action, created_at) VALUES ('l4', 'checklist_item', 'item-sub', 'created', 'x');
+                 INSERT INTO activity_log (id, entity_type, entity_id, action, created_at) VALUES ('l5', 'comment', 'note', 'created', 'x');
+                 INSERT INTO activity_log (id, entity_type, entity_id, action, created_at) VALUES ('l6', 'task', 'gone', 'deleted', 'x');
+                 INSERT INTO activity_log (id, entity_type, entity_id, action, created_at) VALUES ('l7', 'checklist_item', 'gone-item', 'deleted', 'x');
+                 INSERT INTO activity_log (id, entity_type, entity_id, action, created_at) VALUES ('l8', 'project', 'p', 'created', 'x');",
+            )
+            .expect("seed");
+
+        migrations.to_latest(&mut connection).expect("up to latest");
+
+        let mut statement = connection
+            .prepare("SELECT id, task_id FROM activity_log ORDER BY id")
+            .expect("prepares");
+        let links: Vec<(String, Option<String>)> = statement
+            .query_map([], |row| Ok((row.get(0)?, row.get(1)?)))
+            .expect("runs")
+            .collect::<Result<_, _>>()
+            .expect("reads");
+        let expected: Vec<(String, Option<String>)> = [
+            ("l1", Some("top")),
+            ("l2", Some("top")),
+            ("l3", Some("top")),
+            ("l4", Some("top")),
+            ("l5", Some("top")),
+            ("l6", Some("gone")),
+            ("l7", None),
+            ("l8", None),
+        ]
+        .into_iter()
+        .map(|(id, task)| (id.to_string(), task.map(str::to_string)))
+        .collect();
+        assert_eq!(links, expected);
     }
 }

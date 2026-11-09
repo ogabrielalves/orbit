@@ -155,10 +155,10 @@ pub fn delete(state: &AppState, id: &str) -> AppResult<()> {
         let transaction = connection.transaction()?;
         let current = find_existing(&transaction, id)?;
         let stored_names = repository::find_attachment_stored_names(&transaction, id)?;
-        repository::delete(&transaction, id)?;
         let mut changes = ChangeSet::new();
         changes.track("title", Some(current.title.as_str()), None);
         record(&transaction, id, ActivityAction::Deleted, changes)?;
+        repository::delete(&transaction, id)?;
         transaction.commit()?;
         stored_names
     };

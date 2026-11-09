@@ -1,4 +1,4 @@
-use rusqlite::Connection;
+use rusqlite::{Connection, OptionalExtension};
 
 use crate::error::AppResult;
 
@@ -8,6 +8,7 @@ pub struct NewRow<'a> {
     pub entity_id: &'a str,
     pub action: &'a str,
     pub changes: Option<&'a str>,
+    pub task_id: Option<&'a str>,
     pub created_at: &'a str,
 }
 
@@ -22,14 +23,15 @@ pub struct StoredRow {
 
 pub fn insert(connection: &Connection, row: &NewRow<'_>) -> AppResult<()> {
     connection.execute(
-        "INSERT INTO activity_log (id, entity_type, entity_id, action, changes, created_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+        "INSERT INTO activity_log (id, entity_type, entity_id, action, changes, task_id, created_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
         (
             row.id,
             row.entity_type,
             row.entity_id,
             row.action,
             row.changes,
+            row.task_id,
             row.created_at,
         ),
     )?;
@@ -40,10 +42,68 @@ pub fn find_recent(connection: &Connection, limit: u32) -> AppResult<Vec<StoredR
     let mut statement = connection.prepare(
         "SELECT id, entity_type, entity_id, action, changes, created_at
          FROM activity_log
-         ORDER BY created_at DESC, id DESC
+         ORDER BY created_at DESC, rowid DESC
          LIMIT ?1",
     )?;
     let rows = statement.query_map([limit], |row| {
+        Ok(StoredRow {
+            id: row.get(0)?,
+            entity_type: row.get(1)?,
+            entity_id: row.get(2)?,
+            action: row.get(3)?,
+            changes: row.get(4)?,
+            created_at: row.get(5)?,
+        })
+    })?;
+    let entries = rows.collect::<Result<Vec<_>, _>>()?;
+    Ok(entries)
+}
+
+/// The top-level task an entry belongs to, or `None` for entities that are not task-related
+/// (or whose row is already gone).
+pub fn find_task_id(
+    connection: &Connection,
+    entity_type: &str,
+    entity_id: &str,
+) -> AppResult<Option<String>> {
+    let sql = match entity_type {
+        "task" => "SELECT COALESCE(parent_task_id, id) FROM tasks WHERE id = ?1",
+        "checklist_item" => {
+            "SELECT COALESCE(t.parent_task_id, t.id)
+             FROM checklist_items c JOIN tasks t ON t.id = c.task_id WHERE c.id = ?1"
+        }
+        "comment" => {
+            "SELECT COALESCE(t.parent_task_id, t.id)
+             FROM comments c JOIN tasks t ON t.id = c.task_id WHERE c.id = ?1"
+        }
+        "attachment" => {
+            "SELECT COALESCE(t.parent_task_id, t.id)
+             FROM attachments a JOIN tasks t ON t.id = a.task_id WHERE a.id = ?1"
+        }
+        _ => return Ok(None),
+    };
+    let task_id = connection
+        .query_row(sql, [entity_id], |row| row.get(0))
+        .optional()?;
+    Ok(task_id)
+}
+
+/// Everything that happened to a top-level task: its own entries plus those of its subtasks,
+/// checklist items, comments and attachments. Entries written by the task itself are also
+/// matched by entity, so the history of a task that no longer exists is still readable.
+pub fn find_for_task(
+    connection: &Connection,
+    task_id: &str,
+    limit: u32,
+) -> AppResult<Vec<StoredRow>> {
+    let mut statement = connection.prepare(
+        "SELECT id, entity_type, entity_id, action, changes, created_at
+         FROM activity_log
+         WHERE task_id = ?1 OR (entity_type = 'task' AND entity_id = ?1)
+         ORDER BY created_at DESC, rowid DESC
+         LIMIT ?2",
+    )?;
+    let rows = statement.query_map((task_id, limit), |row| {
         Ok(StoredRow {
             id: row.get(0)?,
             entity_type: row.get(1)?,
@@ -67,7 +127,7 @@ pub fn find_by_entity(
         "SELECT id, entity_type, entity_id, action, changes, created_at
          FROM activity_log
          WHERE entity_type = ?1 AND entity_id = ?2
-         ORDER BY created_at DESC, id DESC
+         ORDER BY created_at DESC, rowid DESC
          LIMIT ?3",
     )?;
     let rows = statement.query_map((entity_type, entity_id, limit), |row| {
@@ -102,6 +162,7 @@ mod tests {
             entity_id: "e1",
             action: "created",
             changes: None,
+            task_id: None,
             created_at,
         }
     }
@@ -143,7 +204,7 @@ mod tests {
     }
 
     #[test]
-    fn find_recent_breaks_ties_by_id_descending() {
+    fn find_recent_breaks_ties_by_insertion_order_newest_first() {
         let connection = migrated_connection();
         insert(&connection, &row("a1", "2026-11-08T10:00:00.000Z")).expect("inserts");
         insert(&connection, &row("a2", "2026-11-08T10:00:00.000Z")).expect("inserts");
@@ -217,6 +278,115 @@ mod tests {
             plan.iter()
                 .any(|line| line.contains("idx_activity_log_entity_created")),
             "plan was: {plan:?}"
+        );
+    }
+
+    fn seed_task_tree(connection: &Connection) {
+        connection
+            .execute_batch(
+                "INSERT INTO projects (id, name, created_at, updated_at) VALUES ('p', 'P', 'x', 'x');
+                 INSERT INTO tasks (id, project_id, title, position, created_at, updated_at) VALUES ('top', 'p', 'T', 'V', 'x', 'x');
+                 INSERT INTO tasks (id, project_id, parent_task_id, title, position, created_at, updated_at) VALUES ('sub', 'p', 'top', 'S', 'V', 'x', 'x');
+                 INSERT INTO checklist_items (id, task_id, text, position, created_at, updated_at) VALUES ('item', 'sub', 'a', 'V', 'x', 'x');
+                 INSERT INTO comments (id, task_id, body, created_at, updated_at) VALUES ('note', 'top', 'c', 'x', 'x');
+                 INSERT INTO attachments (id, task_id, file_name, stored_name, mime_type, size_bytes, created_at) VALUES ('file', 'sub', 'f.txt', 's1', 'text/plain', 1, 'x');",
+            )
+            .expect("seeds");
+    }
+
+    #[test]
+    fn find_task_id_resolves_to_the_top_level_task_for_every_task_related_entity() {
+        let connection = migrated_connection();
+        seed_task_tree(&connection);
+
+        let resolve = |entity_type: &str, entity_id: &str| {
+            find_task_id(&connection, entity_type, entity_id).expect("reads")
+        };
+
+        assert_eq!(resolve("task", "top").as_deref(), Some("top"));
+        assert_eq!(resolve("task", "sub").as_deref(), Some("top"));
+        assert_eq!(resolve("checklist_item", "item").as_deref(), Some("top"));
+        assert_eq!(resolve("comment", "note").as_deref(), Some("top"));
+        assert_eq!(resolve("attachment", "file").as_deref(), Some("top"));
+    }
+
+    #[test]
+    fn find_task_id_is_none_for_other_entities_and_for_missing_rows() {
+        let connection = migrated_connection();
+        seed_task_tree(&connection);
+
+        assert_eq!(
+            find_task_id(&connection, "project", "p").expect("reads"),
+            None
+        );
+        assert_eq!(find_task_id(&connection, "tag", "x").expect("reads"), None);
+        assert_eq!(
+            find_task_id(&connection, "task", "ghost").expect("reads"),
+            None
+        );
+        assert_eq!(
+            find_task_id(&connection, "comment", "ghost").expect("reads"),
+            None
+        );
+    }
+
+    #[test]
+    fn find_for_task_gathers_linked_entries_and_the_tasks_own_entity_entries() {
+        let connection = migrated_connection();
+        let linked = |id: &'static str, created_at: &'static str| NewRow {
+            task_id: Some("top"),
+            entity_type: "comment",
+            entity_id: "note",
+            ..row(id, created_at)
+        };
+        insert(&connection, &linked("a1", "2026-11-08T10:00:00.000Z")).expect("inserts");
+        insert(&connection, &linked("a3", "2026-11-08T12:00:00.000Z")).expect("inserts");
+        let own_after_deletion = NewRow {
+            entity_type: "task",
+            entity_id: "top",
+            task_id: None,
+            ..row("a2", "2026-11-08T11:00:00.000Z")
+        };
+        let other_task = NewRow {
+            task_id: Some("other"),
+            ..row("b1", "2026-11-08T13:00:00.000Z")
+        };
+        insert(&connection, &own_after_deletion).expect("inserts");
+        insert(&connection, &other_task).expect("inserts");
+
+        let rows = find_for_task(&connection, "top", 10).expect("reads");
+        let limited = find_for_task(&connection, "top", 2).expect("reads");
+
+        let ids: Vec<&str> = rows.iter().map(|row| row.id.as_str()).collect();
+        assert_eq!(ids, ["a3", "a2", "a1"]);
+        assert_eq!(limited.len(), 2);
+    }
+
+    #[test]
+    fn find_for_task_uses_indexes_for_both_conditions() {
+        let connection = migrated_connection();
+
+        let mut statement = connection
+            .prepare(
+                "EXPLAIN QUERY PLAN SELECT id FROM activity_log
+                 WHERE task_id = 'x' OR (entity_type = 'task' AND entity_id = 'x')
+                 ORDER BY created_at DESC, rowid DESC LIMIT 5",
+            )
+            .expect("prepares");
+        let plan: Vec<String> = statement
+            .query_map([], |row| row.get::<_, String>(3))
+            .expect("runs")
+            .collect::<Result<_, _>>()
+            .expect("reads");
+        let joined = plan.join(" | ");
+
+        assert!(
+            joined.contains("idx_activity_log_task_created"),
+            "plan was: {joined}"
+        );
+        assert!(
+            joined.contains("idx_activity_log_entity_created"),
+            "plan was: {joined}"
         );
     }
 }

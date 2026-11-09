@@ -8,10 +8,11 @@ import { formatShortDate } from "@/lib/dates";
 
 type ProjectBoardsProps = {
   boards: ProjectBoard[];
+  canCreate: boolean;
   onCreate: () => void;
 };
 
-export function ProjectBoards({ boards, onCreate }: ProjectBoardsProps) {
+export function ProjectBoards({ boards, canCreate, onCreate }: ProjectBoardsProps) {
   const { t, i18n } = useTranslation();
   const hasBoards = boards.length > 0;
 
@@ -21,9 +22,11 @@ export function ProjectBoards({ boards, onCreate }: ProjectBoardsProps) {
         <h2 className="font-display text-heading-2 font-semibold text-fg">
           {t("projects.detail.boardsTitle")}
         </h2>
-        <Button variant="secondary" icon={PlusIcon} onClick={onCreate}>
-          {t("projects.detail.newBoard")}
-        </Button>
+        {canCreate && (
+          <Button variant="secondary" icon={PlusIcon} onClick={onCreate}>
+            {t("projects.detail.newBoard")}
+          </Button>
+        )}
       </div>
       {hasBoards ? (
         <ul className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">

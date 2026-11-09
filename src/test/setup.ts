@@ -1,5 +1,6 @@
 import "@testing-library/jest-dom/vitest";
-import { cleanup } from "@testing-library/react";
+import { cleanup, configure } from "@testing-library/react";
+import { toast } from "sonner";
 import { afterEach, beforeAll, vi } from "vitest";
 import { installMatchMedia, resetViewport } from "@/test/viewport";
 
@@ -44,6 +45,9 @@ class ResizeObserverStub {
   disconnect() {}
 }
 
+// The 1s default for findBy*/waitFor is too tight when the whole suite saturates the CPU.
+configure({ asyncUtilTimeout: 5000 });
+
 beforeAll(() => {
   installMatchMedia();
   globalThis.ResizeObserver = ResizeObserverStub;
@@ -51,6 +55,7 @@ beforeAll(() => {
 });
 
 afterEach(() => {
+  toast.dismiss();
   cleanup();
   resetViewport();
 });

@@ -77,7 +77,11 @@ export function ProjectDetailPage() {
             backlogTaskCount={details.backlogTaskCount}
             boardCount={details.boards.length}
           />
-          <ProjectBoards boards={details.boards} onCreate={() => setIsBoardFormOpen(true)} />
+          <ProjectBoards
+            boards={details.boards}
+            canCreate={details.project.archivedAt === null}
+            onCreate={() => setIsBoardFormOpen(true)}
+          />
           {isBoardFormOpen && (
             <BoardFormModal
               templates={boardForm.templates}

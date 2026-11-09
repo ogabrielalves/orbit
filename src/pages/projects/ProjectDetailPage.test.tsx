@@ -1,6 +1,5 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { toast } from "sonner";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { commands, type ProjectDetails } from "@/bindings";
 import { i18next } from "@/i18n";
@@ -56,7 +55,6 @@ describe("ProjectDetailPage", () => {
   });
 
   afterEach(() => {
-    toast.dismiss();
     vi.useRealTimers();
   });
 
@@ -306,6 +304,22 @@ describe("ProjectDetailPage", () => {
       await waitFor(() => expect(createBoard).toHaveBeenCalledTimes(1));
       expect(screen.getByRole("dialog", { name: "New board" })).toBeInTheDocument();
       expect(screen.getByRole("textbox", { name: "Board name" })).toHaveValue("Keep");
+    });
+
+    it("does not offer a new board for an archived project", async () => {
+      mockDetails(
+        createDetails({
+          project: createProjectFixture({
+            id: "p1",
+            status: "completed",
+            archivedAt: "2026-11-01T12:00:00Z",
+          }),
+        }),
+      );
+      renderApp("/projects/p1");
+      await screen.findByRole("heading", { name: "Boards" });
+
+      expect(screen.queryByRole("button", { name: "New board" })).not.toBeInTheDocument();
     });
 
     it("closes the form without creating anything", async () => {

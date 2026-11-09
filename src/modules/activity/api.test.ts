@@ -1,8 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ActivityEntry } from "@/bindings";
-import { fetchRecentActivity } from "@/modules/activity/api";
+import { fetchRecentActivity, fetchTaskHistory } from "@/modules/activity/api";
 
-const commands = vi.hoisted(() => ({ listRecentActivity: vi.fn() }));
+const commands = vi.hoisted(() => ({
+  listRecentActivity: vi.fn(),
+  getTaskHistory: vi.fn(),
+}));
 
 vi.mock("@/bindings", () => ({ commands }));
 
@@ -41,5 +44,26 @@ describe("activity api", () => {
     commands.listRecentActivity.mockResolvedValue({ status: "error", error: payload });
 
     await expect(fetchRecentActivity(10)).rejects.toBe(payload);
+  });
+});
+
+describe("task history api", () => {
+  beforeEach(() => {
+    commands.getTaskHistory.mockReset();
+  });
+
+  it("returns the entries of the task", async () => {
+    commands.getTaskHistory.mockResolvedValue({ status: "ok", data: [entry] });
+
+    await expect(fetchTaskHistory("t1", null)).resolves.toEqual([entry]);
+
+    expect(commands.getTaskHistory).toHaveBeenCalledWith("t1", null);
+  });
+
+  it("rejects with the backend error payload", async () => {
+    const payload = { code: "NOT_FOUND", message: "task not found" };
+    commands.getTaskHistory.mockResolvedValue({ status: "error", error: payload });
+
+    await expect(fetchTaskHistory("t1", 5)).rejects.toBe(payload);
   });
 });

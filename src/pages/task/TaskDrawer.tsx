@@ -7,6 +7,7 @@ import { IconButton } from "@/components/atoms/IconButton";
 import { Skeleton } from "@/components/atoms/Skeleton";
 import { DropdownMenu } from "@/components/molecules/DropdownMenu";
 import { ErrorState } from "@/components/molecules/ErrorState";
+import { SegmentedControl } from "@/components/molecules/SegmentedControl";
 import { Drawer } from "@/components/organisms/Drawer";
 import { getErrorMessageKey } from "@/lib/appError";
 import { buildCopyTitle } from "@/modules/tasks/form";
@@ -16,8 +17,11 @@ import { TaskChecklist } from "@/pages/task/TaskChecklist";
 import { TaskComments } from "@/pages/task/TaskComments";
 import { TaskDeleteDialog } from "@/pages/task/TaskDeleteDialog";
 import { TaskDetailsForm } from "@/pages/task/TaskDetailsForm";
+import { TaskHistory } from "@/pages/task/TaskHistory";
 import { TaskSubtasks } from "@/pages/task/TaskSubtasks";
 import { TaskTags } from "@/pages/task/TaskTags";
+
+type DrawerTab = "details" | "history";
 
 type TaskDrawerProps = {
   taskId: string;
@@ -31,6 +35,7 @@ export function TaskDrawer({ taskId, onClose }: TaskDrawerProps) {
   const restoreTask = useRestoreTask();
   const duplicateTask = useDuplicateTask();
   const [isDeleting, setIsDeleting] = useState(false);
+  const [tab, setTab] = useState<DrawerTab>("details");
 
   const task = taskQuery.data;
   const isLoading = taskQuery.isPending;
@@ -38,6 +43,7 @@ export function TaskDrawer({ taskId, onClose }: TaskDrawerProps) {
   const hasTask = task !== undefined;
   const isArchived = hasTask && task.archivedAt !== null;
   const showDeleteDialog = hasTask && isDeleting;
+  const isHistoryTab = tab === "history";
   const canHaveSubtasks = hasTask && task.parentTaskId === null;
 
   function handleDuplicate(source: Task) {
@@ -131,11 +137,26 @@ export function TaskDrawer({ taskId, onClose }: TaskDrawerProps) {
             )}
             <TaskDetailsForm key={task.id} task={task} />
             <div className="flex flex-col gap-6 border-t border-border p-6">
-              {canHaveSubtasks && <TaskSubtasks taskId={task.id} />}
-              <TaskChecklist taskId={task.id} />
-              <TaskTags taskId={task.id} />
-              <TaskAttachments taskId={task.id} />
-              <TaskComments taskId={task.id} />
+              <SegmentedControl
+                label={t("tasks.history.tabsLabel")}
+                value={tab}
+                onChange={setTab}
+                options={[
+                  { value: "details", label: t("tasks.history.detailsTab") },
+                  { value: "history", label: t("tasks.history.historyTab") },
+                ]}
+              />
+              {isHistoryTab ? (
+                <TaskHistory taskId={task.id} />
+              ) : (
+                <>
+                  {canHaveSubtasks && <TaskSubtasks taskId={task.id} />}
+                  <TaskChecklist taskId={task.id} />
+                  <TaskTags taskId={task.id} />
+                  <TaskAttachments taskId={task.id} />
+                  <TaskComments taskId={task.id} />
+                </>
+              )}
             </div>
           </>
         )}

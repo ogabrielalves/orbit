@@ -4,6 +4,7 @@ pub mod error;
 pub mod modules;
 pub mod shared;
 pub mod state;
+pub mod vault;
 
 use std::error::Error;
 

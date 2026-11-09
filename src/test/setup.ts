@@ -36,6 +36,16 @@ vi.mock("@/bindings", () => ({
     updateColumn: vi.fn(),
     moveColumn: vi.fn(),
     deleteColumn: vi.fn(),
+    listBoardTasks: vi.fn(),
+    getTask: vi.fn(),
+    createTask: vi.fn(),
+    updateTask: vi.fn(),
+    archiveTask: vi.fn(),
+    restoreTask: vi.fn(),
+    deleteTask: vi.fn(),
+    moveTask: vi.fn(),
+    sendTaskToBoard: vi.fn(),
+    sendTaskToBacklog: vi.fn(),
   },
 }));
 

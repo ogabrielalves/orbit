@@ -29,6 +29,8 @@ specta = { version = "=2.0.0-rc.26", features = ["derive"] }
 log = "0.4"
 tauri-plugin-log = "2"
 tauri-plugin-opener = "=2.7.2"
+tauri-plugin-dialog = "=2.8.4"
+sha2 = "0.10"
 
 
 [lints.clippy]

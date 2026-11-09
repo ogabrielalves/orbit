@@ -1,7 +1,8 @@
 use rusqlite::Connection;
 
 use super::models::{
-    Board, BoardColumn, BoardDetails, CreateBoardInput, DEFAULT_COLUMN_NAMES, UpdateBoardInput,
+    Board, BoardColumn, BoardDetails, CreateBoardInput, DEFAULT_COLUMNS, NewColumn,
+    UpdateBoardInput,
 };
 use super::repository;
 use crate::error::{AppError, AppResult};
@@ -17,7 +18,7 @@ pub const MAX_COLUMNS_PER_BOARD: usize = 30;
 
 pub fn create(state: &AppState, input: CreateBoardInput) -> AppResult<BoardDetails> {
     let name = require_text("board name", &input.name, BOARD_NAME_MAX_LENGTH)?;
-    let column_names = resolve_column_names(input.column_names)?;
+    let new_columns = resolve_columns(input.columns)?;
 
     let mut connection = state.database();
     let transaction = connection.transaction()?;
@@ -35,7 +36,7 @@ pub fn create(state: &AppState, input: CreateBoardInput) -> AppResult<BoardDetai
         updated_at: now.clone(),
     };
     repository::insert_board(&transaction, &board)?;
-    for column in initial_columns(&board.id, column_names, &now)? {
+    for column in initial_columns(&board.id, new_columns, &now)? {
         repository::insert_column(&transaction, &column)?;
     }
     let mut changes = ChangeSet::new();
@@ -133,34 +134,54 @@ fn load_details(connection: &Connection, id: &str) -> AppResult<BoardDetails> {
     Ok(BoardDetails { board, columns })
 }
 
-fn resolve_column_names(requested: Option<Vec<String>>) -> AppResult<Vec<String>> {
-    let names = requested.unwrap_or_else(|| {
-        DEFAULT_COLUMN_NAMES
+fn resolve_columns(requested: Option<Vec<NewColumn>>) -> AppResult<Vec<NewColumn>> {
+    let columns = requested.unwrap_or_else(|| {
+        DEFAULT_COLUMNS
             .iter()
-            .map(|name| name.to_string())
+            .map(|(name, kind)| NewColumn {
+                name: name.to_string(),
+                kind: *kind,
+            })
             .collect()
     });
 
-    let has_too_many_columns = names.len() > MAX_COLUMNS_PER_BOARD;
+    let has_too_many_columns = columns.len() > MAX_COLUMNS_PER_BOARD;
     if has_too_many_columns {
         return Err(AppError::Validation(format!(
             "a board cannot have more than {MAX_COLUMNS_PER_BOARD} columns"
         )));
     }
-    names
-        .iter()
-        .map(|name| require_text("column name", name, COLUMN_NAME_MAX_LENGTH))
+    columns
+        .into_iter()
+        .map(|column| {
+            let name = require_text("column name", &column.name, COLUMN_NAME_MAX_LENGTH)?;
+            Ok(NewColumn {
+                name,
+                kind: column.kind,
+            })
+        })
         .collect()
 }
 
-fn initial_columns(board_id: &str, names: Vec<String>, now: &str) -> AppResult<Vec<BoardColumn>> {
-    let mut columns: Vec<BoardColumn> = Vec::with_capacity(names.len());
-    for name in names {
+fn initial_columns(
+    board_id: &str,
+    new_columns: Vec<NewColumn>,
+    now: &str,
+) -> AppResult<Vec<BoardColumn>> {
+    let mut columns: Vec<BoardColumn> = Vec::with_capacity(new_columns.len());
+    for new_column in new_columns {
         let next_position = match columns.last() {
             Some(previous) => position::after(&previous.position)?,
             None => position::first(),
         };
-        columns.push(BoardColumn::new(board_id, name, None, next_position, now));
+        columns.push(BoardColumn::new(
+            board_id,
+            new_column.name,
+            None,
+            new_column.kind,
+            next_position,
+            now,
+        ));
     }
     Ok(columns)
 }
@@ -170,6 +191,7 @@ mod tests {
     use super::*;
     use crate::db::{connection::open_in_memory, migrations};
     use crate::modules::activity::models::ActivityEntry;
+    use crate::modules::boards::models::ColumnKind;
     use std::time::Duration;
 
     const NOW: &str = "2026-11-08T10:00:00.000Z";
@@ -190,7 +212,7 @@ mod tests {
         CreateBoardInput {
             project_id: project_id.into(),
             name: name.into(),
-            column_names: None,
+            columns: None,
         }
     }
 
@@ -254,6 +276,47 @@ mod tests {
     }
 
     #[test]
+    fn default_board_columns_carry_the_default_kinds() {
+        let (state, project_id) = state_with_project();
+
+        let details = create_named(&state, &project_id, "Sprint");
+
+        let kinds: Vec<ColumnKind> = details.columns.iter().map(|column| column.kind).collect();
+        assert_eq!(
+            kinds,
+            [
+                ColumnKind::Todo,
+                ColumnKind::Todo,
+                ColumnKind::InProgress,
+                ColumnKind::InProgress,
+                ColumnKind::Done
+            ]
+        );
+    }
+
+    #[test]
+    fn create_stores_the_kind_sent_for_each_column() {
+        let (state, project_id) = state_with_project();
+        let custom = CreateBoardInput {
+            columns: Some(vec![
+                NewColumn::new("Ideas", ColumnKind::Todo),
+                NewColumn::new("Shipped", ColumnKind::Done),
+                NewColumn::new("Archived", ColumnKind::Done),
+            ]),
+            ..input(&project_id, "Quadro")
+        };
+
+        let details = create(&state, custom).expect("creates");
+        let reloaded = get(&state, &details.board.id).expect("reads");
+
+        let kinds: Vec<ColumnKind> = reloaded.columns.iter().map(|column| column.kind).collect();
+        assert_eq!(
+            kinds,
+            [ColumnKind::Todo, ColumnKind::Done, ColumnKind::Done]
+        );
+    }
+
+    #[test]
     fn default_columns_have_strictly_increasing_positions() {
         let (state, project_id) = state_with_project();
 
@@ -274,10 +337,10 @@ mod tests {
     fn create_uses_the_column_names_sent_by_the_front() {
         let (state, project_id) = state_with_project();
         let translated = CreateBoardInput {
-            column_names: Some(vec![
-                " Pendente ".into(),
-                "Em andamento".into(),
-                "Feito".into(),
+            columns: Some(vec![
+                NewColumn::new(" Pendente ", ColumnKind::Todo),
+                NewColumn::new("Em andamento", ColumnKind::InProgress),
+                NewColumn::new("Feito", ColumnKind::Done),
             ]),
             ..input(&project_id, "Quadro")
         };
@@ -294,7 +357,7 @@ mod tests {
     fn create_with_an_empty_name_list_makes_an_empty_board() {
         let (state, project_id) = state_with_project();
         let empty = CreateBoardInput {
-            column_names: Some(vec![]),
+            columns: Some(vec![]),
             ..input(&project_id, "Empty")
         };
 
@@ -317,11 +380,17 @@ mod tests {
         let (state, project_id) = state_with_project();
         let too_long = "x".repeat(BOARD_NAME_MAX_LENGTH + 1);
         let long_column = CreateBoardInput {
-            column_names: Some(vec!["y".repeat(COLUMN_NAME_MAX_LENGTH + 1)]),
+            columns: Some(vec![NewColumn::new(
+                &"y".repeat(COLUMN_NAME_MAX_LENGTH + 1),
+                ColumnKind::Todo,
+            )]),
             ..input(&project_id, "Board")
         };
         let blank_column = CreateBoardInput {
-            column_names: Some(vec!["Ok".into(), "  ".into()]),
+            columns: Some(vec![
+                NewColumn::new("Ok", ColumnKind::Todo),
+                NewColumn::new("  ", ColumnKind::Todo),
+            ]),
             ..input(&project_id, "Board")
         };
 
@@ -348,13 +417,17 @@ mod tests {
     #[test]
     fn create_rejects_more_columns_than_the_limit() {
         let (state, project_id) = state_with_project();
-        let names = |amount: usize| (0..amount).map(|index| format!("C{index}")).collect();
+        let names = |amount: usize| {
+            (0..amount)
+                .map(|index| NewColumn::new(&format!("C{index}"), ColumnKind::InProgress))
+                .collect()
+        };
         let at_limit = CreateBoardInput {
-            column_names: Some(names(MAX_COLUMNS_PER_BOARD)),
+            columns: Some(names(MAX_COLUMNS_PER_BOARD)),
             ..input(&project_id, "At limit")
         };
         let over_limit = CreateBoardInput {
-            column_names: Some(names(MAX_COLUMNS_PER_BOARD + 1)),
+            columns: Some(names(MAX_COLUMNS_PER_BOARD + 1)),
             ..input(&project_id, "Over limit")
         };
 

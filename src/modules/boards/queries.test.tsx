@@ -36,6 +36,7 @@ function column(id: string, overrides: Partial<BoardColumn> = {}): BoardColumn {
     name: id.toUpperCase(),
     position: id,
     color: null,
+    kind: "todo",
     createdAt: "2026-11-08T10:00:00Z",
     updatedAt: "2026-11-08T10:00:00Z",
     taskCount: 0,
@@ -118,13 +119,17 @@ describe("board queries", () => {
       const { result } = renderHook(() => useCreateBoard(), { wrapper });
 
       await act(() =>
-        result.current.mutateAsync({ projectId: "p1", name: "Sprint", columnNames: ["A"] }),
+        result.current.mutateAsync({
+          projectId: "p1",
+          name: "Sprint",
+          columns: [{ name: "A", kind: "todo" }],
+        }),
       );
 
       expect(commands.createBoard).toHaveBeenCalledWith({
         projectId: "p1",
         name: "Sprint",
-        columnNames: ["A"],
+        columns: [{ name: "A", kind: "todo" }],
       });
       expect(queryClient.getQueryData(boardKeys.detail("b1"))).toEqual(details(["a"]));
       expect(invalidate).toHaveBeenCalledWith({ queryKey: projectKeys.all });

@@ -1,6 +1,6 @@
 use rusqlite::Connection;
 
-use super::models::{BoardColumn, CreateColumnInput, UpdateColumnInput};
+use super::models::{BoardColumn, ColumnKind, CreateColumnInput, UpdateColumnInput};
 use super::repository::{self, ColumnSlot};
 use super::service::{COLUMN_NAME_MAX_LENGTH, MAX_COLUMNS_PER_BOARD, find_existing};
 use crate::error::{AppError, AppResult};
@@ -34,12 +34,14 @@ pub fn create(state: &AppState, input: CreateColumnInput) -> AppResult<BoardColu
         &input.board_id,
         name,
         optional_text(input.color),
+        input.kind.unwrap_or(ColumnKind::InProgress),
         next_position,
         &time::now(),
     );
     repository::insert_column(&transaction, &column)?;
     let mut changes = ChangeSet::new();
     changes.track("name", None, Some(column.name.as_str()));
+    changes.track("kind", None, Some(column.kind.as_str()));
     record(&transaction, &column.id, ActivityAction::Created, changes)?;
     transaction.commit()?;
     Ok(column)
@@ -57,6 +59,9 @@ pub fn update(state: &AppState, id: &str, input: UpdateColumnInput) -> AppResult
     if let Some(color) = input.color {
         changed.color = optional_text(color);
     }
+    if let Some(kind) = input.kind {
+        changed.kind = kind;
+    }
 
     let mut changes = ChangeSet::new();
     changes.track(
@@ -65,6 +70,11 @@ pub fn update(state: &AppState, id: &str, input: UpdateColumnInput) -> AppResult
         Some(changed.name.as_str()),
     );
     changes.track("color", current.color.as_deref(), changed.color.as_deref());
+    changes.track(
+        "kind",
+        Some(current.kind.as_str()),
+        Some(changed.kind.as_str()),
+    );
     let has_changes = !changes.is_empty();
     if !has_changes {
         return Ok(current);
@@ -167,7 +177,7 @@ mod tests {
     use super::*;
     use crate::db::{connection::open_in_memory, migrations};
     use crate::modules::activity::models::ActivityEntry;
-    use crate::modules::boards::models::{BoardDetails, CreateBoardInput};
+    use crate::modules::boards::models::{BoardDetails, ColumnKind, CreateBoardInput, NewColumn};
     use crate::modules::boards::service as boards;
     use std::time::Duration;
 
@@ -191,7 +201,12 @@ mod tests {
             CreateBoardInput {
                 project_id: "p1".into(),
                 name: "Board".into(),
-                column_names: Some(names.iter().map(|name| name.to_string()).collect()),
+                columns: Some(
+                    names
+                        .iter()
+                        .map(|name| NewColumn::new(name, ColumnKind::InProgress))
+                        .collect(),
+                ),
             },
         )
         .expect("creates board")
@@ -233,6 +248,7 @@ mod tests {
             board_id: board_id.into(),
             name: name.into(),
             color: None,
+            kind: None,
         }
     }
 
@@ -346,6 +362,7 @@ mod tests {
             UpdateColumnInput {
                 name: Some(" New ".into()),
                 color: Some(Some("#00ff00".into())),
+                kind: None,
             },
         )
         .expect("updates");
@@ -694,5 +711,70 @@ mod tests {
 
         assert!(created.is_err() && renamed.is_err() && moved.is_err() && deleted.is_err());
         assert_eq!(names_in_order(&state, &board.board.id), ["A", "B"]);
+    }
+
+    #[test]
+    fn create_defaults_the_kind_to_in_progress_and_accepts_an_explicit_one() {
+        let state = state();
+        let board = board_with_columns(&state, &["A"]);
+
+        let default = create(&state, new_column(&board.board.id, "B")).expect("creates");
+        let explicit = create(
+            &state,
+            CreateColumnInput {
+                kind: Some(ColumnKind::Done),
+                ..new_column(&board.board.id, "C")
+            },
+        )
+        .expect("creates");
+
+        assert_eq!(default.kind, ColumnKind::InProgress);
+        assert_eq!(explicit.kind, ColumnKind::Done);
+    }
+
+    #[test]
+    fn update_changes_the_kind_and_logs_it() {
+        let state = state();
+        let board = board_with_columns(&state, &["A"]);
+        let id = board.columns[0].id.clone();
+
+        let updated = update(
+            &state,
+            &id,
+            UpdateColumnInput {
+                kind: Some(ColumnKind::Done),
+                ..Default::default()
+            },
+        )
+        .expect("updates");
+
+        assert_eq!(updated.kind, ColumnKind::Done);
+        let logged = column_entries(&state);
+        let changes = logged
+            .last()
+            .and_then(|entry| entry.changes.as_ref())
+            .expect("has changes");
+        assert_eq!(changes["kind"].from.as_deref(), Some("in_progress"));
+        assert_eq!(changes["kind"].to.as_deref(), Some("done"));
+    }
+
+    #[test]
+    fn update_with_the_same_kind_is_a_no_op_without_a_log_entry() {
+        let state = state();
+        let board = board_with_columns(&state, &["A"]);
+        let id = board.columns[0].id.clone();
+        let before = column_entries(&state).len();
+
+        update(
+            &state,
+            &id,
+            UpdateColumnInput {
+                kind: Some(ColumnKind::InProgress),
+                ..Default::default()
+            },
+        )
+        .expect("updates");
+
+        assert_eq!(column_entries(&state).len(), before);
     }
 }

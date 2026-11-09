@@ -2,6 +2,8 @@ use rusqlite::{Connection, OptionalExtension, Row};
 
 use super::models::{Task, TaskPriority};
 use crate::error::AppResult;
+use crate::modules::boards::models::ColumnKind;
+use crate::modules::boards::repository::parse_kind;
 
 const TASK_COLUMNS: &str = "id, project_id, board_id, column_id, parent_task_id, title, description, \
      priority, due_date, position, created_at, updated_at, completed_at, archived_at";
@@ -12,6 +14,7 @@ pub struct ColumnInfo {
     pub board_id: String,
     pub board_name: String,
     pub project_id: String,
+    pub kind: ColumnKind,
 }
 
 pub struct TaskSlot {
@@ -74,7 +77,7 @@ pub fn board_exists(connection: &Connection, board_id: &str) -> AppResult<bool> 
 pub fn find_column_info(connection: &Connection, column_id: &str) -> AppResult<Option<ColumnInfo>> {
     let info = connection
         .query_row(
-            "SELECT c.id, c.name, c.board_id, b.name, b.project_id
+            "SELECT c.id, c.name, c.board_id, b.name, b.project_id, c.kind
              FROM columns c JOIN boards b ON b.id = c.board_id
              WHERE c.id = ?1",
             [column_id],
@@ -90,7 +93,7 @@ pub fn find_first_column_info(
 ) -> AppResult<Option<ColumnInfo>> {
     let info = connection
         .query_row(
-            "SELECT c.id, c.name, c.board_id, b.name, b.project_id
+            "SELECT c.id, c.name, c.board_id, b.name, b.project_id, c.kind
              FROM columns c JOIN boards b ON b.id = c.board_id
              WHERE c.board_id = ?1
              ORDER BY c.position
@@ -109,6 +112,7 @@ fn map_column_info(row: &Row<'_>) -> rusqlite::Result<ColumnInfo> {
         board_id: row.get(2)?,
         board_name: row.get(3)?,
         project_id: row.get(4)?,
+        kind: parse_kind(5, row.get(5)?)?,
     })
 }
 
@@ -200,13 +204,14 @@ pub fn set_placement(
     board_id: Option<&str>,
     column_id: Option<&str>,
     position: &str,
+    completed_at: Option<&str>,
     updated_at: &str,
 ) -> AppResult<usize> {
     let affected = connection.execute(
         "UPDATE tasks
-         SET board_id = ?2, column_id = ?3, position = ?4, updated_at = ?5
+         SET board_id = ?2, column_id = ?3, position = ?4, completed_at = ?5, updated_at = ?6
          WHERE id = ?1",
-        (id, board_id, column_id, position, updated_at),
+        (id, board_id, column_id, position, completed_at, updated_at),
     )?;
     Ok(affected)
 }
@@ -381,11 +386,20 @@ mod tests {
         let connection = migrated_connection();
         insert(&connection, &task("t1", "V")).expect("inserts");
 
-        set_placement(&connection, "t1", Some("b1"), Some("c2"), "k", NOW).expect("sends");
+        set_placement(
+            &connection,
+            "t1",
+            Some("b1"),
+            Some("c2"),
+            "k",
+            Some(NOW),
+            NOW,
+        )
+        .expect("sends");
         let on_board = find_by_id(&connection, "t1")
             .expect("reads")
             .expect("exists");
-        set_placement(&connection, "t1", None, None, "z", NOW).expect("returns");
+        set_placement(&connection, "t1", None, None, "z", None, NOW).expect("returns");
         let in_backlog = find_by_id(&connection, "t1")
             .expect("reads")
             .expect("exists");

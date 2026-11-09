@@ -9,6 +9,7 @@ function column(id: string): BoardColumn {
     name: id.toUpperCase(),
     position: id,
     color: null,
+    kind: "todo",
     createdAt: "2026-11-08T10:00:00Z",
     updatedAt: "2026-11-08T10:00:00Z",
     taskCount: 0,

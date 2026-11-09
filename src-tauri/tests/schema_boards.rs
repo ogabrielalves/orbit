@@ -164,3 +164,36 @@ fn column_listing_by_board_is_ordered_by_the_unique_position_index() {
     );
     assert!(!plan.contains("TEMP B-TREE"), "plan was: {plan}");
 }
+
+#[test]
+fn column_kind_defaults_to_in_progress() {
+    let connection = connection_with_project();
+    insert_board(&connection, "b1", "p1").expect("board");
+    insert_column(&connection, "c1", "b1", "V").expect("column");
+
+    let kind: String = connection
+        .query_row("SELECT kind FROM columns WHERE id = 'c1'", [], |row| {
+            row.get(0)
+        })
+        .expect("reads");
+
+    assert_eq!(kind, "in_progress");
+}
+
+#[test]
+fn column_kind_accepts_only_the_three_known_values() {
+    let connection = connection_with_project();
+    insert_board(&connection, "b1", "p1").expect("board");
+    insert_column(&connection, "c1", "b1", "V").expect("column");
+
+    for kind in ["todo", "in_progress", "done"] {
+        let result = connection.execute("UPDATE columns SET kind = ?1 WHERE id = 'c1'", [kind]);
+        assert!(result.is_ok(), "{kind} should be accepted");
+    }
+    for kind in ["doing", "Done", ""] {
+        let result = connection.execute("UPDATE columns SET kind = ?1 WHERE id = 'c1'", [kind]);
+        assert!(result.is_err(), "{kind:?} should be rejected");
+    }
+    let null_kind = connection.execute("UPDATE columns SET kind = NULL WHERE id = 'c1'", []);
+    assert!(null_kind.is_err());
+}

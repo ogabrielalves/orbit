@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { Board, BoardColumn, BoardDetails } from "@/bindings";
+import type { Board, BoardColumn, BoardDetails, CreateBoardInput } from "@/bindings";
 import {
   createBoard,
   createColumn,
@@ -37,6 +37,7 @@ const column: BoardColumn = {
   name: "To do",
   position: "a0",
   color: null,
+  kind: "todo",
   createdAt: "2026-11-08T10:00:00Z",
   updatedAt: "2026-11-08T10:00:00Z",
   taskCount: 0,
@@ -61,7 +62,14 @@ describe("boards api", () => {
 
   it("creates a board with the given column names", async () => {
     commands.createBoard.mockResolvedValue({ status: "ok", data: details });
-    const input = { projectId: "p1", name: "Sprint", columnNames: ["A fazer", "Feito"] };
+    const input: CreateBoardInput = {
+      projectId: "p1",
+      name: "Sprint",
+      columns: [
+        { name: "A fazer", kind: "todo" },
+        { name: "Feito", kind: "done" },
+      ],
+    };
 
     await expect(createBoard(input)).resolves.toEqual(details);
 
@@ -71,12 +79,12 @@ describe("boards api", () => {
   it("can create a board without columns", async () => {
     commands.createBoard.mockResolvedValue({ status: "ok", data: { board, columns: [] } });
 
-    await createBoard({ projectId: "p1", name: "Blank", columnNames: [] });
+    await createBoard({ projectId: "p1", name: "Blank", columns: [] });
 
     expect(commands.createBoard).toHaveBeenCalledWith({
       projectId: "p1",
       name: "Blank",
-      columnNames: [],
+      columns: [],
     });
   });
 

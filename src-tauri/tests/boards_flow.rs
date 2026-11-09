@@ -5,7 +5,8 @@ use orbit_lib::error::AppError;
 use orbit_lib::modules::activity::models::{ActivityAction, EntityType};
 use orbit_lib::modules::activity::service as activity;
 use orbit_lib::modules::boards::models::{
-    BoardDetails, CreateBoardInput, CreateColumnInput, UpdateBoardInput, UpdateColumnInput,
+    BoardDetails, ColumnKind, CreateBoardInput, CreateColumnInput, NewColumn, UpdateBoardInput,
+    UpdateColumnInput,
 };
 use orbit_lib::modules::boards::{column_service, service};
 use orbit_lib::modules::projects::models::CreateProjectInput;
@@ -28,7 +29,12 @@ fn create_board(state: &AppState, project_id: &str, columns: &[&str]) -> BoardDe
     let input = CreateBoardInput {
         project_id: project_id.into(),
         name: "Sprint".into(),
-        column_names: Some(columns.iter().map(|name| name.to_string()).collect()),
+        columns: Some(
+            columns
+                .iter()
+                .map(|name| NewColumn::new(name, ColumnKind::InProgress))
+                .collect(),
+        ),
     };
     service::create(state, input).expect("creates board")
 }
@@ -71,10 +77,12 @@ fn board_columns_keep_their_order_and_names_after_a_restart() {
         board_id: board.board.id.clone(),
         name: "D".into(),
         color: Some("#123456".into()),
+        kind: Some(ColumnKind::Done),
     };
     column_service::create(&first_run, extra).expect("adds D");
     let rename = UpdateColumnInput {
         name: Some("A2".into()),
+        kind: Some(ColumnKind::Todo),
         ..Default::default()
     };
     column_service::update(&first_run, &board.columns[0].id, rename).expect("renames A");
@@ -85,6 +93,16 @@ fn board_columns_keep_their_order_and_names_after_a_restart() {
     let reloaded = service::get(&second_run, &board.board.id).expect("reads");
     assert_eq!(column_names(&reloaded), ["C", "A2", "B", "D"]);
     assert_eq!(reloaded.columns[3].color.as_deref(), Some("#123456"));
+    let kinds: Vec<ColumnKind> = reloaded.columns.iter().map(|column| column.kind).collect();
+    assert_eq!(
+        kinds,
+        [
+            ColumnKind::InProgress,
+            ColumnKind::Todo,
+            ColumnKind::InProgress,
+            ColumnKind::Done
+        ]
+    );
 }
 
 #[test]

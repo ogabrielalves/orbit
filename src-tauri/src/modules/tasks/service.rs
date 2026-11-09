@@ -6,6 +6,7 @@ use super::repository::{self, TaskSlot};
 use crate::error::{AppError, AppResult};
 use crate::modules::activity::models::{ActivityAction, ChangeSet, EntityType};
 use crate::modules::activity::service as activity;
+use crate::modules::boards::models::ColumnKind;
 use crate::shared::text::{optional_text, require_text, text_or_empty};
 use crate::shared::{files, id, position, time};
 use crate::state::AppState;
@@ -28,7 +29,7 @@ pub fn create(state: &AppState, input: CreateTaskInput) -> AppResult<Task> {
         return Err(AppError::NotFound("project".into()));
     }
 
-    let (board_id, column_id, siblings) = match &input.column_id {
+    let (board_id, column_id, siblings, lands_in_done) = match &input.column_id {
         Some(column_id) => {
             let column = repository::find_column_info(&transaction, column_id)?
                 .ok_or_else(|| AppError::NotFound("column".into()))?;
@@ -39,11 +40,12 @@ pub fn create(state: &AppState, input: CreateTaskInput) -> AppResult<Task> {
                 ));
             }
             let slots = repository::list_column_slots(&transaction, &column.id)?;
-            (Some(column.board_id), Some(column.id), slots)
+            let lands_in_done = column.kind == ColumnKind::Done;
+            (Some(column.board_id), Some(column.id), slots, lands_in_done)
         }
         None => {
             let slots = repository::list_backlog_slots(&transaction, &input.project_id)?;
-            (None, None, slots)
+            (None, None, slots, false)
         }
     };
 
@@ -60,8 +62,8 @@ pub fn create(state: &AppState, input: CreateTaskInput) -> AppResult<Task> {
         due_date,
         position: end_position(&siblings)?,
         created_at: now.clone(),
-        updated_at: now,
-        completed_at: None,
+        updated_at: now.clone(),
+        completed_at: lands_in_done.then_some(now),
         archived_at: None,
     };
     repository::insert(&transaction, &task)?;
@@ -279,11 +281,27 @@ mod tests {
     use super::*;
     use crate::db::{connection::open_in_memory, migrations};
     use crate::modules::activity::models::ActivityEntry;
-    use crate::modules::boards::models::{BoardDetails, CreateBoardInput};
+    use crate::modules::boards::models::{BoardDetails, ColumnKind, CreateBoardInput, NewColumn};
     use crate::modules::boards::service as boards;
     use std::time::Duration;
 
     const NOW: &str = "2026-11-08T10:00:00.000Z";
+
+    /// Test convention: "Todo" is a todo stage, "Done" is the done stage, anything else is in progress.
+    fn kind_of(name: &str) -> ColumnKind {
+        match name {
+            "Todo" => ColumnKind::Todo,
+            "Done" => ColumnKind::Done,
+            _ => ColumnKind::InProgress,
+        }
+    }
+
+    fn named_columns(names: &[&str]) -> Vec<NewColumn> {
+        names
+            .iter()
+            .map(|name| NewColumn::new(name, kind_of(name)))
+            .collect()
+    }
 
     fn state() -> AppState {
         let mut connection = open_in_memory().expect("opens");
@@ -305,7 +323,7 @@ mod tests {
             CreateBoardInput {
                 project_id: project_id.into(),
                 name: "Board".into(),
-                column_names: Some(columns.iter().map(|name| name.to_string()).collect()),
+                columns: Some(named_columns(columns)),
             },
         )
         .expect("creates board")
@@ -962,5 +980,32 @@ mod tests {
             list_by_board(&state, "missing"),
             Err(AppError::NotFound(_))
         ));
+    }
+
+    #[test]
+    fn creating_a_task_straight_into_a_done_column_stamps_completed_at() {
+        let state = state();
+        let details = board(&state, "p1", &["Todo", "Done"]);
+        let in_column = |index: usize, title: &str| {
+            create(
+                &state,
+                CreateTaskInput {
+                    column_id: Some(details.columns[index].id.clone()),
+                    ..input("p1", title)
+                },
+            )
+            .expect("creates")
+        };
+
+        let open = in_column(0, "Open");
+        let finished = in_column(1, "Finished");
+        let idea = create_in_backlog(&state, "p1", "Idea");
+
+        assert_eq!(open.completed_at, None);
+        assert_eq!(idea.completed_at, None);
+        assert_eq!(
+            finished.completed_at.as_deref(),
+            Some(finished.created_at.as_str())
+        );
     }
 }

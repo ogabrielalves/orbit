@@ -4,7 +4,7 @@ use orbit_lib::bootstrap::initialize_state;
 use orbit_lib::error::AppError;
 use orbit_lib::modules::activity::models::{ActivityAction, EntityType};
 use orbit_lib::modules::activity::service as activity;
-use orbit_lib::modules::boards::models::{BoardDetails, CreateBoardInput};
+use orbit_lib::modules::boards::models::{BoardDetails, ColumnKind, CreateBoardInput, NewColumn};
 use orbit_lib::modules::boards::{column_service, service as boards};
 use orbit_lib::modules::dashboard::models::DashboardSummaryInput;
 use orbit_lib::modules::dashboard::service as dashboard;
@@ -28,7 +28,11 @@ fn create_board(state: &AppState, project_id: &str) -> BoardDetails {
     let input = CreateBoardInput {
         project_id: project_id.into(),
         name: "Sprint".into(),
-        column_names: Some(vec!["Todo".into(), "Doing".into(), "Done".into()]),
+        columns: Some(vec![
+            NewColumn::new("Todo", ColumnKind::Todo),
+            NewColumn::new("Doing", ColumnKind::InProgress),
+            NewColumn::new("Done", ColumnKind::Done),
+        ]),
     };
     boards::create(state, input).expect("creates board")
 }
@@ -264,4 +268,40 @@ fn task_history_is_recorded_in_order_and_survives_a_restart() {
             ActivityAction::Deleted
         ]
     );
+}
+
+#[test]
+fn completed_at_follows_the_done_column_and_survives_a_restart() {
+    let directory = tempfile::tempdir().expect("temp dir");
+    let first_run = initialize_state(directory.path()).expect("first start");
+    let project_id = create_project(&first_run);
+    let board = create_board(&first_run, &project_id);
+    let (todo, done) = (board.columns[0].id.clone(), board.columns[2].id.clone());
+    let task = create_task(&first_run, &project_id, "T", Some(&todo));
+    let finished = placement_service::move_task(&first_run, &task.id, &done, None).expect("done");
+    drop(first_run);
+
+    let second_run = initialize_state(directory.path()).expect("second start");
+    let reloaded = tasks::get(&second_run, &task.id).expect("reads");
+    let reopened =
+        placement_service::move_task(&second_run, &task.id, &todo, None).expect("reopens");
+
+    assert!(finished.completed_at.is_some());
+    assert_eq!(reloaded.completed_at, finished.completed_at);
+    assert_eq!(reopened.completed_at, None);
+}
+
+#[test]
+fn deleting_a_board_clears_completed_at_of_the_tasks_it_sends_to_the_backlog() {
+    let directory = tempfile::tempdir().expect("temp dir");
+    let state = initialize_state(directory.path()).expect("starts");
+    let project_id = create_project(&state);
+    let board = create_board(&state, &project_id);
+    let task = create_task(&state, &project_id, "Shipped", Some(&board.columns[2].id));
+    assert!(task.completed_at.is_some());
+
+    boards::delete(&state, &board.board.id).expect("deletes board");
+    let orphaned = tasks::get(&state, &task.id).expect("task survives");
+
+    assert_eq!((orphaned.board_id, orphaned.completed_at), (None, None));
 }

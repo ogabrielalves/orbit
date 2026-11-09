@@ -62,7 +62,7 @@ fn format_date(date: NaiveDate) -> String {
 mod tests {
     use super::*;
     use crate::db::{connection::open_in_memory, migrations};
-    use crate::modules::boards::models::{BoardDetails, CreateBoardInput};
+    use crate::modules::boards::models::{BoardDetails, ColumnKind, CreateBoardInput, NewColumn};
     use crate::modules::boards::{column_service, service as boards};
     use crate::modules::tasks::models::TaskPriority;
 
@@ -90,16 +90,33 @@ mod tests {
         );
     }
 
-    fn add_board(state: &AppState, project_id: &str, columns: &[&str]) -> BoardDetails {
+    const TODO: ColumnKind = ColumnKind::Todo;
+    const DOING: ColumnKind = ColumnKind::InProgress;
+    const DONE: ColumnKind = ColumnKind::Done;
+
+    fn add_board(
+        state: &AppState,
+        project_id: &str,
+        columns: &[(&str, ColumnKind)],
+    ) -> BoardDetails {
         boards::create(
             state,
             CreateBoardInput {
                 project_id: project_id.into(),
                 name: "Board".into(),
-                column_names: Some(columns.iter().map(|name| name.to_string()).collect()),
+                columns: Some(
+                    columns
+                        .iter()
+                        .map(|(name, kind)| NewColumn::new(name, *kind))
+                        .collect(),
+                ),
             },
         )
         .expect("creates board")
+    }
+
+    fn todo_and_done(state: &AppState, project_id: &str) -> BoardDetails {
+        add_board(state, project_id, &[("Todo", TODO), ("Done", DONE)])
     }
 
     fn add_task_on_board(
@@ -178,13 +195,19 @@ mod tests {
     }
 
     #[test]
-    fn task_state_comes_from_the_column_position_on_a_five_column_board() {
+    fn task_state_comes_from_the_column_kind_on_a_five_column_board() {
         let state = state();
         add_project(&state, "p1");
         let board = add_board(
             &state,
             "p1",
-            &["Backlog", "To Do", "Doing", "Review", "Done"],
+            &[
+                ("Backlog", TODO),
+                ("To Do", TODO),
+                ("Doing", DOING),
+                ("Review", DOING),
+                ("Done", DONE),
+            ],
         );
         add_task_on_board(&state, "first", "p1", &board, 0);
         add_task_on_board(&state, "second", "p1", &board, 1);
@@ -195,8 +218,8 @@ mod tests {
 
         let counts = summary_for_today(&state).tasks;
 
-        assert_eq!(counts.pending, 1);
-        assert_eq!(counts.in_progress, 3);
+        assert_eq!(counts.pending, 2);
+        assert_eq!(counts.in_progress, 2);
         assert_eq!(counts.completed, 2);
         assert_eq!(counts.backlog, 0);
         assert_eq!(counts.total, 6);
@@ -206,7 +229,7 @@ mod tests {
     fn tasks_without_a_board_count_as_backlog_and_in_the_total() {
         let state = state();
         add_project(&state, "p1");
-        let board = add_board(&state, "p1", &["Todo", "Done"]);
+        let board = todo_and_done(&state, "p1");
         add_backlog_task(&state, "idea-1", "p1");
         add_backlog_task(&state, "idea-2", "p1");
         add_task_on_board(&state, "on-board", "p1", &board, 0);
@@ -222,7 +245,7 @@ mod tests {
     fn a_two_column_board_has_only_pending_and_completed() {
         let state = state();
         add_project(&state, "p1");
-        let board = add_board(&state, "p1", &["Todo", "Done"]);
+        let board = todo_and_done(&state, "p1");
         add_task_on_board(&state, "a", "p1", &board, 0);
         add_task_on_board(&state, "b", "p1", &board, 1);
 
@@ -235,25 +258,45 @@ mod tests {
     }
 
     #[test]
-    fn a_single_column_board_never_counts_as_completed() {
+    fn a_single_column_counts_by_its_own_kind() {
         let state = state();
         add_project(&state, "p1");
-        let board = add_board(&state, "p1", &["Only"]);
-        add_task_on_board(&state, "a", "p1", &board, 0);
+        let todo_only = add_board(&state, "p1", &[("Only", TODO)]);
+        let done_only = add_board(&state, "p1", &[("Only", DONE)]);
+        add_task_on_board(&state, "a", "p1", &todo_only, 0);
+        add_task_on_board(&state, "b", "p1", &done_only, 0);
 
         let counts = summary_for_today(&state).tasks;
 
         assert_eq!(
             (counts.pending, counts.in_progress, counts.completed),
-            (1, 0, 0)
+            (1, 0, 1)
         );
     }
 
     #[test]
-    fn adding_a_column_after_done_moves_the_completed_state_to_the_new_last_column() {
+    fn every_done_column_counts_as_completed_and_names_do_not_matter() {
         let state = state();
         add_project(&state, "p1");
-        let board = add_board(&state, "p1", &["Todo", "Done"]);
+        let board = add_board(
+            &state,
+            "p1",
+            &[("Done", DOING), ("Shipped", DONE), ("Released", DONE)],
+        );
+        add_task_on_board(&state, "named-done-but-doing", "p1", &board, 0);
+        add_task_on_board(&state, "shipped", "p1", &board, 1);
+        add_task_on_board(&state, "released", "p1", &board, 2);
+
+        let counts = summary_for_today(&state).tasks;
+
+        assert_eq!((counts.in_progress, counts.completed), (1, 2));
+    }
+
+    #[test]
+    fn adding_a_column_does_not_change_the_state_of_existing_tasks() {
+        let state = state();
+        add_project(&state, "p1");
+        let board = todo_and_done(&state, "p1");
         add_task_on_board(&state, "in-done", "p1", &board, 1);
         column_service::create(
             &state,
@@ -261,34 +304,60 @@ mod tests {
                 board_id: board.board.id.clone(),
                 name: "Shipped".into(),
                 color: None,
+                kind: Some(DONE),
             },
         )
         .expect("adds column");
 
         let counts = summary_for_today(&state).tasks;
 
-        assert_eq!((counts.in_progress, counts.completed), (1, 0));
+        assert_eq!((counts.in_progress, counts.completed), (0, 1));
     }
 
     #[test]
-    fn reordering_columns_changes_which_tasks_are_completed() {
+    fn reordering_columns_does_not_change_the_state_of_tasks() {
         let state = state();
         add_project(&state, "p1");
-        let board = add_board(&state, "p1", &["A", "B", "C"]);
+        let board = add_board(&state, "p1", &[("A", TODO), ("B", DOING), ("C", DONE)]);
         add_task_on_board(&state, "in-c", "p1", &board, 2);
         column_service::move_column(&state, &board.columns[2].id, None).expect("moves C first");
 
         let counts = summary_for_today(&state).tasks;
 
-        assert_eq!((counts.pending, counts.completed), (1, 0));
+        assert_eq!((counts.pending, counts.completed), (0, 1));
+    }
+
+    #[test]
+    fn changing_a_column_kind_moves_its_tasks_to_the_new_state() {
+        let state = state();
+        add_project(&state, "p1");
+        let board = todo_and_done(&state, "p1");
+        add_task_on_board(&state, "a", "p1", &board, 0);
+        column_service::update(
+            &state,
+            &board.columns[0].id,
+            crate::modules::boards::models::UpdateColumnInput {
+                kind: Some(DOING),
+                ..Default::default()
+            },
+        )
+        .expect("updates kind");
+
+        let counts = summary_for_today(&state).tasks;
+
+        assert_eq!((counts.pending, counts.in_progress), (0, 1));
     }
 
     #[test]
     fn each_board_is_classified_by_its_own_columns() {
         let state = state();
         add_project(&state, "p1");
-        let short = add_board(&state, "p1", &["Todo", "Done"]);
-        let long = add_board(&state, "p1", &["A", "B", "C", "D"]);
+        let short = todo_and_done(&state, "p1");
+        let long = add_board(
+            &state,
+            "p1",
+            &[("A", TODO), ("B", DOING), ("C", DOING), ("D", DONE)],
+        );
         add_task_on_board(&state, "short-last", "p1", &short, 1);
         add_task_on_board(&state, "long-last", "p1", &long, 3);
         add_task_on_board(&state, "long-mid", "p1", &long, 1);
@@ -306,8 +375,8 @@ mod tests {
         let state = state();
         add_project(&state, "p1");
         add_project(&state, "p2");
-        let one = add_board(&state, "p1", &["A", "B", "C"]);
-        let two = add_board(&state, "p2", &["X", "Y"]);
+        let one = add_board(&state, "p1", &[("A", TODO), ("B", DOING), ("C", DONE)]);
+        let two = add_board(&state, "p2", &[("X", TODO), ("Y", DONE)]);
         for (index, column) in [0usize, 1, 2, 2, 1, 0].into_iter().enumerate() {
             add_task_on_board(&state, &format!("one-{index}"), "p1", &one, column);
         }
@@ -328,9 +397,9 @@ mod tests {
         let state = state();
         add_project(&state, "live");
         add_project(&state, "gone");
-        let live_board = add_board(&state, "live", &["Todo", "Done"]);
-        let gone_board = add_board(&state, "gone", &["Todo", "Done"]);
-        let archived_board = add_board(&state, "live", &["Todo", "Done"]);
+        let live_board = todo_and_done(&state, "live");
+        let gone_board = todo_and_done(&state, "gone");
+        let archived_board = todo_and_done(&state, "live");
         add_task_on_board(&state, "counted", "live", &live_board, 0);
         add_task_on_board(&state, "archived-task", "live", &live_board, 0);
         add_task_on_board(&state, "parent", "live", &live_board, 0);
@@ -434,7 +503,11 @@ mod tests {
     fn upcoming_skips_completed_tasks_but_keeps_pending_ones_and_the_backlog() {
         let state = state();
         add_project(&state, "p1");
-        let board = add_board(&state, "p1", &["Todo", "Doing", "Done"]);
+        let board = add_board(
+            &state,
+            "p1",
+            &[("Todo", TODO), ("Doing", DOING), ("Done", DONE)],
+        );
         add_task_on_board(&state, "pending", "p1", &board, 0);
         add_task_on_board(&state, "doing", "p1", &board, 1);
         add_task_on_board(&state, "done", "p1", &board, 2);
@@ -521,7 +594,7 @@ mod tests {
     fn upcoming_items_carry_project_board_and_column_context() {
         let state = state();
         add_project(&state, "p1");
-        let board = add_board(&state, "p1", &["Todo", "Done"]);
+        let board = todo_and_done(&state, "p1");
         add_task_on_board(&state, "on-board", "p1", &board, 0);
         add_backlog_task(&state, "in-backlog", "p1");
         set_due(&state, "on-board", "2026-11-09");
@@ -674,7 +747,7 @@ mod tests {
     fn overdue_counts_unfinished_tasks_due_before_today() {
         let state = state();
         add_project(&state, "p1");
-        let board = add_board(&state, "p1", &["Todo", "Done"]);
+        let board = todo_and_done(&state, "p1");
         add_task_on_board(&state, "late-pending", "p1", &board, 0);
         add_task_on_board(&state, "late-but-done", "p1", &board, 1);
         add_backlog_task(&state, "late-idea", "p1");

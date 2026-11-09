@@ -5,6 +5,7 @@ use super::repository::{self, ColumnInfo, TaskSlot};
 use super::service::{end_position, find_existing, record};
 use crate::error::{AppError, AppResult};
 use crate::modules::activity::models::{ActivityAction, ChangeSet};
+use crate::modules::boards::models::ColumnKind;
 use crate::shared::position::{self, Slot};
 use crate::shared::time;
 use crate::state::AppState;
@@ -39,17 +40,29 @@ pub fn move_task(
         .copied()
         .collect();
     let new_position = position::place_after(&siblings, after_task_id.as_deref())?;
+    let origin = describe_origin(&transaction, &task)?;
+    let now = time::now();
+    let completed_at = if is_same_column {
+        task.completed_at.clone()
+    } else {
+        completion_after_move(
+            &origin,
+            Some(target.kind),
+            task.completed_at.as_deref(),
+            &now,
+        )
+    };
     repository::set_placement(
         &transaction,
         id,
         Some(&target.board_id),
         Some(&target.id),
         &new_position,
-        &time::now(),
+        completed_at.as_deref(),
+        &now,
     )?;
 
     if !is_same_column {
-        let origin = describe_origin(&transaction, &task)?;
         let mut changes = ChangeSet::new();
         track_placement(&mut changes, &origin, Some(&target));
         record(&transaction, id, ActivityAction::Moved, changes)?;
@@ -98,13 +111,16 @@ pub fn send_to_board(
 
     let slots = repository::list_column_slots(&transaction, &target.id)?;
     let new_position = end_position(&slots)?;
+    let now = time::now();
+    let completed_at = completion_after_move(&Origin::Backlog, Some(target.kind), None, &now);
     repository::set_placement(
         &transaction,
         id,
         Some(&target.board_id),
         Some(&target.id),
         &new_position,
-        &time::now(),
+        completed_at.as_deref(),
+        &now,
     )?;
     let mut changes = ChangeSet::new();
     track_placement(&mut changes, &Origin::Backlog, Some(&target));
@@ -127,7 +143,15 @@ pub fn send_to_backlog(state: &AppState, id: &str) -> AppResult<Task> {
     let origin = describe_origin(&transaction, &task)?;
     let slots = repository::list_backlog_slots(&transaction, &task.project_id)?;
     let new_position = end_position(&slots)?;
-    repository::set_placement(&transaction, id, None, None, &new_position, &time::now())?;
+    repository::set_placement(
+        &transaction,
+        id,
+        None,
+        None,
+        &new_position,
+        None,
+        &time::now(),
+    )?;
     let mut changes = ChangeSet::new();
     track_placement(&mut changes, &origin, None);
     record(&transaction, id, ActivityAction::Moved, changes)?;
@@ -138,7 +162,36 @@ pub fn send_to_backlog(state: &AppState, id: &str) -> AppResult<Task> {
 
 enum Origin {
     Backlog,
-    Column { board: String, column: String },
+    Column {
+        board: String,
+        column: String,
+        kind: ColumnKind,
+    },
+}
+
+/// `completed_at` after a task changes column: entering a `done` column stamps `now`,
+/// moving between `done` columns keeps the original stamp, and anywhere else clears it.
+fn completion_after_move(
+    origin: &Origin,
+    target_kind: Option<ColumnKind>,
+    current: Option<&str>,
+    now: &str,
+) -> Option<String> {
+    let enters_done = target_kind == Some(ColumnKind::Done);
+    if !enters_done {
+        return None;
+    }
+    let was_done = matches!(
+        origin,
+        Origin::Column {
+            kind: ColumnKind::Done,
+            ..
+        }
+    );
+    match (was_done, current) {
+        (true, Some(stamp)) => Some(stamp.to_string()),
+        _ => Some(now.to_string()),
+    }
 }
 
 fn find_movable(connection: &Connection, id: &str) -> AppResult<Task> {
@@ -172,13 +225,14 @@ fn describe_origin(connection: &Connection, task: &Task) -> AppResult<Origin> {
     Ok(Origin::Column {
         board: column.board_name,
         column: column.name,
+        kind: column.kind,
     })
 }
 
 fn track_placement(changes: &mut ChangeSet, origin: &Origin, destination: Option<&ColumnInfo>) {
     let (from_board, from_column) = match origin {
         Origin::Backlog => (None, None),
-        Origin::Column { board, column } => (Some(board.as_str()), Some(column.as_str())),
+        Origin::Column { board, column, .. } => (Some(board.as_str()), Some(column.as_str())),
     };
     let to_board = destination.map(|column| column.board_name.as_str());
     let to_column = destination.map(|column| column.name.as_str());
@@ -202,12 +256,28 @@ mod tests {
     use crate::db::{connection::open_in_memory, migrations};
     use crate::modules::activity::models::{ActivityEntry, EntityType};
     use crate::modules::activity::service as activity;
-    use crate::modules::boards::models::{BoardDetails, CreateBoardInput};
+    use crate::modules::boards::models::{BoardDetails, ColumnKind, CreateBoardInput, NewColumn};
     use crate::modules::boards::service as boards;
     use crate::modules::tasks::models::{CreateTaskInput, UpdateTaskInput};
     use crate::modules::tasks::service as tasks;
 
     const NOW: &str = "2026-11-08T10:00:00.000Z";
+
+    /// Test convention: "Todo" is a todo stage, "Done" is the done stage, anything else is in progress.
+    fn kind_of(name: &str) -> ColumnKind {
+        match name {
+            "Todo" => ColumnKind::Todo,
+            "Done" => ColumnKind::Done,
+            _ => ColumnKind::InProgress,
+        }
+    }
+
+    fn named_columns(names: &[&str]) -> Vec<NewColumn> {
+        names
+            .iter()
+            .map(|name| NewColumn::new(name, kind_of(name)))
+            .collect()
+    }
 
     fn state() -> AppState {
         let mut connection = open_in_memory().expect("opens");
@@ -229,7 +299,7 @@ mod tests {
             CreateBoardInput {
                 project_id: project_id.into(),
                 name: name.into(),
-                column_names: Some(columns.iter().map(|name| name.to_string()).collect()),
+                columns: Some(named_columns(columns)),
             },
         )
         .expect("creates board")
@@ -778,5 +848,203 @@ mod tests {
 
         assert_eq!(back.description, "keep me");
         assert_eq!((back.board_id, back.column_id), (None, None));
+    }
+
+    fn done_board(state: &AppState) -> BoardDetails {
+        board(state, "p1", "B", &["Todo", "Doing", "Done", "Done"])
+    }
+
+    fn column_of(details: &BoardDetails, index: usize) -> String {
+        details.columns[index].id.clone()
+    }
+
+    #[test]
+    fn entering_a_done_column_stamps_completed_at() {
+        let state = state();
+        let details = done_board(&state);
+        let task = column_task(&state, "p1", &column_of(&details, 0), "A");
+        assert_eq!(task.completed_at, None);
+
+        let moved = move_task(&state, &task.id, &column_of(&details, 2), None).expect("moves");
+
+        assert_eq!(
+            moved.completed_at.as_deref(),
+            Some(moved.updated_at.as_str())
+        );
+    }
+
+    #[test]
+    fn moves_between_open_columns_leave_completed_at_empty() {
+        let state = state();
+        let details = done_board(&state);
+        let task = column_task(&state, "p1", &column_of(&details, 0), "A");
+
+        let moved = move_task(&state, &task.id, &column_of(&details, 1), None).expect("moves");
+
+        assert_eq!(moved.completed_at, None);
+    }
+
+    #[test]
+    fn leaving_a_done_column_clears_completed_at() {
+        let state = state();
+        let details = done_board(&state);
+        let task = column_task(&state, "p1", &column_of(&details, 2), "A");
+        assert!(task.completed_at.is_some());
+
+        let reopened = move_task(&state, &task.id, &column_of(&details, 1), None).expect("moves");
+
+        assert_eq!(reopened.completed_at, None);
+    }
+
+    #[test]
+    fn moving_between_done_columns_keeps_the_original_stamp() {
+        let state = state();
+        let details = done_board(&state);
+        let task = column_task(&state, "p1", &column_of(&details, 2), "A");
+        std::thread::sleep(std::time::Duration::from_millis(3));
+
+        let moved = move_task(&state, &task.id, &column_of(&details, 3), None).expect("moves");
+
+        assert_eq!(moved.completed_at, task.completed_at);
+        assert!(moved.updated_at > task.updated_at);
+    }
+
+    #[test]
+    fn reordering_inside_a_done_column_keeps_the_stamp() {
+        let state = state();
+        let details = done_board(&state);
+        let done = column_of(&details, 2);
+        column_task(&state, "p1", &done, "A");
+        let second = column_task(&state, "p1", &done, "B");
+        std::thread::sleep(std::time::Duration::from_millis(3));
+
+        let moved = move_task(&state, &second.id, &done, None).expect("moves to the top");
+
+        assert_eq!(moved.completed_at, second.completed_at);
+    }
+
+    #[test]
+    fn sending_to_a_board_stamps_only_when_the_column_is_done() {
+        let state = state();
+        let details = done_board(&state);
+        let to_done = backlog_task(&state, "p1", "Finished already");
+        let to_todo = backlog_task(&state, "p1", "Fresh");
+
+        let finished = send_to_board(
+            &state,
+            &to_done.id,
+            &details.board.id,
+            Some(column_of(&details, 2)),
+        )
+        .expect("sends to done");
+        let fresh = send_to_board(&state, &to_todo.id, &details.board.id, None).expect("sends");
+
+        assert!(finished.completed_at.is_some());
+        assert_eq!(fresh.completed_at, None);
+    }
+
+    #[test]
+    fn sending_a_completed_task_to_the_backlog_clears_completed_at() {
+        let state = state();
+        let details = done_board(&state);
+        let task = column_task(&state, "p1", &column_of(&details, 2), "A");
+
+        let back = send_to_backlog(&state, &task.id).expect("returns");
+
+        assert_eq!((back.board_id, back.completed_at), (None, None));
+    }
+
+    #[test]
+    fn moving_to_the_done_column_of_another_board_stamps_a_task_that_was_open() {
+        let state = state();
+        let first = done_board(&state);
+        let second = board(&state, "p1", "Second", &["Todo", "Done"]);
+        let task = column_task(&state, "p1", &column_of(&first, 0), "A");
+
+        let moved = move_task(&state, &task.id, &column_of(&second, 1), None).expect("moves");
+
+        assert!(moved.completed_at.is_some());
+    }
+
+    #[test]
+    fn changing_a_column_kind_does_not_reprocess_its_tasks_until_they_move() {
+        let state = state();
+        let details = done_board(&state);
+        let done = column_of(&details, 2);
+        let task = column_task(&state, "p1", &done, "A");
+        crate::modules::boards::column_service::update(
+            &state,
+            &done,
+            crate::modules::boards::models::UpdateColumnInput {
+                kind: Some(ColumnKind::InProgress),
+                ..Default::default()
+            },
+        )
+        .expect("changes kind");
+
+        let untouched = tasks::get(&state, &task.id).expect("reads");
+        let moved = move_task(&state, &task.id, &column_of(&details, 1), None).expect("moves");
+
+        assert_eq!(untouched.completed_at, task.completed_at);
+        assert_eq!(moved.completed_at, None);
+    }
+
+    #[test]
+    fn a_task_in_a_done_column_without_a_stamp_gets_one_when_it_moves_to_another_done_column() {
+        let state = state();
+        let details = done_board(&state);
+        let task = column_task(&state, "p1", &column_of(&details, 2), "A");
+        state
+            .database()
+            .execute(
+                "UPDATE tasks SET completed_at = NULL WHERE id = ?1",
+                [&task.id],
+            )
+            .expect("clears stamp");
+
+        let moved = move_task(&state, &task.id, &column_of(&details, 3), None).expect("moves");
+
+        assert_eq!(
+            moved.completed_at.as_deref(),
+            Some(moved.updated_at.as_str())
+        );
+    }
+
+    #[test]
+    fn completion_rules_in_isolation() {
+        let open = Origin::Column {
+            board: "B".into(),
+            column: "C".into(),
+            kind: ColumnKind::InProgress,
+        };
+        let done = Origin::Column {
+            board: "B".into(),
+            column: "D".into(),
+            kind: ColumnKind::Done,
+        };
+        let stamp = Some("old");
+        let done_kind = Some(ColumnKind::Done);
+
+        assert_eq!(
+            completion_after_move(&Origin::Backlog, done_kind, None, "now"),
+            Some("now".into())
+        );
+        assert_eq!(
+            completion_after_move(&open, done_kind, stamp, "now"),
+            Some("now".into())
+        );
+        assert_eq!(
+            completion_after_move(&done, done_kind, stamp, "now"),
+            Some("old".into())
+        );
+        assert_eq!(
+            completion_after_move(&done, done_kind, None, "now"),
+            Some("now".into())
+        );
+        assert_eq!(
+            completion_after_move(&done, Some(ColumnKind::Todo), stamp, "now"),
+            None
+        );
+        assert_eq!(completion_after_move(&done, None, stamp, "now"), None);
     }
 }

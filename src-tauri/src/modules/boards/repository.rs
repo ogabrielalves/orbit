@@ -1,12 +1,12 @@
 use rusqlite::{Connection, OptionalExtension, Row};
 
-use super::models::{Board, BoardColumn};
+use super::models::{Board, BoardColumn, ColumnKind};
 use crate::error::AppResult;
 
 const BOARD_COLUMNS: &str = "id, project_id, name, created_at, updated_at";
 
 const COLUMN_SELECT: &str =
-    "SELECT c.id, c.board_id, c.name, c.position, c.color, c.created_at, c.updated_at,
+    "SELECT c.id, c.board_id, c.name, c.position, c.color, c.created_at, c.updated_at, c.kind,
         (SELECT COUNT(*) FROM tasks t
          WHERE t.column_id = c.id AND t.archived_at IS NULL AND t.parent_task_id IS NULL)
      FROM columns c";
@@ -26,6 +26,16 @@ fn map_board(row: &Row<'_>) -> rusqlite::Result<Board> {
     })
 }
 
+pub(crate) fn parse_kind(index: usize, text: String) -> rusqlite::Result<ColumnKind> {
+    ColumnKind::parse(&text).ok_or_else(|| {
+        rusqlite::Error::FromSqlConversionFailure(
+            index,
+            rusqlite::types::Type::Text,
+            format!("unknown column kind '{text}'").into(),
+        )
+    })
+}
+
 fn map_column(row: &Row<'_>) -> rusqlite::Result<BoardColumn> {
     Ok(BoardColumn {
         id: row.get(0)?,
@@ -35,7 +45,8 @@ fn map_column(row: &Row<'_>) -> rusqlite::Result<BoardColumn> {
         color: row.get(4)?,
         created_at: row.get(5)?,
         updated_at: row.get(6)?,
-        task_count: row.get(7)?,
+        kind: parse_kind(7, row.get(7)?)?,
+        task_count: row.get(8)?,
     })
 }
 
@@ -95,7 +106,8 @@ pub fn detach_tasks_from_board(
     updated_at: &str,
 ) -> AppResult<usize> {
     let affected = connection.execute(
-        "UPDATE tasks SET board_id = NULL, column_id = NULL, updated_at = ?2 WHERE board_id = ?1",
+        "UPDATE tasks SET board_id = NULL, column_id = NULL, completed_at = NULL, updated_at = ?2
+         WHERE board_id = ?1",
         (board_id, updated_at),
     )?;
     Ok(affected)
@@ -103,14 +115,15 @@ pub fn detach_tasks_from_board(
 
 pub fn insert_column(connection: &Connection, column: &BoardColumn) -> AppResult<()> {
     connection.execute(
-        "INSERT INTO columns (id, board_id, name, position, color, created_at, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+        "INSERT INTO columns (id, board_id, name, position, color, kind, created_at, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
         (
             &column.id,
             &column.board_id,
             &column.name,
             &column.position,
             &column.color,
+            column.kind.as_str(),
             &column.created_at,
             &column.updated_at,
         ),
@@ -147,12 +160,14 @@ pub fn list_column_slots(connection: &Connection, board_id: &str) -> AppResult<V
 
 pub fn update_column(connection: &Connection, column: &BoardColumn) -> AppResult<usize> {
     let affected = connection.execute(
-        "UPDATE columns SET name = ?2, color = ?3, position = ?4, updated_at = ?5 WHERE id = ?1",
+        "UPDATE columns SET name = ?2, color = ?3, position = ?4, kind = ?5, updated_at = ?6
+         WHERE id = ?1",
         (
             &column.id,
             &column.name,
             &column.color,
             &column.position,
+            column.kind.as_str(),
             &column.updated_at,
         ),
     )?;
@@ -209,6 +224,7 @@ mod tests {
             name: format!("Column {id}"),
             position: position.into(),
             color: None,
+            kind: ColumnKind::InProgress,
             created_at: NOW.into(),
             updated_at: NOW.into(),
             task_count: 0,

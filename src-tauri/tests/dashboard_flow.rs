@@ -1,7 +1,9 @@
 #![allow(clippy::expect_used)]
 
 use orbit_lib::bootstrap::initialize_state;
-use orbit_lib::modules::boards::models::{BoardDetails, CreateBoardInput};
+use orbit_lib::modules::boards::models::{
+    BoardDetails, ColumnKind, CreateBoardInput, UpdateColumnInput,
+};
 use orbit_lib::modules::boards::{column_service, service as boards};
 use orbit_lib::modules::dashboard::models::{DashboardSummary, DashboardSummaryInput};
 use orbit_lib::modules::dashboard::service as dashboard;
@@ -26,7 +28,7 @@ fn create_board(state: &AppState, project_id: &str) -> BoardDetails {
     let input = CreateBoardInput {
         project_id: project_id.into(),
         name: "Board".into(),
-        column_names: None,
+        columns: None,
     };
     boards::create(state, input).expect("creates board")
 }
@@ -141,24 +143,34 @@ fn deleting_a_board_turns_its_tasks_into_backlog_in_the_summary() {
 }
 
 #[test]
-fn moving_the_done_column_changes_what_counts_as_completed() {
+fn the_kind_of_the_column_decides_what_counts_as_completed_not_its_position() {
     let directory = tempfile::tempdir().expect("temp dir");
     let state = initialize_state(directory.path()).expect("starts");
     let project = create_project(&state, "P");
     let board = create_board(&state, &project);
-    let last = board.columns[4].id.clone();
+    let done = board.columns[4].id.clone();
     add_task(
         &state,
         &project,
         "t1",
-        Some((board.board.id.as_str(), last.as_str())),
+        Some((board.board.id.as_str(), done.as_str())),
         None,
     );
     let before = summary(&state).tasks;
 
-    column_service::move_column(&state, &last, None).expect("moves Done first");
-    let after = summary(&state).tasks;
+    column_service::move_column(&state, &done, None).expect("moves Done first");
+    let after_move = summary(&state).tasks;
+    let reopen = UpdateColumnInput {
+        kind: Some(ColumnKind::InProgress),
+        ..Default::default()
+    };
+    column_service::update(&state, &done, reopen).expect("changes kind");
+    let after_kind_change = summary(&state).tasks;
 
-    assert_eq!((before.completed, before.pending), (1, 0));
-    assert_eq!((after.completed, after.pending), (0, 1));
+    assert_eq!((before.completed, before.in_progress), (1, 0));
+    assert_eq!(after_move, before);
+    assert_eq!(
+        (after_kind_change.completed, after_kind_change.in_progress),
+        (0, 1)
+    );
 }

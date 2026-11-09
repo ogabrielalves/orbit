@@ -15,11 +15,8 @@ fn scoped_tasks(task_filter: &str) -> String {
            p.name AS project_name,
            CASE
                WHEN t.board_id IS NULL THEN 'backlog'
-               WHEN c.position = (SELECT MAX(position) FROM columns WHERE board_id = t.board_id)
-                    AND c.position <> (SELECT MIN(position) FROM columns WHERE board_id = t.board_id)
-                   THEN 'completed'
-               WHEN c.position = (SELECT MIN(position) FROM columns WHERE board_id = t.board_id)
-                   THEN 'pending'
+               WHEN c.kind = 'done' THEN 'completed'
+               WHEN c.kind = 'todo' THEN 'pending'
                ELSE 'in_progress'
            END AS state
     FROM tasks t

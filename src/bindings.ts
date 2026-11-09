@@ -61,6 +61,7 @@ export type BoardColumn = {
 	name: string,
 	position: string,
 	color: string | null,
+	kind: ColumnKind,
 	createdAt: string,
 	updatedAt: string,
 	taskCount: number,
@@ -71,16 +72,19 @@ export type BoardDetails = {
 	columns: BoardColumn[],
 };
 
+export type ColumnKind = "todo" | "in_progress" | "done";
+
 export type CreateBoardInput = {
 	projectId: string,
 	name: string,
-	columnNames?: string[] | null,
+	columns?: NewColumn[] | null,
 };
 
 export type CreateColumnInput = {
 	boardId: string,
 	name: string,
 	color?: string | null,
+	kind?: ColumnKind | null,
 };
 
 export type CreateProjectInput = {
@@ -130,6 +134,11 @@ export type ListProjectsInput = {
 	scope?: ProjectScope,
 	status?: ProjectStatus | null,
 	search?: string | null,
+};
+
+export type NewColumn = {
+	name: string,
+	kind: ColumnKind,
 };
 
 export type Project = {
@@ -211,6 +220,7 @@ export type UpdateBoardInput = {
 
 export type UpdateColumnInput = {
 	name?: string | null,
+	kind?: ColumnKind | null,
 	color?: string | null,
 };
 

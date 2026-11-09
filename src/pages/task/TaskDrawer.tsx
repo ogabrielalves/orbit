@@ -11,6 +11,7 @@ import { Drawer } from "@/components/organisms/Drawer";
 import { getErrorMessageKey } from "@/lib/appError";
 import { buildCopyTitle } from "@/modules/tasks/form";
 import { useArchiveTask, useDuplicateTask, useRestoreTask, useTask } from "@/modules/tasks/queries";
+import { TaskAttachments } from "@/pages/task/TaskAttachments";
 import { TaskChecklist } from "@/pages/task/TaskChecklist";
 import { TaskComments } from "@/pages/task/TaskComments";
 import { TaskDeleteDialog } from "@/pages/task/TaskDeleteDialog";
@@ -133,6 +134,7 @@ export function TaskDrawer({ taskId, onClose }: TaskDrawerProps) {
               {canHaveSubtasks && <TaskSubtasks taskId={task.id} />}
               <TaskChecklist taskId={task.id} />
               <TaskTags taskId={task.id} />
+              <TaskAttachments taskId={task.id} />
               <TaskComments taskId={task.id} />
             </div>
           </>

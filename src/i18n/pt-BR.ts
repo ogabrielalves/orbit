@@ -353,6 +353,28 @@ export const ptBR = {
         deleteConfirm: "Excluir",
       },
     },
+    attachments: {
+      attach: "Anexar",
+      title: "Anexos",
+      list: "Arquivos anexados",
+      open: "Abrir {{name}}",
+      openShort: "Abrir",
+      remove: "Remover {{name}}",
+      dropHint: "Solte arquivos aqui para anexá-los",
+      dropNow: "Solte para anexar",
+      importing: "Anexando…",
+      toast: {
+        attached_one: "{{count}} arquivo anexado",
+        attached_other: "{{count}} arquivos anexados",
+        removed: "Anexo removido",
+      },
+      confirm: {
+        removeTitle: "Remover “{{name}}”?",
+        removeDescription:
+          "O arquivo será removido desta tarefa e apagado do armazenamento do app.",
+        removeConfirm: "Remover",
+      },
+    },
     dueLabel: "Prazo",
     overdue: "atrasada",
   },

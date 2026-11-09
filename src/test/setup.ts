@@ -4,6 +4,16 @@ import { toast } from "sonner";
 import { afterEach, beforeAll, vi } from "vitest";
 import { installMatchMedia, resetViewport } from "@/test/viewport";
 
+vi.mock("@tauri-apps/api/webview", () => ({
+  getCurrentWebview: () => ({
+    onDragDropEvent: vi.fn().mockResolvedValue(() => undefined),
+  }),
+}));
+
+vi.mock("@tauri-apps/plugin-dialog", () => ({
+  open: vi.fn().mockResolvedValue(null),
+}));
+
 vi.mock("@/bindings", () => ({
   commands: {
     getSettings: vi.fn().mockResolvedValue({
@@ -62,6 +72,10 @@ vi.mock("@/bindings", () => ({
     createComment: vi.fn(),
     updateComment: vi.fn(),
     deleteComment: vi.fn(),
+    listAttachments: vi.fn().mockResolvedValue({ status: "ok", data: [] }),
+    importAttachment: vi.fn(),
+    removeAttachment: vi.fn(),
+    openAttachment: vi.fn(),
     moveTask: vi.fn(),
     sendTaskToBoard: vi.fn(),
     sendTaskToBacklog: vi.fn(),

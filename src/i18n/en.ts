@@ -355,6 +355,28 @@ export const en: Widen<typeof ptBR> = {
         deleteConfirm: "Delete",
       },
     },
+    attachments: {
+      attach: "Attach",
+      title: "Attachments",
+      list: "Attached files",
+      open: "Open {{name}}",
+      openShort: "Open",
+      remove: "Remove {{name}}",
+      dropHint: "Drop files here to attach them",
+      dropNow: "Release to attach",
+      importing: "Attaching…",
+      toast: {
+        attached_one: "{{count}} file attached",
+        attached_other: "{{count}} files attached",
+        removed: "Attachment removed",
+      },
+      confirm: {
+        removeTitle: "Remove “{{name}}”?",
+        removeDescription:
+          "The file will be removed from this task and deleted from the app storage.",
+        removeConfirm: "Remove",
+      },
+    },
     dueLabel: "Due",
     overdue: "overdue",
   },

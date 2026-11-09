@@ -64,7 +64,7 @@ describe("BoardPage cards drag and drop", () => {
   beforeEach(async () => {
     await i18next.changeLanguage("en");
     dnd.props = null;
-    for (const command of [getBoard, listBoardTasks, moveTask]) {
+    for (const command of [getBoard, listBoardTasks, moveTask, vi.mocked(commands.moveColumn)]) {
       command.mockReset();
     }
     getBoard.mockResolvedValue({ status: "ok", data: createBoardDetailsFixture() });
@@ -127,6 +127,17 @@ describe("BoardPage cards drag and drop", () => {
       await drop("t2", { overId: "c1" });
 
       expect(moveTask).not.toHaveBeenCalled();
+    });
+
+    it("never reorders columns when a card is dropped, even over a column", async () => {
+      renderApp("/boards/b1");
+      await screen.findByText("Third");
+
+      await drop("t1", { overId: "c3" });
+      await drop("t3", { overId: "t1" });
+
+      expect(commands.moveColumn).not.toHaveBeenCalled();
+      expect(moveTask).toHaveBeenCalledTimes(2);
     });
 
     it("still moves columns with the same handlers", async () => {

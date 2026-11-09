@@ -11,8 +11,12 @@ import { Drawer } from "@/components/organisms/Drawer";
 import { getErrorMessageKey } from "@/lib/appError";
 import { buildCopyTitle } from "@/modules/tasks/form";
 import { useArchiveTask, useDuplicateTask, useRestoreTask, useTask } from "@/modules/tasks/queries";
+import { TaskChecklist } from "@/pages/task/TaskChecklist";
+import { TaskComments } from "@/pages/task/TaskComments";
 import { TaskDeleteDialog } from "@/pages/task/TaskDeleteDialog";
 import { TaskDetailsForm } from "@/pages/task/TaskDetailsForm";
+import { TaskSubtasks } from "@/pages/task/TaskSubtasks";
+import { TaskTags } from "@/pages/task/TaskTags";
 
 type TaskDrawerProps = {
   taskId: string;
@@ -33,6 +37,7 @@ export function TaskDrawer({ taskId, onClose }: TaskDrawerProps) {
   const hasTask = task !== undefined;
   const isArchived = hasTask && task.archivedAt !== null;
   const showDeleteDialog = hasTask && isDeleting;
+  const canHaveSubtasks = hasTask && task.parentTaskId === null;
 
   function handleDuplicate(source: Task) {
     const title = buildCopyTitle(source.title, (value) =>
@@ -124,6 +129,12 @@ export function TaskDrawer({ taskId, onClose }: TaskDrawerProps) {
               </p>
             )}
             <TaskDetailsForm key={task.id} task={task} />
+            <div className="flex flex-col gap-6 border-t border-border p-6">
+              {canHaveSubtasks && <TaskSubtasks taskId={task.id} />}
+              <TaskChecklist taskId={task.id} />
+              <TaskTags taskId={task.id} />
+              <TaskComments taskId={task.id} />
+            </div>
           </>
         )}
       </Drawer>

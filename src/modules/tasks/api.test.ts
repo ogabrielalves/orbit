@@ -1,15 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   archiveTask,
+  createSubtask,
   createTask,
   deleteTask,
   duplicateTask,
   fetchBoardTasks,
+  fetchSubtasks,
   fetchTask,
+  moveSubtask,
   moveTask,
   restoreTask,
   sendTaskToBacklog,
   sendTaskToBoard,
+  setSubtaskDone,
   updateTask,
 } from "@/modules/tasks/api";
 import { createTaskFixture } from "@/test/taskFixture";
@@ -26,6 +30,10 @@ const commands = vi.hoisted(() => ({
   moveTask: vi.fn(),
   sendTaskToBoard: vi.fn(),
   sendTaskToBacklog: vi.fn(),
+  listSubtasks: vi.fn(),
+  createSubtask: vi.fn(),
+  setSubtaskDone: vi.fn(),
+  moveSubtask: vi.fn(),
 }));
 
 vi.mock("@/bindings", () => ({ commands }));
@@ -106,6 +114,20 @@ describe("tasks api", () => {
 
     expect(commands.sendTaskToBoard).toHaveBeenCalledWith("t1", "b2", null);
     expect(commands.sendTaskToBacklog).toHaveBeenCalledWith("t1");
+  });
+
+  it("lists, creates, completes and moves subtasks", async () => {
+    commands.listSubtasks.mockResolvedValue({ status: "ok", data: [task] });
+
+    await expect(fetchSubtasks("t1")).resolves.toEqual([task]);
+    await createSubtask({ parentTaskId: "t1", title: "Child" });
+    await setSubtaskDone("s1", true);
+    await moveSubtask("s1", null);
+
+    expect(commands.listSubtasks).toHaveBeenCalledWith("t1");
+    expect(commands.createSubtask).toHaveBeenCalledWith({ parentTaskId: "t1", title: "Child" });
+    expect(commands.setSubtaskDone).toHaveBeenCalledWith("s1", true);
+    expect(commands.moveSubtask).toHaveBeenCalledWith("s1", null);
   });
 
   it("rejects with the backend error payload", async () => {

@@ -55,6 +55,25 @@ describe("Drawer", () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
+  it("leaves Escape to an inline editor marked with data-escape-scope", async () => {
+    const onClose = vi.fn();
+    render(
+      <Drawer isOpen onClose={onClose} title="Task details" closeLabel="Close">
+        <input aria-label="Inline editor" data-escape-scope="" />
+      </Drawer>,
+    );
+
+    await userEvent.click(screen.getByRole("textbox", { name: "Inline editor" }));
+    await userEvent.keyboard("{Escape}");
+
+    expect(onClose).not.toHaveBeenCalled();
+
+    screen.getByRole("button", { name: "Close" }).focus();
+    await userEvent.keyboard("{Escape}");
+
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
   it("keeps the focus inside while open", async () => {
     renderDrawer();
 

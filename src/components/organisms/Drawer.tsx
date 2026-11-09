@@ -22,6 +22,14 @@ export function Drawer({
 }: DrawerProps) {
   const hasHeaderActions = headerActions !== undefined;
 
+  function handleEscapeKeyDown(event: KeyboardEvent) {
+    const target = event.target instanceof Element ? event.target : null;
+    const isInsideEscapeScope = target?.closest("[data-escape-scope]") != null;
+    if (isInsideEscapeScope) {
+      event.preventDefault();
+    }
+  }
+
   function handleOpenChange(nextIsOpen: boolean) {
     const shouldClose = !nextIsOpen;
     if (shouldClose) {
@@ -35,6 +43,7 @@ export function Drawer({
         <Dialog.Overlay className="fixed inset-0 z-40 animate-fade-in bg-overlay motion-reduce:animate-none" />
         <Dialog.Content
           aria-describedby={undefined}
+          onEscapeKeyDown={handleEscapeKeyDown}
           className="fixed inset-y-0 right-0 z-50 flex w-full max-w-drawer animate-slide-in flex-col bg-surface shadow-lg motion-reduce:animate-none"
         >
           <div className="flex items-center justify-between gap-3 border-b border-border px-6 py-4">

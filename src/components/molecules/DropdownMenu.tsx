@@ -15,9 +15,15 @@ type DropdownMenuProps = {
   trigger: ReactElement;
   sections: DropdownMenuItemData[][];
   align?: "start" | "center" | "end";
+  onCloseAutoFocus?: (event: Event) => void;
 };
 
-export function DropdownMenu({ trigger, sections, align = "end" }: DropdownMenuProps) {
+export function DropdownMenu({
+  trigger,
+  sections,
+  align = "end",
+  onCloseAutoFocus,
+}: DropdownMenuProps) {
   return (
     <RadixMenu.Root>
       <RadixMenu.Trigger asChild>{trigger}</RadixMenu.Trigger>
@@ -25,6 +31,7 @@ export function DropdownMenu({ trigger, sections, align = "end" }: DropdownMenuP
         <RadixMenu.Content
           align={align}
           sideOffset={6}
+          onCloseAutoFocus={onCloseAutoFocus}
           className="z-50 flex min-w-52.5 flex-col rounded-lg border border-border bg-surface p-1.5 shadow-md"
         >
           {sections.map((section, sectionIndex) => {

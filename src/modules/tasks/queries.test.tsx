@@ -10,13 +10,17 @@ import {
   taskKeys,
   useArchiveTask,
   useBoardTasks,
+  useCreateSubtask,
   useCreateTask,
   useDeleteTask,
   useDuplicateTask,
+  useMoveSubtask,
   useMoveTask,
   useRestoreTask,
   useSendTaskToBacklog,
   useSendTaskToBoard,
+  useSetSubtaskDone,
+  useSubtasks,
   useTask,
   useUpdateTask,
 } from "@/modules/tasks/queries";
@@ -33,6 +37,10 @@ const commands = vi.hoisted(() => ({
   deleteTask: vi.fn(),
   duplicateTask: vi.fn(),
   moveTask: vi.fn(),
+  listSubtasks: vi.fn(),
+  createSubtask: vi.fn(),
+  setSubtaskDone: vi.fn(),
+  moveSubtask: vi.fn(),
   sendTaskToBoard: vi.fn(),
   sendTaskToBacklog: vi.fn(),
 }));
@@ -240,6 +248,76 @@ describe("task queries", () => {
       await act(() => result.current.mutateAsync({ id: "t1", columnId: "c2", afterTaskId: "t9" }));
 
       expect(commands.moveTask).toHaveBeenCalledWith("t1", "c2", "t9");
+    });
+  });
+
+  describe("subtasks", () => {
+    const child = (id: string) => createTaskFixture({ id, parentTaskId: "t1", position: id });
+
+    function ids(queryClient: QueryClient): string[] {
+      const tasks = queryClient.getQueryData<Task[]>(taskKeys.subtasks("t1")) ?? [];
+      return tasks.map((entry) => entry.id);
+    }
+
+    it("loads the subtasks of a task", async () => {
+      commands.listSubtasks.mockResolvedValue({ status: "ok", data: [child("s1")] });
+      const { wrapper } = createWrapper();
+
+      const { result } = renderHook(() => useSubtasks("t1"), { wrapper });
+
+      await waitFor(() => expect(result.current.isSuccess).toBe(true));
+      expect(result.current.data).toEqual([child("s1")]);
+      expect(commands.listSubtasks).toHaveBeenCalledWith("t1");
+    });
+
+    it("creates a subtask under its parent and refreshes everything", async () => {
+      const { queryClient, wrapper } = createWrapper();
+      const invalidate = vi.spyOn(queryClient, "invalidateQueries");
+      const { result } = renderHook(() => useCreateSubtask("t1"), { wrapper });
+
+      await act(() => result.current.mutateAsync("Child"));
+
+      expect(commands.createSubtask).toHaveBeenCalledWith({ parentTaskId: "t1", title: "Child" });
+      expect(invalidatedKeys(invalidate)).toEqual(expect.arrayContaining(everyKey));
+    });
+
+    it("completes and reopens a subtask", async () => {
+      const { queryClient, wrapper } = createWrapper();
+      const invalidate = vi.spyOn(queryClient, "invalidateQueries");
+      const { result } = renderHook(() => useSetSubtaskDone(), { wrapper });
+
+      await act(() => result.current.mutateAsync({ id: "s1", isDone: true }));
+
+      expect(commands.setSubtaskDone).toHaveBeenCalledWith("s1", true);
+      expect(invalidatedKeys(invalidate)).toEqual(expect.arrayContaining(everyKey));
+    });
+
+    it("reorders the cache before the backend answers", async () => {
+      commands.moveSubtask.mockReturnValue(new Promise(() => undefined));
+      const { queryClient, wrapper } = createWrapper();
+      queryClient.setQueryData(taskKeys.subtasks("t1"), [child("a"), child("b"), child("c")]);
+      const { result } = renderHook(() => useMoveSubtask("t1"), { wrapper });
+
+      act(() => result.current.mutate({ id: "a", afterId: "c" }));
+
+      await waitFor(() => expect(ids(queryClient)).toEqual(["b", "c", "a"]));
+      expect(commands.moveSubtask).toHaveBeenCalledWith("a", "c");
+    });
+
+    it("puts the order back when the backend refuses", async () => {
+      commands.moveSubtask.mockResolvedValue({
+        status: "error",
+        error: { code: "X", message: "x" },
+      });
+      const { queryClient, wrapper } = createWrapper();
+      queryClient.setQueryData(taskKeys.subtasks("t1"), [child("a"), child("b"), child("c")]);
+      const { result } = renderHook(() => useMoveSubtask("t1"), { wrapper });
+
+      await act(async () => {
+        await result.current.mutateAsync({ id: "a", afterId: "c" }).catch(() => undefined);
+      });
+
+      expect(ids(queryClient)).toEqual(["a", "b", "c"]);
     });
   });
 });

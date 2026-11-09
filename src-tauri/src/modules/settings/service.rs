@@ -13,7 +13,21 @@ pub fn get(state: &AppState) -> AppResult<Settings> {
     load(&connection)
 }
 
+/// Updates the settings the user edits directly (language). The vault is not one of them: it is
+/// chosen with `setup_vault`, which checks the directory first, so a `vaultPath` here is refused.
 pub fn update(state: &AppState, input: UpdateSettingsInput) -> AppResult<Settings> {
+    let tries_to_set_the_vault = input.vault_path.is_some();
+    if tries_to_set_the_vault {
+        return Err(AppError::Validation(
+            "the vault is chosen with setupVault, not with updateSettings".into(),
+        ));
+    }
+    save(state, input)
+}
+
+/// Stores the settings without the vault check of `update`. Meant for code that already
+/// validated the vault directory (`setup_vault`).
+pub fn save(state: &AppState, input: UpdateSettingsInput) -> AppResult<Settings> {
     let vault_path = normalize_vault_path(input.vault_path)?;
     let now = time::now();
 
@@ -132,13 +146,13 @@ mod tests {
             language: Some(Some(Language::PtBr)),
             vault_path: Some("my-vault".into()),
         };
-        update(&state, setup).expect("sets both");
+        save(&state, setup).expect("sets both");
         let clear = UpdateSettingsInput {
             language: Some(None),
             ..Default::default()
         };
 
-        let settings = update(&state, clear).expect("clears");
+        let settings = save(&state, clear).expect("clears");
 
         assert_eq!(settings.vault_path.as_deref(), Some("my-vault"));
         assert_eq!(state.vault_path(), Some(PathBuf::from("my-vault")));
@@ -151,13 +165,13 @@ mod tests {
             language: Some(Some(Language::PtBr)),
             ..Default::default()
         };
-        update(&state, choose).expect("chooses");
+        save(&state, choose).expect("chooses");
         let only_vault = UpdateSettingsInput {
             vault_path: Some("my-vault".into()),
             ..Default::default()
         };
 
-        let settings = update(&state, only_vault).expect("updates vault");
+        let settings = save(&state, only_vault).expect("updates vault");
 
         assert_eq!(settings.language, Some(Language::PtBr));
     }
@@ -170,7 +184,7 @@ mod tests {
             vault_path: Some("  my-vault  ".into()),
         };
 
-        update(&state, input).expect("updates");
+        save(&state, input).expect("updates");
 
         let settings = get(&state).expect("reads");
         assert_eq!(settings.language, Some(Language::PtBr));
@@ -185,7 +199,7 @@ mod tests {
             ..Default::default()
         };
 
-        update(&state, input).expect("updates");
+        save(&state, input).expect("updates");
 
         assert_eq!(state.vault_path(), Some(PathBuf::from("my-vault")));
     }
@@ -198,7 +212,7 @@ mod tests {
             vault_path: Some("   ".into()),
         };
 
-        let result = update(&state, input);
+        let result = save(&state, input);
 
         assert!(matches!(result, Err(AppError::Validation(_))));
         assert_eq!(get(&state).expect("reads"), Settings::default());
@@ -221,5 +235,49 @@ mod tests {
         restore_vault_path(&state).expect("restores");
 
         assert_eq!(state.vault_path(), Some(PathBuf::from("stored-vault")));
+    }
+
+    #[test]
+    fn update_refuses_a_vault_path_and_points_to_setup_vault_without_changing_anything() {
+        let state = fresh_state();
+        let input = UpdateSettingsInput {
+            language: Some(Some(Language::PtBr)),
+            vault_path: Some("/some/vault".into()),
+        };
+
+        let result = update(&state, input);
+
+        let Err(AppError::Validation(message)) = result else {
+            panic!("expected a validation error");
+        };
+        assert!(message.contains("setupVault"));
+        assert_eq!(get(&state).expect("reads"), Settings::default());
+        assert_eq!(state.vault_path(), None);
+    }
+
+    #[test]
+    fn update_still_changes_the_language_and_keeps_an_existing_vault() {
+        let state = fresh_state();
+        save(
+            &state,
+            UpdateSettingsInput {
+                vault_path: Some("my-vault".into()),
+                ..Default::default()
+            },
+        )
+        .expect("saves the vault");
+
+        let settings = update(
+            &state,
+            UpdateSettingsInput {
+                language: Some(Some(Language::PtBr)),
+                ..Default::default()
+            },
+        )
+        .expect("updates the language");
+
+        assert_eq!(settings.language, Some(Language::PtBr));
+        assert_eq!(settings.vault_path.as_deref(), Some("my-vault"));
+        assert_eq!(state.vault_path(), Some(PathBuf::from("my-vault")));
     }
 }

@@ -531,6 +531,10 @@ export type UpdateProjectInput = {
 
 export type UpdateSettingsInput = {
 	language?: Language | null,
+	/**
+	 *  Refused by `updateSettings` (it fails with a validation error): choose the vault with
+	 *  `setupVault`, which validates the directory first.
+	 */
 	vaultPath?: string | null,
 };
 

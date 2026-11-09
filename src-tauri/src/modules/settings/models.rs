@@ -57,6 +57,8 @@ pub struct UpdateSettingsInput {
     #[serde(deserialize_with = "distinguish_null_from_absent")]
     #[specta(type = Option<Language>)]
     pub language: Option<Option<Language>>,
+    /// Refused by `updateSettings` (it fails with a validation error): choose the vault with
+    /// `setupVault`, which validates the directory first.
     pub vault_path: Option<String>,
 }
 

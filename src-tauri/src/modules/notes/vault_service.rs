@@ -45,7 +45,7 @@ pub fn setup(state: &AppState, input: SetupVaultInput) -> AppResult<VaultInfo> {
     verify_access(&path)?;
 
     let path_text = path.to_string_lossy().into_owned();
-    settings::update(
+    settings::save(
         state,
         UpdateSettingsInput {
             vault_path: Some(path_text.clone()),

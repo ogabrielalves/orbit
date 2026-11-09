@@ -68,7 +68,7 @@ mod tests {
             vault_path: Some("saved-vault".into()),
             ..Default::default()
         };
-        settings_service::update(&first_run, input).expect("updates");
+        settings_service::save(&first_run, input).expect("updates");
         drop(first_run);
 
         let second_run = initialize_state(directory.path()).expect("initializes again");

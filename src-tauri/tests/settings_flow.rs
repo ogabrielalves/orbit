@@ -11,7 +11,7 @@ fn settings_survive_a_restart_on_a_real_database_file() {
         language: Some(Some(Language::PtBr)),
         vault_path: Some("notes-vault".into()),
     };
-    service::update(&first_run, input).expect("updates");
+    service::save(&first_run, input).expect("updates");
     drop(first_run);
 
     let second_run = initialize_state(directory.path()).expect("second start");
@@ -40,7 +40,7 @@ fn invalid_update_is_rejected_and_leaves_stored_settings_untouched() {
         vault_path: Some("  ".into()),
     };
 
-    let result = service::update(&state, input);
+    let result = service::save(&state, input);
 
     assert!(matches!(result, Err(AppError::Validation(_))));
     assert_eq!(service::get(&state).expect("reads"), Settings::default());

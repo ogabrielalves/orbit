@@ -1,6 +1,10 @@
 pub mod activity;
+pub mod backlog;
 pub mod boards;
+pub mod checklist;
+pub mod comments;
 pub mod dashboard;
 pub mod projects;
 pub mod settings;
+pub mod tags;
 pub mod tasks;

@@ -33,6 +33,31 @@ export const commands = {
 	moveTask: (id: string, columnId: string, afterTaskId: string | null) => typedError<Task, ErrorPayload>(__TAURI_INVOKE("move_task", { id, columnId, afterTaskId })),
 	sendTaskToBoard: (id: string, boardId: string, columnId: string | null) => typedError<Task, ErrorPayload>(__TAURI_INVOKE("send_task_to_board", { id, boardId, columnId })),
 	sendTaskToBacklog: (id: string) => typedError<Task, ErrorPayload>(__TAURI_INVOKE("send_task_to_backlog", { id })),
+	createSubtask: (input: CreateSubtaskInput) => typedError<Task, ErrorPayload>(__TAURI_INVOKE("create_subtask", { input })),
+	listSubtasks: (parentTaskId: string) => typedError<Task[], ErrorPayload>(__TAURI_INVOKE("list_subtasks", { parentTaskId })),
+	setSubtaskDone: (id: string, isDone: boolean) => typedError<Task, ErrorPayload>(__TAURI_INVOKE("set_subtask_done", { id, isDone })),
+	moveSubtask: (id: string, afterSubtaskId: string | null) => typedError<Task, ErrorPayload>(__TAURI_INVOKE("move_subtask", { id, afterSubtaskId })),
+	createChecklistItem: (input: CreateChecklistItemInput) => typedError<ChecklistItem, ErrorPayload>(__TAURI_INVOKE("create_checklist_item", { input })),
+	listChecklistItems: (taskId: string) => typedError<ChecklistItem[], ErrorPayload>(__TAURI_INVOKE("list_checklist_items", { taskId })),
+	updateChecklistItem: (id: string, input: UpdateChecklistItemInput) => typedError<ChecklistItem, ErrorPayload>(__TAURI_INVOKE("update_checklist_item", { id, input })),
+	moveChecklistItem: (id: string, afterItemId: string | null) => typedError<ChecklistItem, ErrorPayload>(__TAURI_INVOKE("move_checklist_item", { id, afterItemId })),
+	deleteChecklistItem: (id: string) => typedError<null, ErrorPayload>(__TAURI_INVOKE("delete_checklist_item", { id })),
+	createComment: (input: CreateCommentInput) => typedError<Comment, ErrorPayload>(__TAURI_INVOKE("create_comment", { input })),
+	listComments: (taskId: string) => typedError<Comment[], ErrorPayload>(__TAURI_INVOKE("list_comments", { taskId })),
+	updateComment: (id: string, body: string) => typedError<Comment, ErrorPayload>(__TAURI_INVOKE("update_comment", { id, body })),
+	deleteComment: (id: string) => typedError<null, ErrorPayload>(__TAURI_INVOKE("delete_comment", { id })),
+	createTag: (input: CreateTagInput) => typedError<Tag, ErrorPayload>(__TAURI_INVOKE("create_tag", { input })),
+	listTags: () => typedError<Tag[], ErrorPayload>(__TAURI_INVOKE("list_tags")),
+	updateTag: (id: string, input: UpdateTagInput) => typedError<Tag, ErrorPayload>(__TAURI_INVOKE("update_tag", { id, input })),
+	deleteTag: (id: string) => typedError<null, ErrorPayload>(__TAURI_INVOKE("delete_tag", { id })),
+	listTaskTags: (taskId: string) => typedError<Tag[], ErrorPayload>(__TAURI_INVOKE("list_task_tags", { taskId })),
+	assignTag: (taskId: string, tagId: string) => typedError<null, ErrorPayload>(__TAURI_INVOKE("assign_tag", { taskId, tagId })),
+	unassignTag: (taskId: string, tagId: string) => typedError<null, ErrorPayload>(__TAURI_INVOKE("unassign_tag", { taskId, tagId })),
+	duplicateTask: (id: string, title: string | null) => typedError<Task, ErrorPayload>(__TAURI_INVOKE("duplicate_task", { id, title })),
+	getTaskHistory: (taskId: string, limit: number | null) => typedError<ActivityEntry[], ErrorPayload>(__TAURI_INVOKE("get_task_history", { taskId, limit })),
+	listBacklog: (input: ListBacklogInput) => typedError<BacklogItem[], ErrorPayload>(__TAURI_INVOKE("list_backlog", { input })),
+	listBacklogByProject: (input: ListBacklogInput) => typedError<BacklogGroup[], ErrorPayload>(__TAURI_INVOKE("list_backlog_by_project", { input })),
+	moveBacklogTask: (id: string, afterTaskId: string | null) => typedError<Task, ErrorPayload>(__TAURI_INVOKE("move_backlog_task", { id, afterTaskId })),
 };
 
 /* Types */
@@ -46,6 +71,32 @@ export type ActivityEntry = {
 	changes: { [key in string]: FieldChange } | null,
 	createdAt: string,
 };
+
+export type BacklogGroup = {
+	projectId: string,
+	projectName: string,
+	items: BacklogItem[],
+};
+
+export type BacklogItem = {
+	task: Task,
+	projectName: string,
+	tags: Tag[],
+	subtaskCount: number,
+	subtasksDone: number,
+	checklistCount: number,
+	checklistDone: number,
+};
+
+export type BacklogSort = 
+/**  Project name, then the order the user arranged inside each project. */
+"manual" | 
+/**  Urgent first, then earliest due date. */
+"priority" | 
+/**  Earliest due date first, undated tasks last. */
+"due_date" | 
+/**  Newest first. */
+"created" | "title";
 
 export type Board = {
 	id: string,
@@ -72,12 +123,35 @@ export type BoardDetails = {
 	columns: BoardColumn[],
 };
 
+export type ChecklistItem = {
+	id: string,
+	taskId: string,
+	text: string,
+	isDone: boolean,
+	position: string,
+	createdAt: string,
+	updatedAt: string,
+};
+
 export type ColumnKind = "todo" | "in_progress" | "done";
+
+export type Comment = {
+	id: string,
+	taskId: string,
+	body: string,
+	createdAt: string,
+	updatedAt: string,
+};
 
 export type CreateBoardInput = {
 	projectId: string,
 	name: string,
 	columns?: NewColumn[] | null,
+};
+
+export type CreateChecklistItemInput = {
+	taskId: string,
+	text: string,
 };
 
 export type CreateColumnInput = {
@@ -87,10 +161,25 @@ export type CreateColumnInput = {
 	kind?: ColumnKind | null,
 };
 
+export type CreateCommentInput = {
+	taskId: string,
+	body: string,
+};
+
 export type CreateProjectInput = {
 	name: string,
 	description?: string | null,
 	icon?: string | null,
+	color?: string | null,
+};
+
+export type CreateSubtaskInput = {
+	parentTaskId: string,
+	title: string,
+};
+
+export type CreateTagInput = {
+	name: string,
 	color?: string | null,
 };
 
@@ -129,6 +218,14 @@ export type FieldChange = {
 };
 
 export type Language = "en" | "pt-BR";
+
+export type ListBacklogInput = {
+	projectId?: string | null,
+	priority?: TaskPriority | null,
+	tagId?: string | null,
+	search?: string | null,
+	sort?: BacklogSort | null,
+};
 
 export type ListProjectsInput = {
 	scope?: ProjectScope,
@@ -176,6 +273,15 @@ export type Settings = {
 	vaultPath: string | null,
 };
 
+export type Tag = {
+	id: string,
+	name: string,
+	color: string | null,
+	createdAt: string,
+	updatedAt: string,
+	taskCount: number,
+};
+
 export type Task = {
 	id: string,
 	projectId: string,
@@ -218,6 +324,11 @@ export type UpdateBoardInput = {
 	name?: string | null,
 };
 
+export type UpdateChecklistItemInput = {
+	text?: string | null,
+	isDone?: boolean | null,
+};
+
 export type UpdateColumnInput = {
 	name?: string | null,
 	kind?: ColumnKind | null,
@@ -235,6 +346,11 @@ export type UpdateProjectInput = {
 export type UpdateSettingsInput = {
 	language?: Language | null,
 	vaultPath?: string | null,
+};
+
+export type UpdateTagInput = {
+	name?: string | null,
+	color?: string | null,
 };
 
 export type UpdateTaskInput = {

@@ -7,7 +7,7 @@ use crate::error::{AppError, AppResult};
 use crate::modules::activity::models::{ActivityAction, ChangeSet, EntityType};
 use crate::modules::activity::service as activity;
 use crate::shared::files;
-use crate::shared::text::{optional_text, require_text, text_or_empty};
+use crate::shared::text::{like_pattern, optional_text, require_text, text_or_empty};
 use crate::shared::{id, time};
 use crate::state::AppState;
 
@@ -190,14 +190,6 @@ fn apply_update(current: &Project, input: UpdateProjectInput) -> AppResult<Proje
         project.status = status;
     }
     Ok(project)
-}
-
-fn like_pattern(term: &str) -> String {
-    let escaped = term
-        .replace('\\', "\\\\")
-        .replace('%', "\\%")
-        .replace('_', "\\_");
-    format!("%{escaped}%")
 }
 
 #[cfg(test)]

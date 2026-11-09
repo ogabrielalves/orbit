@@ -57,6 +57,33 @@ pub fn find_recent(connection: &Connection, limit: u32) -> AppResult<Vec<StoredR
     Ok(entries)
 }
 
+pub fn find_by_entity(
+    connection: &Connection,
+    entity_type: &str,
+    entity_id: &str,
+    limit: u32,
+) -> AppResult<Vec<StoredRow>> {
+    let mut statement = connection.prepare(
+        "SELECT id, entity_type, entity_id, action, changes, created_at
+         FROM activity_log
+         WHERE entity_type = ?1 AND entity_id = ?2
+         ORDER BY created_at DESC, id DESC
+         LIMIT ?3",
+    )?;
+    let rows = statement.query_map((entity_type, entity_id, limit), |row| {
+        Ok(StoredRow {
+            id: row.get(0)?,
+            entity_type: row.get(1)?,
+            entity_id: row.get(2)?,
+            action: row.get(3)?,
+            changes: row.get(4)?,
+            created_at: row.get(5)?,
+        })
+    })?;
+    let entries = rows.collect::<Result<Vec<_>, _>>()?;
+    Ok(entries)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -141,5 +168,55 @@ mod tests {
 
         assert!(insert(&connection, &bad_type).is_err());
         assert!(insert(&connection, &bad_action).is_err());
+    }
+
+    #[test]
+    fn find_by_entity_is_scoped_ordered_newest_first_and_limited() {
+        let connection = migrated_connection();
+        insert(&connection, &row("a1", "2026-11-08T10:00:00.000Z")).expect("inserts");
+        insert(&connection, &row("a2", "2026-11-08T11:00:00.000Z")).expect("inserts");
+        insert(&connection, &row("a3", "2026-11-08T12:00:00.000Z")).expect("inserts");
+        let other_entity = NewRow {
+            entity_id: "e2",
+            ..row("b1", "2026-11-08T13:00:00.000Z")
+        };
+        let other_type = NewRow {
+            entity_type: "task",
+            ..row("c1", "2026-11-08T14:00:00.000Z")
+        };
+        insert(&connection, &other_entity).expect("inserts");
+        insert(&connection, &other_type).expect("inserts");
+
+        let all = find_by_entity(&connection, "project", "e1", 10).expect("reads");
+        let two = find_by_entity(&connection, "project", "e1", 2).expect("reads");
+        let none = find_by_entity(&connection, "project", "ghost", 10).expect("reads");
+
+        let ids: Vec<&str> = all.iter().map(|row| row.id.as_str()).collect();
+        assert_eq!(ids, ["a3", "a2", "a1"]);
+        assert_eq!(two.len(), 2);
+        assert!(none.is_empty());
+    }
+
+    #[test]
+    fn find_by_entity_uses_the_entity_index() {
+        let connection = migrated_connection();
+
+        let mut statement = connection
+            .prepare(
+                "EXPLAIN QUERY PLAN SELECT id FROM activity_log
+                 WHERE entity_type = 'task' AND entity_id = 'x' ORDER BY created_at DESC",
+            )
+            .expect("prepares");
+        let plan: Vec<String> = statement
+            .query_map([], |row| row.get::<_, String>(3))
+            .expect("runs")
+            .collect::<Result<_, _>>()
+            .expect("reads");
+
+        assert!(
+            plan.iter()
+                .any(|line| line.contains("idx_activity_log_entity_created")),
+            "plan was: {plan:?}"
+        );
     }
 }

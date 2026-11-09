@@ -4,6 +4,7 @@ use super::models::{Task, TaskPriority};
 use crate::error::AppResult;
 use crate::modules::boards::models::ColumnKind;
 use crate::modules::boards::repository::parse_kind;
+use crate::shared::position::Slot;
 
 const TASK_COLUMNS: &str = "id, project_id, board_id, column_id, parent_task_id, title, description, \
      priority, due_date, position, created_at, updated_at, completed_at, archived_at";
@@ -22,7 +23,17 @@ pub struct TaskSlot {
     pub position: String,
 }
 
-fn map_task(row: &Row<'_>) -> rusqlite::Result<Task> {
+pub fn to_slots(slots: &[TaskSlot]) -> Vec<Slot<'_>> {
+    slots
+        .iter()
+        .map(|slot| Slot {
+            id: slot.id.as_str(),
+            position: slot.position.as_str(),
+        })
+        .collect()
+}
+
+pub(crate) fn map_task(row: &Row<'_>) -> rusqlite::Result<Task> {
     let priority_text: String = row.get(7)?;
     let priority = TaskPriority::parse(&priority_text).ok_or_else(|| {
         rusqlite::Error::FromSqlConversionFailure(
@@ -231,6 +242,53 @@ pub fn list_by_board(connection: &Connection, board_id: &str) -> AppResult<Vec<T
     let rows = statement.query_map([board_id], map_task)?;
     let tasks = rows.collect::<Result<Vec<_>, _>>()?;
     Ok(tasks)
+}
+
+pub fn list_subtasks(connection: &Connection, parent_task_id: &str) -> AppResult<Vec<Task>> {
+    let sql =
+        format!("SELECT {TASK_COLUMNS} FROM tasks WHERE parent_task_id = ?1 ORDER BY position, id");
+    let mut statement = connection.prepare(&sql)?;
+    let rows = statement.query_map([parent_task_id], map_task)?;
+    let tasks = rows.collect::<Result<Vec<_>, _>>()?;
+    Ok(tasks)
+}
+
+pub fn list_subtask_slots(
+    connection: &Connection,
+    parent_task_id: &str,
+) -> AppResult<Vec<TaskSlot>> {
+    let mut statement = connection.prepare(
+        "SELECT id, position FROM tasks WHERE parent_task_id = ?1 ORDER BY position, id",
+    )?;
+    let rows = statement.query_map([parent_task_id], map_slot)?;
+    let slots = rows.collect::<Result<Vec<_>, _>>()?;
+    Ok(slots)
+}
+
+pub fn set_completed_at(
+    connection: &Connection,
+    id: &str,
+    completed_at: Option<&str>,
+    updated_at: &str,
+) -> AppResult<usize> {
+    let affected = connection.execute(
+        "UPDATE tasks SET completed_at = ?2, updated_at = ?3 WHERE id = ?1",
+        (id, completed_at, updated_at),
+    )?;
+    Ok(affected)
+}
+
+pub fn set_position(
+    connection: &Connection,
+    id: &str,
+    position: &str,
+    updated_at: &str,
+) -> AppResult<usize> {
+    let affected = connection.execute(
+        "UPDATE tasks SET position = ?2, updated_at = ?3 WHERE id = ?1",
+        (id, position, updated_at),
+    )?;
+    Ok(affected)
 }
 
 pub fn list_column_slots(connection: &Connection, column_id: &str) -> AppResult<Vec<TaskSlot>> {

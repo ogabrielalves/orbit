@@ -65,6 +65,13 @@ pub struct CreateTaskInput {
     pub column_id: Option<String>,
 }
 
+#[derive(Debug, Clone, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateSubtaskInput {
+    pub parent_task_id: String,
+    pub title: String,
+}
+
 #[derive(Debug, Clone, Default, Deserialize, Type)]
 #[serde(rename_all = "camelCase", default)]
 pub struct UpdateTaskInput {
@@ -137,6 +144,16 @@ mod tests {
         assert_eq!(input.priority, Some(TaskPriority::Urgent));
         assert_eq!(input.due_date.as_deref(), Some("2026-11-08"));
         assert_eq!(input.column_id.as_deref(), Some("c"));
+    }
+
+    #[test]
+    fn create_subtask_input_requires_parent_and_title() {
+        let ok: CreateSubtaskInput =
+            serde_json::from_str(r#"{ "parentTaskId": "t1", "title": "Step" }"#).expect("parses");
+        let missing: Result<CreateSubtaskInput, _> = serde_json::from_str(r#"{ "title": "x" }"#);
+
+        assert_eq!(ok.parent_task_id, "t1");
+        assert!(missing.is_err());
     }
 
     #[test]

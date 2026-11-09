@@ -1,5 +1,9 @@
 pub mod commands;
+pub mod duplicate_commands;
+pub mod duplicate_service;
 pub mod models;
 pub mod placement_service;
 pub mod repository;
 pub mod service;
+pub mod subtask_commands;
+pub mod subtask_service;

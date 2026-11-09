@@ -8,6 +8,8 @@ use crate::state::AppState;
 
 pub const DEFAULT_RECENT_LIMIT: u32 = 20;
 pub const MAX_RECENT_LIMIT: u32 = 100;
+pub const DEFAULT_HISTORY_LIMIT: u32 = 50;
+pub const MAX_HISTORY_LIMIT: u32 = 200;
 
 pub fn record(
     connection: &Connection,
@@ -36,6 +38,27 @@ pub fn recent(state: &AppState, limit: Option<u32>) -> AppResult<Vec<ActivityEnt
         .clamp(1, MAX_RECENT_LIMIT);
     let connection = state.database();
     let rows = repository::find_recent(&connection, effective_limit)?;
+    rows.into_iter().map(to_entry).collect()
+}
+
+/// Entries of one entity, newest first. The log outlives the entity, so the history of a
+/// deleted entity is still readable.
+pub fn history(
+    state: &AppState,
+    entity_type: EntityType,
+    entity_id: &str,
+    limit: Option<u32>,
+) -> AppResult<Vec<ActivityEntry>> {
+    let effective_limit = limit
+        .unwrap_or(DEFAULT_HISTORY_LIMIT)
+        .clamp(1, MAX_HISTORY_LIMIT);
+    let connection = state.database();
+    let rows = repository::find_by_entity(
+        &connection,
+        entity_type.as_str(),
+        entity_id,
+        effective_limit,
+    )?;
     rows.into_iter().map(to_entry).collect()
 }
 
@@ -270,5 +293,70 @@ mod tests {
         let result = recent(&state, None);
 
         assert!(matches!(result, Err(AppError::Internal)));
+    }
+
+    #[test]
+    fn history_returns_only_the_entity_entries_newest_first() {
+        let state = state();
+        {
+            let connection = state.database();
+            for (entity_type, entity_id, action) in [
+                (EntityType::Task, "t1", ActivityAction::Created),
+                (EntityType::Task, "t2", ActivityAction::Created),
+                (EntityType::Task, "t1", ActivityAction::Archived),
+                (EntityType::Comment, "t1", ActivityAction::Created),
+            ] {
+                record(
+                    &connection,
+                    entity_type,
+                    entity_id,
+                    action,
+                    ChangeSet::new(),
+                )
+                .expect("records");
+                std::thread::sleep(std::time::Duration::from_millis(2));
+            }
+        }
+
+        let entries = history(&state, EntityType::Task, "t1", None).expect("reads");
+
+        let actions: Vec<ActivityAction> = entries.iter().map(|entry| entry.action).collect();
+        assert_eq!(actions, [ActivityAction::Archived, ActivityAction::Created]);
+        assert!(entries.iter().all(|entry| entry.entity_id == "t1"));
+    }
+
+    #[test]
+    fn history_clamps_the_limit_and_defaults_to_fifty() {
+        let state = state();
+        {
+            let connection = state.database();
+            for _ in 0..(MAX_HISTORY_LIMIT + 5) {
+                record(
+                    &connection,
+                    EntityType::Task,
+                    "t1",
+                    ActivityAction::Updated,
+                    ChangeSet::new(),
+                )
+                .expect("records");
+            }
+        }
+
+        let default = history(&state, EntityType::Task, "t1", None).expect("reads");
+        let zero = history(&state, EntityType::Task, "t1", Some(0)).expect("reads");
+        let huge = history(&state, EntityType::Task, "t1", Some(10_000)).expect("reads");
+
+        assert_eq!(default.len(), DEFAULT_HISTORY_LIMIT as usize);
+        assert_eq!(zero.len(), 1);
+        assert_eq!(huge.len(), MAX_HISTORY_LIMIT as usize);
+    }
+
+    #[test]
+    fn history_of_an_unknown_entity_is_empty() {
+        let state = state();
+
+        let entries = history(&state, EntityType::Task, "ghost", None).expect("reads");
+
+        assert!(entries.is_empty());
     }
 }

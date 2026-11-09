@@ -15,6 +15,15 @@ pub fn require_text(label: &str, value: &str, max_length: usize) -> AppResult<St
     Ok(trimmed.to_string())
 }
 
+/// Builds a `LIKE` pattern that matches `term` as a literal substring (use with `ESCAPE '\\'`).
+pub fn like_pattern(term: &str) -> String {
+    let escaped = term
+        .replace('\\', "\\\\")
+        .replace('%', "\\%")
+        .replace('_', "\\_");
+    format!("%{escaped}%")
+}
+
 pub fn optional_text(value: Option<String>) -> Option<String> {
     let trimmed = value.map(|text| text.trim().to_string())?;
     let is_blank = trimmed.is_empty();

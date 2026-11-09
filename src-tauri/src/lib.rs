@@ -10,20 +10,33 @@ use std::error::Error;
 use tauri::Manager;
 use tauri_specta::{Builder, collect_commands};
 
-use modules::activity::commands::list_recent_activity;
+use modules::activity::commands::{get_task_history, list_recent_activity};
+use modules::backlog::commands::{list_backlog, list_backlog_by_project, move_backlog_task};
 use modules::boards::commands::{
     create_board, create_column, delete_board, delete_column, get_board, move_column, update_board,
     update_column,
 };
+use modules::checklist::commands::{
+    create_checklist_item, delete_checklist_item, list_checklist_items, move_checklist_item,
+    update_checklist_item,
+};
+use modules::comments::commands::{create_comment, delete_comment, list_comments, update_comment};
 use modules::dashboard::commands::get_dashboard_summary;
 use modules::projects::commands::{
     archive_project, create_project, delete_project, get_project, list_projects, restore_project,
     update_project,
 };
 use modules::settings::commands::{get_settings, update_settings};
+use modules::tags::commands::{
+    assign_tag, create_tag, delete_tag, list_tags, list_task_tags, unassign_tag, update_tag,
+};
 use modules::tasks::commands::{
     archive_task, create_task, delete_task, get_task, list_board_tasks, move_task, restore_task,
     send_task_to_backlog, send_task_to_board, update_task,
+};
+use modules::tasks::duplicate_commands::duplicate_task;
+use modules::tasks::subtask_commands::{
+    create_subtask, list_subtasks, move_subtask, set_subtask_done,
 };
 
 pub fn bindings_builder() -> Builder<tauri::Wry> {
@@ -59,6 +72,31 @@ pub fn bindings_builder() -> Builder<tauri::Wry> {
             move_task,
             send_task_to_board,
             send_task_to_backlog,
+            create_subtask,
+            list_subtasks,
+            set_subtask_done,
+            move_subtask,
+            create_checklist_item,
+            list_checklist_items,
+            update_checklist_item,
+            move_checklist_item,
+            delete_checklist_item,
+            create_comment,
+            list_comments,
+            update_comment,
+            delete_comment,
+            create_tag,
+            list_tags,
+            update_tag,
+            delete_tag,
+            list_task_tags,
+            assign_tag,
+            unassign_tag,
+            duplicate_task,
+            get_task_history,
+            list_backlog,
+            list_backlog_by_project,
+            move_backlog_task,
         ])
 }
 

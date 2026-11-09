@@ -114,6 +114,7 @@ pub fn archive(state: &AppState, id: &str) -> AppResult<Task> {
     let mut connection = state.database();
     let transaction = connection.transaction()?;
     let current = find_existing(&transaction, id)?;
+    reject_subtask(&current, "archived")?;
 
     let is_already_archived = current.archived_at.is_some();
     if is_already_archived {
@@ -132,6 +133,7 @@ pub fn restore(state: &AppState, id: &str) -> AppResult<Task> {
     let mut connection = state.database();
     let transaction = connection.transaction()?;
     let current = find_existing(&transaction, id)?;
+    reject_subtask(&current, "restored")?;
 
     let is_archived = current.archived_at.is_some();
     if !is_archived {
@@ -163,6 +165,21 @@ pub fn delete(state: &AppState, id: &str) -> AppResult<()> {
 
     if let Some(directory) = state.attachments_directory() {
         files::remove_stored_files(directory, &stored_names);
+    }
+    Ok(())
+}
+
+fn reject_subtask(task: &Task, verb: &str) -> AppResult<()> {
+    let is_subtask = task.parent_task_id.is_some();
+    if is_subtask {
+        return Err(AppError::Validation(format!(
+            "subtasks cannot be {verb}; delete the subtask or {} its parent",
+            if verb == "archived" {
+                "archive"
+            } else {
+                "restore"
+            }
+        )));
     }
     Ok(())
 }

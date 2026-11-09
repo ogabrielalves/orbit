@@ -498,6 +498,25 @@ export const ptBR = {
       created: "Mais recentes",
       title: "Título",
     },
+    reorderHint: "Arraste as tarefas para reordená-las dentro de cada projeto.",
+    send: {
+      openShort: "Enviar ao quadro",
+      open: "Enviar {{title}} para um quadro",
+      title: "Enviar “{{title}}” para um quadro",
+      boardLabel: "Quadro",
+      columnLabel: "Coluna",
+      confirm: "Enviar",
+      noBoards: "Este projeto ainda não tem quadros. Crie um primeiro.",
+      toast: "Tarefa enviada para “{{board}}”",
+    },
+    dnd: {
+      instructions:
+        "Para reordenar, aperte espaço, use as setas e aperte espaço de novo para soltar.",
+      picked: "Tarefa {{title}} selecionada.",
+      over: "Tarefa {{title}} está sobre {{over}}.",
+      dropped: "Tarefa {{title}} solta sobre {{over}}.",
+      cancelled: "Reordenação cancelada. A tarefa {{title}} voltou ao lugar original.",
+    },
     subtasksProgress: "{{done}}/{{total}} subtarefas",
     checklistProgress: "{{done}}/{{total}} checklist",
     empty: {

@@ -1,6 +1,10 @@
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import type { CSSProperties, HTMLAttributes, Ref } from "react";
 import { useTranslation } from "react-i18next";
 import type { BacklogItem } from "@/bindings";
 import { Badge } from "@/components/atoms/Badge";
+import { Button } from "@/components/atoms/Button";
 import { TagChip } from "@/components/molecules/TagChip";
 import { formatDueDate, toLocalIsoDate } from "@/lib/dates";
 import { priorityTones } from "@/modules/tasks/priority";
@@ -9,9 +13,23 @@ type BacklogItemCardProps = {
   item: BacklogItem;
   showProject: boolean;
   onOpen: () => void;
+  onSend: () => void;
+  isDragging?: boolean;
+  innerRef?: Ref<HTMLLIElement>;
+  style?: CSSProperties;
+  dragProps?: HTMLAttributes<HTMLLIElement>;
 };
 
-export function BacklogItemCard({ item, showProject, onOpen }: BacklogItemCardProps) {
+export function BacklogItemCard({
+  item,
+  showProject,
+  onOpen,
+  onSend,
+  isDragging = false,
+  innerRef,
+  style,
+  dragProps,
+}: BacklogItemCardProps) {
   const { t, i18n } = useTranslation();
   const { task } = item;
   const now = new Date();
@@ -23,9 +41,17 @@ export function BacklogItemCard({ item, showProject, onOpen }: BacklogItemCardPr
   const hasSubtasks = item.subtaskCount > 0;
   const hasChecklist = item.checklistCount > 0;
   const hasTags = item.tags.length > 0;
+  const isDraggable = dragProps !== undefined;
+  const dragClass = isDraggable ? "cursor-grab touch-manipulation active:cursor-grabbing" : "";
+  const draggingClass = isDragging ? "opacity-40" : "";
 
   return (
-    <li className="relative flex flex-col gap-2 rounded-lg border border-border bg-surface p-3 shadow-xs has-focus-visible:shadow-focus">
+    <li
+      ref={innerRef}
+      style={style}
+      {...dragProps}
+      className={`relative flex flex-col gap-2 rounded-lg border border-border bg-surface p-3 shadow-xs has-focus-visible:shadow-focus ${dragClass} ${draggingClass}`}
+    >
       <div className="flex flex-wrap items-start justify-between gap-2">
         <button
           type="button"
@@ -58,6 +84,16 @@ export function BacklogItemCard({ item, showProject, onOpen }: BacklogItemCardPr
             })}
           </span>
         )}
+        <span className="relative z-10 ml-auto">
+          <Button
+            variant="secondary"
+            size="sm"
+            aria-label={t("backlog.send.open", { title: task.title })}
+            onClick={onSend}
+          >
+            {t("backlog.send.openShort")}
+          </Button>
+        </span>
       </div>
       {hasTags && (
         <ul aria-label={t("backlog.tagsLabel")} className="flex flex-wrap gap-1.5">
@@ -69,5 +105,24 @@ export function BacklogItemCard({ item, showProject, onOpen }: BacklogItemCardPr
         </ul>
       )}
     </li>
+  );
+}
+
+export function SortableBacklogItemCard(props: Omit<BacklogItemCardProps, "dragProps">) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: props.item.task.id,
+  });
+
+  // Keep the list item semantics: only the focus and the sortable description are needed.
+  const { role: _role, ...sortableAttributes } = attributes;
+
+  return (
+    <BacklogItemCard
+      {...props}
+      isDragging={isDragging}
+      innerRef={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      dragProps={{ ...sortableAttributes, ...listeners } as HTMLAttributes<HTMLLIElement>}
+    />
   );
 }

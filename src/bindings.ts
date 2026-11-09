@@ -67,6 +67,8 @@ export const commands = {
 	 *  is granted to the frontend.
 	 */
 	openAttachment: (id: string) => typedError<null, ErrorPayload>(__TAURI_INVOKE("open_attachment", { id })),
+	setupVault: (input: SetupVaultInput) => typedError<VaultInfo, ErrorPayload>(__TAURI_INVOKE("setup_vault", { input })),
+	getVaultStatus: () => typedError<VaultStatus, ErrorPayload>(__TAURI_INVOKE("get_vault_status")),
 };
 
 /* Types */
@@ -291,6 +293,12 @@ export type Settings = {
 	vaultPath: string | null,
 };
 
+export type SetupVaultInput = {
+	path: string,
+	/**  Create the directory when it does not exist yet (the "create a new vault" flow). */
+	create?: boolean,
+};
+
 export type Tag = {
 	id: string,
 	name: string,
@@ -376,6 +384,17 @@ export type UpdateTaskInput = {
 	description?: string | null,
 	priority?: TaskPriority | null,
 	dueDate?: string | null,
+};
+
+export type VaultInfo = {
+	path: string,
+	wasCreated: boolean,
+};
+
+export type VaultStatus = {
+	path: string | null,
+	/**  False when a vault is configured but its directory is gone or no longer writable. */
+	isAccessible: boolean,
 };
 
 /* Tauri Specta runtime */

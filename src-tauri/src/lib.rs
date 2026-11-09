@@ -26,6 +26,7 @@ use modules::checklist::commands::{
 };
 use modules::comments::commands::{create_comment, delete_comment, list_comments, update_comment};
 use modules::dashboard::commands::get_dashboard_summary;
+use modules::notes::vault_commands::{get_vault_status, setup_vault};
 use modules::projects::commands::{
     archive_project, create_project, delete_project, get_project, list_projects, restore_project,
     update_project,
@@ -105,6 +106,8 @@ pub fn bindings_builder() -> Builder<tauri::Wry> {
             list_attachments,
             remove_attachment,
             open_attachment,
+            setup_vault,
+            get_vault_status,
         ])
 }
 

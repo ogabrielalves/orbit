@@ -5,6 +5,7 @@ pub mod boards;
 pub mod checklist;
 pub mod comments;
 pub mod dashboard;
+pub mod notes;
 pub mod projects;
 pub mod settings;
 pub mod tags;

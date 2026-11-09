@@ -1,2 +1,12 @@
+pub mod image_commands;
+pub mod image_service;
+pub mod index_service;
+pub mod link_commands;
+pub mod link_service;
+pub mod models;
+pub mod note_commands;
+pub mod note_service;
+pub mod repository;
 pub mod vault_commands;
 pub mod vault_service;
+pub mod vault_watch;

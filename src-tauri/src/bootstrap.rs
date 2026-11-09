@@ -2,6 +2,7 @@ use std::path::Path;
 
 use crate::db::{connection, migrations};
 use crate::error::AppResult;
+use crate::modules::notes::vault_service;
 use crate::modules::settings::service as settings_service;
 use crate::state::AppState;
 
@@ -16,7 +17,20 @@ pub fn initialize_state(data_directory: &Path) -> AppResult<AppState> {
     std::fs::create_dir_all(&attachments_directory)?;
     let state = AppState::new(database, None).with_attachments_directory(attachments_directory);
     settings_service::restore_vault_path(&state)?;
+    reconcile_vault(&state);
     Ok(state)
+}
+
+/// Brings the note index in line with the vault. A missing or unreadable vault, or a failing
+/// scan, must never keep the app from starting, so problems are only logged.
+fn reconcile_vault(state: &AppState) {
+    if state.vault_path().is_none() {
+        return;
+    }
+    match vault_service::reindex(state) {
+        Ok(report) => log::info!("vault indexed: {report:?}"),
+        Err(error) => log::warn!("could not index the vault at startup: {error}"),
+    }
 }
 
 #[cfg(test)]

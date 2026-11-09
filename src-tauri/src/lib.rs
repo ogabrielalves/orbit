@@ -9,7 +9,7 @@ pub mod vault;
 use std::error::Error;
 
 use tauri::Manager;
-use tauri_specta::{Builder, collect_commands};
+use tauri_specta::{Builder, collect_commands, collect_events};
 
 use modules::activity::commands::{get_task_history, list_recent_activity};
 use modules::attachments::commands::{
@@ -26,7 +26,16 @@ use modules::checklist::commands::{
 };
 use modules::comments::commands::{create_comment, delete_comment, list_comments, update_comment};
 use modules::dashboard::commands::get_dashboard_summary;
-use modules::notes::vault_commands::{get_vault_status, setup_vault};
+use modules::folders::commands::{
+    create_folder, delete_folder, list_folders, move_folder, rename_folder,
+};
+use modules::notes::image_commands::{read_vault_image, save_pasted_image};
+use modules::notes::link_commands::{get_note_links, list_unresolved_links, resolve_note_link};
+use modules::notes::note_commands::{
+    create_note, delete_note, get_note, list_notes, move_note, rename_note, save_note,
+};
+use modules::notes::vault_commands::{get_vault_status, reindex_vault, setup_vault};
+use modules::notes::vault_watch::{self, VaultChanged, VaultWatchSlot};
 use modules::projects::commands::{
     archive_project, create_project, delete_project, get_project, list_projects, restore_project,
     update_project,
@@ -108,7 +117,26 @@ pub fn bindings_builder() -> Builder<tauri::Wry> {
             open_attachment,
             setup_vault,
             get_vault_status,
+            reindex_vault,
+            list_folders,
+            create_folder,
+            rename_folder,
+            move_folder,
+            delete_folder,
+            list_notes,
+            get_note,
+            create_note,
+            save_note,
+            rename_note,
+            move_note,
+            delete_note,
+            resolve_note_link,
+            get_note_links,
+            list_unresolved_links,
+            save_pasted_image,
+            read_vault_image,
         ])
+        .events(collect_events![VaultChanged])
 }
 
 #[cfg(debug_assertions)]
@@ -143,6 +171,8 @@ pub fn run() -> tauri::Result<()> {
             let state = bootstrap::initialize_state(&data_directory)
                 .map_err(|error| -> Box<dyn Error> { Box::new(error) })?;
             app.manage(state);
+            app.manage(VaultWatchSlot::default());
+            vault_watch::restart(app.handle());
             Ok(())
         })
         .run(tauri::generate_context!())

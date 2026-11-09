@@ -1,5 +1,10 @@
 pub mod frontmatter;
 pub mod hash;
+pub mod images;
+pub mod indexer;
 pub mod links;
+pub mod names;
+pub mod paths;
 pub mod title;
+pub mod watcher;
 pub mod writer;

@@ -3,6 +3,7 @@ use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 use specta::Type;
 
+use super::index_service::{self, IndexReport};
 use crate::error::{AppError, AppResult};
 use crate::modules::settings::models::UpdateSettingsInput;
 use crate::modules::settings::service as settings;
@@ -24,6 +25,8 @@ pub struct SetupVaultInput {
 pub struct VaultInfo {
     pub path: String,
     pub was_created: bool,
+    /// Notes found in the vault when it was indexed.
+    pub note_count: u32,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Type)]
@@ -49,10 +52,22 @@ pub fn setup(state: &AppState, input: SetupVaultInput) -> AppResult<VaultInfo> {
             ..Default::default()
         },
     )?;
+    let report = reindex(state)?;
+    let note_count = report.added + report.updated + report.unchanged;
     Ok(VaultInfo {
         path: path_text,
         was_created,
+        note_count,
     })
+}
+
+/// Rebuilds the note index from the vault: new and edited files are indexed, moved ones are
+/// followed by id, and rows whose file is gone are dropped. Also adds an `id` to the
+/// frontmatter of notes that have none.
+pub fn reindex(state: &AppState) -> AppResult<IndexReport> {
+    let root = vault_root(state)?;
+    let mut connection = state.database();
+    index_service::reconcile(&mut connection, &root)
 }
 
 pub fn status(state: &AppState) -> VaultStatus {

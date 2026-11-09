@@ -19,6 +19,44 @@ pub fn title_of(body: &str, fallback: &str) -> String {
     fallback.trim().to_string()
 }
 
+/// Rewrites the text of the heading `title_of` would pick, when that heading's text is exactly
+/// `old_title`. Returns `None` when the title does not come from a heading (or is different), so
+/// the caller knows nothing needs to change. Indentation and the line ending are kept.
+pub fn replace_title(body: &str, old_title: &str, new_title: &str) -> Option<String> {
+    let mut in_fence = false;
+    let mut offset = 0;
+    for line in body.split_inclusive('\n') {
+        let line_start = offset;
+        offset += line.len();
+        let trimmed = line.trim_start();
+        let toggles_fence = trimmed.starts_with("```") || trimmed.starts_with("~~~");
+        if toggles_fence {
+            in_fence = !in_fence;
+            continue;
+        }
+        if in_fence {
+            continue;
+        }
+        let Some(heading) = level_one_heading(line.trim_end_matches(['\n', '\r'])) else {
+            continue;
+        };
+        if heading != old_title {
+            return None;
+        }
+        let indent = &line[..line.len() - trimmed.len()];
+        let terminator = &line[line.trim_end_matches(['\n', '\r']).len()..];
+        let mut output = String::with_capacity(body.len() + new_title.len());
+        output.push_str(&body[..line_start]);
+        output.push_str(indent);
+        output.push_str("# ");
+        output.push_str(new_title);
+        output.push_str(terminator);
+        output.push_str(&body[offset..]);
+        return Some(output);
+    }
+    None
+}
+
 fn level_one_heading(line: &str) -> Option<String> {
     let indent = line.len() - line.trim_start_matches(' ').len();
     let is_indented_code = indent >= 4;
@@ -86,6 +124,38 @@ mod tests {
         assert_eq!(
             title_of("# Ação com [[Link]]\n", "file"),
             "Ação com [[Link]]"
+        );
+    }
+
+    #[test]
+    fn replace_title_rewrites_the_first_heading_and_keeps_the_rest() {
+        let body = "\n# Old name\n\nSee [[Other]].\n# Old name\n";
+
+        let replaced = replace_title(body, "Old name", "New name").expect("replaces");
+
+        assert_eq!(replaced, "\n# New name\n\nSee [[Other]].\n# Old name\n");
+    }
+
+    #[test]
+    fn replace_title_keeps_indentation_and_crlf_and_drops_closing_hashes() {
+        let replaced = replace_title("  # Old ##\r\nbody\r\n", "Old", "New").expect("replaces");
+
+        assert_eq!(replaced, "  # New\r\nbody\r\n");
+    }
+
+    #[test]
+    fn replace_title_does_nothing_when_the_title_is_not_that_heading() {
+        assert_eq!(replace_title("no heading\n", "Old", "New"), None);
+        assert_eq!(replace_title("# Something else\n", "Old", "New"), None);
+        assert_eq!(replace_title("```\n# Old\n```\n", "Old", "New"), None);
+        assert_eq!(replace_title("## Old\n", "Old", "New"), None);
+    }
+
+    #[test]
+    fn replace_title_handles_a_heading_on_the_last_line_without_a_newline() {
+        assert_eq!(
+            replace_title("# Old", "Old", "New").as_deref(),
+            Some("# New")
         );
     }
 }

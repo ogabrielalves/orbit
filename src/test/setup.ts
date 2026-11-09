@@ -36,7 +36,7 @@ vi.mock("@/bindings", () => ({
     updateColumn: vi.fn(),
     moveColumn: vi.fn(),
     deleteColumn: vi.fn(),
-    listBoardTasks: vi.fn(),
+    listBoardTasks: vi.fn().mockResolvedValue({ status: "ok", data: [] }),
     getTask: vi.fn(),
     createTask: vi.fn(),
     updateTask: vi.fn(),

@@ -6,6 +6,7 @@ import { type BoardDetails, commands } from "@/bindings";
 import { i18next } from "@/i18n";
 import { createBoardDetailsFixture, createColumnFixture } from "@/test/boardFixture";
 import { renderApp } from "@/test/renderApp";
+import { createTaskFixture } from "@/test/taskFixture";
 
 const dnd = vi.hoisted(() => ({ props: null as DndContextProps | null }));
 
@@ -28,6 +29,7 @@ const moveColumn = vi.mocked(commands.moveColumn);
 const deleteColumn = vi.mocked(commands.deleteColumn);
 const updateBoard = vi.mocked(commands.updateBoard);
 const deleteBoard = vi.mocked(commands.deleteBoard);
+const listBoardTasks = vi.mocked(commands.listBoardTasks);
 
 function mockBoard(details: BoardDetails = createBoardDetailsFixture()) {
   getBoard.mockResolvedValue({ status: "ok", data: details });
@@ -62,10 +64,12 @@ describe("BoardPage", () => {
       deleteColumn,
       updateBoard,
       deleteBoard,
+      listBoardTasks,
     ]) {
       command.mockReset();
     }
     mockBoard();
+    listBoardTasks.mockResolvedValue({ status: "ok", data: [] });
   });
 
   describe("states", () => {
@@ -192,6 +196,88 @@ describe("BoardPage", () => {
       renderApp("/boards/b1");
 
       expect(await screen.findByRole("button", { name: "New column" })).toBeEnabled();
+    });
+  });
+
+  describe("tasks", () => {
+    it("asks for the tasks of the board", async () => {
+      renderApp("/boards/b1");
+      await screen.findByRole("heading", { level: 1, name: "Sprint 14" });
+
+      await waitFor(() => expect(listBoardTasks).toHaveBeenCalledWith("b1"));
+    });
+
+    it("puts each card in its column ordered by position", async () => {
+      listBoardTasks.mockResolvedValue({
+        status: "ok",
+        data: [
+          createTaskFixture({ id: "t2", title: "Second", columnId: "c1", position: "a1" }),
+          createTaskFixture({ id: "t1", title: "First", columnId: "c1", position: "a0" }),
+          createTaskFixture({ id: "t3", title: "Elsewhere", columnId: "c2", position: "a0" }),
+        ],
+      });
+      renderApp("/boards/b1");
+
+      const todo = await screen.findByRole("list", { name: "Tasks in To do" });
+      const inProgress = screen.getByRole("list", { name: "Tasks in In progress" });
+
+      expect(
+        within(todo)
+          .getAllByRole("listitem")
+          .map((item) => item.textContent),
+      ).toEqual([expect.stringContaining("First"), expect.stringContaining("Second")]);
+      expect(within(inProgress).getByText("Elsewhere")).toBeInTheDocument();
+    });
+
+    it("shows priority and due date on the card", async () => {
+      listBoardTasks.mockResolvedValue({
+        status: "ok",
+        data: [createTaskFixture({ priority: "urgent", dueDate: "2099-01-05" })],
+      });
+      renderApp("/boards/b1");
+
+      const card = await screen.findByText("Write the spec");
+
+      expect(card.closest("li")).toHaveTextContent("Urgent");
+      expect(card.closest("li")).toHaveTextContent("Jan 5");
+    });
+
+    it("keeps the empty message in columns without tasks", async () => {
+      listBoardTasks.mockResolvedValue({
+        status: "ok",
+        data: [createTaskFixture({ columnId: "c1" })],
+      });
+      renderApp("/boards/b1");
+      await screen.findByText("Write the spec");
+
+      expect(screen.getAllByText("No tasks")).toHaveLength(2);
+    });
+
+    it("shows placeholders in the columns while the tasks load", async () => {
+      listBoardTasks.mockReturnValue(new Promise(() => undefined));
+      renderApp("/boards/b1");
+
+      await screen.findByRole("list", { name: "Board columns" });
+
+      expect(screen.queryByText("No tasks")).not.toBeInTheDocument();
+    });
+
+    it("keeps the columns and offers a retry when the tasks fail", async () => {
+      listBoardTasks.mockResolvedValueOnce({
+        status: "error",
+        error: { code: "DATABASE", message: "x" },
+      });
+      listBoardTasks.mockResolvedValue({
+        status: "ok",
+        data: [createTaskFixture({ title: "Recovered" })],
+      });
+      renderApp("/boards/b1");
+
+      expect(await screen.findByText("Could not load the tasks")).toBeInTheDocument();
+      expect(screen.getByRole("list", { name: "Board columns" })).toBeInTheDocument();
+      await userEvent.click(screen.getByRole("button", { name: "Try again" }));
+
+      expect(await screen.findByText("Recovered")).toBeInTheDocument();
     });
   });
 

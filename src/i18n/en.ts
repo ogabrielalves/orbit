@@ -158,6 +158,7 @@ export const en: Widen<typeof ptBR> = {
     back: "Back to project",
     backToProjects: "Back to projects",
     loadError: "Could not load the board",
+    tasksLoadError: "Could not load the tasks",
     columnCount_one: "{{count}} column",
     columnCount_other: "{{count}} columns",
     taskCount_one: "{{count}} task",
@@ -174,6 +175,7 @@ export const en: Widen<typeof ptBR> = {
     },
     column: {
       emptyTasks: "No tasks",
+      tasksLabel: "Tasks in {{name}}",
       actions: "Actions for column {{name}}",
       reorder: "Reorder column {{name}}",
       edit: "Edit column",
@@ -248,6 +250,11 @@ export const en: Widen<typeof ptBR> = {
       cancelled: "Reordering cancelled. Column {{name}} returned to its original position.",
     },
   },
+  tasks: {
+    priority: { low: "Low", medium: "Medium", high: "High", urgent: "Urgent" },
+    dueLabel: "Due",
+    overdue: "overdue",
+  },
   dashboard: {
     summary: {
       loadError: "Could not load the summary",
@@ -264,7 +271,6 @@ export const en: Widen<typeof ptBR> = {
         description: "Tasks with a due date will appear here.",
       },
       loadError: "Could not load the deadlines",
-      priority: { low: "Low", medium: "Medium", high: "High", urgent: "Urgent" },
     },
     activeProjects: {
       title: "Active projects",

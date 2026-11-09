@@ -1,6 +1,5 @@
 import { Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import type { TaskPriority } from "@/bindings";
 import { Badge } from "@/components/atoms/Badge";
 import { Skeleton } from "@/components/atoms/Skeleton";
 import { EmptyState } from "@/components/molecules/EmptyState";
@@ -8,6 +7,7 @@ import { ErrorState } from "@/components/molecules/ErrorState";
 import { getErrorMessageKey } from "@/lib/appError";
 import { formatDueDate } from "@/lib/dates";
 import { useDashboardSummary } from "@/modules/dashboard/queries";
+import { priorityTones } from "@/modules/tasks/priority";
 import { DashboardCard } from "@/pages/dashboard/DashboardCard";
 
 type UpcomingDeadlinesCardProps = {
@@ -16,13 +16,6 @@ type UpcomingDeadlinesCardProps = {
 };
 
 const placeholderIds = ["a", "b", "c"];
-
-const priorityTones: Record<TaskPriority, "neutral" | "info" | "warning" | "danger"> = {
-  low: "neutral",
-  medium: "info",
-  high: "warning",
-  urgent: "danger",
-};
 
 export function UpcomingDeadlinesCard({ today, now }: UpcomingDeadlinesCardProps) {
   const { t, i18n } = useTranslation();
@@ -72,7 +65,7 @@ export function UpcomingDeadlinesCard({ today, now }: UpcomingDeadlinesCardProps
                   <span className="truncate text-caption text-fg-muted">{task.projectName}</span>
                 </span>
                 <Badge tone={priorityTones[task.priority]}>
-                  {t(`dashboard.upcoming.priority.${task.priority}`)}
+                  {t(`tasks.priority.${task.priority}`)}
                 </Badge>
                 <span className="shrink-0 text-caption text-fg-muted">
                   {formatDueDate(task.dueDate, now, i18n.language)}

@@ -2,13 +2,16 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useTranslation } from "react-i18next";
 import MoreIcon from "@/assets/icons/linha/mais-opcoes.svg?react";
-import type { BoardColumn as BoardColumnData } from "@/bindings";
+import type { BoardColumn as BoardColumnData, Task } from "@/bindings";
 import { IconButton } from "@/components/atoms/IconButton";
+import { Skeleton } from "@/components/atoms/Skeleton";
 import { DropdownMenu } from "@/components/molecules/DropdownMenu";
 import { resolveProjectColor } from "@/modules/projects/colors";
+import { TaskCard } from "@/pages/board/TaskCard";
 
 type BoardColumnProps = {
   column: BoardColumnData;
+  tasks: Task[] | undefined;
   index: number;
   total: number;
   onEdit: (column: BoardColumnData) => void;
@@ -19,6 +22,7 @@ type BoardColumnProps = {
 
 export function BoardColumn({
   column,
+  tasks,
   index,
   total,
   onEdit,
@@ -36,6 +40,9 @@ export function BoardColumn({
   const hasColor = column.color !== null;
   const dotColor = hasColor ? resolveProjectColor(column.color) : "var(--color-fg-subtle)";
   const draggingClass = isDragging ? "opacity-60" : "";
+  const isLoadingTasks = tasks === undefined;
+  const hasTasks = tasks !== undefined && tasks.length > 0;
+  const hasNoTasks = tasks !== undefined && tasks.length === 0;
 
   return (
     <li
@@ -96,9 +103,22 @@ export function BoardColumn({
           ]}
         />
       </div>
-      <p className="rounded-lg border border-dashed border-border-strong px-3 py-6 text-center text-small text-fg-muted">
-        {t("boards.column.emptyTasks")}
-      </p>
+      {isLoadingTasks && <Skeleton className="h-16 rounded-lg" />}
+      {hasNoTasks && (
+        <p className="rounded-lg border border-dashed border-border-strong px-3 py-6 text-center text-small text-fg-muted">
+          {t("boards.column.emptyTasks")}
+        </p>
+      )}
+      {hasTasks && (
+        <ul
+          aria-label={t("boards.column.tasksLabel", { name: column.name })}
+          className="flex flex-col gap-2"
+        >
+          {tasks.map((task) => (
+            <TaskCard key={task.id} task={task} />
+          ))}
+        </ul>
+      )}
     </li>
   );
 }

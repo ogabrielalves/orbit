@@ -27,6 +27,8 @@ import { ErrorState } from "@/components/molecules/ErrorState";
 import { getErrorMessageKey } from "@/lib/appError";
 import { getColumnMove } from "@/modules/boards/columns";
 import { useBoard, useMoveColumn } from "@/modules/boards/queries";
+import { groupTasksByColumn } from "@/modules/tasks/grouping";
+import { useBoardTasks } from "@/modules/tasks/queries";
 import { BoardColumn } from "@/pages/board/BoardColumn";
 import { BoardDeleteDialog } from "@/pages/board/BoardDeleteDialog";
 import { BoardHeader } from "@/pages/board/BoardHeader";
@@ -44,6 +46,7 @@ export function BoardPage() {
   const navigate = useNavigate();
   const [isDeleted, setIsDeleted] = useState(false);
   const boardQuery = useBoard(boardId, !isDeleted);
+  const tasksQuery = useBoardTasks(boardId, !isDeleted);
   const moveColumn = useMoveColumn(boardId);
   const [columnForm, setColumnForm] = useState<ColumnFormState>(null);
   const [columnToDelete, setColumnToDelete] = useState<BoardColumnData | null>(null);
@@ -57,6 +60,9 @@ export function BoardPage() {
 
   const details = boardQuery.data;
   const columns = details?.columns ?? [];
+  const tasksByColumn =
+    tasksQuery.data === undefined ? undefined : groupTasksByColumn(tasksQuery.data);
+  const haveTasksFailed = tasksQuery.isError;
   const isLoading = boardQuery.isPending;
   const hasFailed = boardQuery.isError;
   const hasDetails = details !== undefined;
@@ -163,6 +169,14 @@ export function BoardPage() {
             onDelete={() => setIsDeletingBoard(true)}
           />
 
+          {haveTasksFailed && (
+            <ErrorState
+              title={t("boards.tasksLoadError")}
+              description={t(getErrorMessageKey(tasksQuery.error))}
+              onRetry={() => void tasksQuery.refetch()}
+            />
+          )}
+
           {hasColumns ? (
             <DndContext
               sensors={sensors}
@@ -185,6 +199,11 @@ export function BoardPage() {
                     <BoardColumn
                       key={column.id}
                       column={column}
+                      tasks={
+                        tasksByColumn === undefined
+                          ? undefined
+                          : (tasksByColumn.get(column.id) ?? [])
+                      }
                       index={index}
                       total={columns.length}
                       onEdit={(target) => setColumnForm({ column: target })}

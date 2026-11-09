@@ -155,6 +155,7 @@ export const ptBR = {
     back: "Voltar ao projeto",
     backToProjects: "Voltar para projetos",
     loadError: "Não foi possível carregar o quadro",
+    tasksLoadError: "Não foi possível carregar as tarefas",
     columnCount_one: "{{count}} coluna",
     columnCount_other: "{{count}} colunas",
     taskCount_one: "{{count}} tarefa",
@@ -171,6 +172,7 @@ export const ptBR = {
     },
     column: {
       emptyTasks: "Sem tarefas",
+      tasksLabel: "Tarefas em {{name}}",
       actions: "Ações da coluna {{name}}",
       reorder: "Reordenar a coluna {{name}}",
       edit: "Editar coluna",
@@ -245,6 +247,11 @@ export const ptBR = {
       cancelled: "Reordenação cancelada. A coluna {{name}} voltou à posição original.",
     },
   },
+  tasks: {
+    priority: { low: "Baixa", medium: "Média", high: "Alta", urgent: "Urgente" },
+    dueLabel: "Prazo",
+    overdue: "atrasada",
+  },
   dashboard: {
     summary: {
       loadError: "Não foi possível carregar o resumo",
@@ -261,7 +268,6 @@ export const ptBR = {
         description: "As tarefas com prazo aparecerão aqui.",
       },
       loadError: "Não foi possível carregar os prazos",
-      priority: { low: "Baixa", medium: "Média", high: "Alta", urgent: "Urgente" },
     },
     activeProjects: {
       title: "Projetos ativos",

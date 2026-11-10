@@ -308,6 +308,59 @@ mod tests {
         assert!(matches!(result, Err(AppError::Internal)));
     }
 
+    fn insert_raw_row(state: &AppState, entity_type: &str, action: &str, changes: Option<&str>) {
+        state
+            .database()
+            .execute_batch("PRAGMA ignore_check_constraints = ON;")
+            .expect("disables check");
+        state
+            .database()
+            .execute(
+                "INSERT INTO activity_log (id, entity_type, entity_id, action, changes, task_id, created_at) VALUES ('a1', ?1, 't1', ?2, ?3, 't1', '2026-11-08T10:00:00.000Z')",
+                rusqlite::params![entity_type, action, changes],
+            )
+            .expect("inserts raw row");
+    }
+
+    #[test]
+    fn an_unknown_entity_type_in_the_log_surfaces_as_an_internal_error() {
+        let state = state();
+        insert_raw_row(&state, "spaceship", "created", None);
+
+        assert!(matches!(recent(&state, None), Err(AppError::Internal)));
+        assert!(matches!(
+            task_history(&state, "t1", None),
+            Err(AppError::Internal)
+        ));
+    }
+
+    #[test]
+    fn an_unknown_action_in_the_log_surfaces_as_an_internal_error() {
+        let state = state();
+        insert_raw_row(&state, "task", "teleported", None);
+
+        assert!(matches!(recent(&state, None), Err(AppError::Internal)));
+        assert!(matches!(
+            task_history(&state, "t1", None),
+            Err(AppError::Internal)
+        ));
+    }
+
+    #[test]
+    fn corrupt_changes_json_also_fails_the_entity_and_task_histories() {
+        let state = state();
+        insert_raw_row(&state, "task", "updated", Some("{broken"));
+
+        assert!(matches!(
+            history(&state, EntityType::Task, "t1", None),
+            Err(AppError::Internal)
+        ));
+        assert!(matches!(
+            task_history(&state, "t1", None),
+            Err(AppError::Internal)
+        ));
+    }
+
     #[test]
     fn history_returns_only_the_entity_entries_newest_first() {
         let state = state();

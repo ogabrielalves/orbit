@@ -15,6 +15,7 @@ import { FavoritesPage } from "@/pages/favorites/FavoritesPage";
 import { GraphPage } from "@/pages/graph/GraphPage";
 import { NotFoundPage } from "@/pages/not-found/NotFoundPage";
 import { NotesPage } from "@/pages/notes/NotesPage";
+import { parseNotesSearch } from "@/pages/notes/notesSearch";
 import { ProjectDetailPage } from "@/pages/projects/ProjectDetailPage";
 import { ProjectsPage } from "@/pages/projects/ProjectsPage";
 import { parseProjectsSearch } from "@/pages/projects/projectsSearch";
@@ -67,6 +68,7 @@ const notesRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/notes",
   component: NotesPage,
+  validateSearch: parseNotesSearch,
   staticData: { titleKey: "nav.notes" },
 });
 
@@ -74,6 +76,7 @@ const noteDetailRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/notes/$noteId",
   component: NotesPage,
+  validateSearch: parseNotesSearch,
   staticData: { titleKey: "nav.notes" },
 });
 

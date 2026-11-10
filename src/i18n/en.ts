@@ -543,6 +543,68 @@ export const en: Widen<typeof ptBR> = {
       ready_other: "Vault ready · {{count}} notes found",
       loadError: "Could not check the notes folder",
     },
+    folders: {
+      title: "Folders",
+      all: "All notes",
+      loadError: "Could not load the folders",
+      newFolder: "New folder",
+      actions: "Actions for {{name}}",
+      expand: "Expand {{name}}",
+      collapse: "Collapse {{name}}",
+      menu: {
+        newNote: "New note here",
+        newSubfolder: "New subfolder",
+        rename: "Rename",
+        delete: "Delete",
+      },
+      form: {
+        createTitle: "New folder",
+        renameTitle: "Rename folder",
+        nameLabel: "Folder name",
+        namePlaceholder: "e.g. Meetings",
+        create: "Create",
+        rename: "Rename",
+      },
+      toast: {
+        created: "Folder created",
+        renamed: "Folder renamed",
+        deleted: "Folder deleted",
+      },
+      confirm: {
+        emptyTitle: "Delete the folder “{{name}}”?",
+        emptyDescription: "The empty folder will be removed from your vault.",
+        confirm: "Delete",
+        recursiveTitle: "Permanently delete “{{name}}” and everything inside it?",
+        recursiveDescription_one:
+          "This removes {{count}} note, plus every subfolder and any other file inside, from your disk. It does not go to a trash and cannot be undone.",
+        recursiveDescription_other:
+          "This removes {{count}} notes, plus every subfolder and any other file inside, from your disk. It does not go to a trash and cannot be undone.",
+        recursiveConfirm: "Delete permanently",
+      },
+    },
+    list: {
+      title: "Notes",
+      newNote: "New note",
+      loadError: "Could not load the notes",
+      empty: {
+        title: "No notes here yet",
+        description: "Create a note to start writing.",
+      },
+      form: {
+        title: "New note",
+        titleLabel: "Title",
+        titlePlaceholder: "e.g. Weekly review",
+        create: "Create",
+      },
+      toast: { created: "Note created" },
+    },
+    pane: {
+      loadError: "Could not load the note",
+      empty: {
+        title: "Select a note",
+        description: "Pick a note from the list to open it.",
+      },
+    },
   },
   greeting: {
     morning: "Good morning",

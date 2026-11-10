@@ -120,4 +120,30 @@ describe("DropdownMenu", () => {
     expect(onDelete).toHaveBeenCalledTimes(1);
     expect(onEdit).not.toHaveBeenCalled();
   });
+
+  it("can be opened and observed from the outside", async () => {
+    const onOpenChange = vi.fn();
+    const { rerender } = render(
+      <DropdownMenu
+        isOpen={false}
+        onOpenChange={onOpenChange}
+        trigger={<button type="button">Project actions</button>}
+        sections={[[{ id: "edit", label: "Edit project", onSelect: vi.fn() }]]}
+      />,
+    );
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+
+    rerender(
+      <DropdownMenu
+        isOpen
+        onOpenChange={onOpenChange}
+        trigger={<button type="button">Project actions</button>}
+        sections={[[{ id: "edit", label: "Edit project", onSelect: vi.fn() }]]}
+      />,
+    );
+    expect(await screen.findByRole("menu")).toBeInTheDocument();
+    await userEvent.keyboard("{Escape}");
+
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
 });

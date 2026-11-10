@@ -545,6 +545,68 @@ export const ptBR = {
       ready_other: "Vault pronto · {{count}} notas encontradas",
       loadError: "Não foi possível verificar a pasta de notas",
     },
+    folders: {
+      title: "Pastas",
+      all: "Todas as notas",
+      loadError: "Não foi possível carregar as pastas",
+      newFolder: "Nova pasta",
+      actions: "Ações de {{name}}",
+      expand: "Expandir {{name}}",
+      collapse: "Recolher {{name}}",
+      menu: {
+        newNote: "Nova nota aqui",
+        newSubfolder: "Nova subpasta",
+        rename: "Renomear",
+        delete: "Excluir",
+      },
+      form: {
+        createTitle: "Nova pasta",
+        renameTitle: "Renomear pasta",
+        nameLabel: "Nome da pasta",
+        namePlaceholder: "ex.: Reuniões",
+        create: "Criar",
+        rename: "Renomear",
+      },
+      toast: {
+        created: "Pasta criada",
+        renamed: "Pasta renomeada",
+        deleted: "Pasta excluída",
+      },
+      confirm: {
+        emptyTitle: "Excluir a pasta “{{name}}”?",
+        emptyDescription: "A pasta vazia será removida do seu vault.",
+        confirm: "Excluir",
+        recursiveTitle: "Excluir “{{name}}” e tudo dentro dela para sempre?",
+        recursiveDescription_one:
+          "Isso remove {{count}} nota, além de todas as subpastas e de qualquer outro arquivo dentro, do seu disco. Não vai para a lixeira e não pode ser desfeito.",
+        recursiveDescription_other:
+          "Isso remove {{count}} notas, além de todas as subpastas e de qualquer outro arquivo dentro, do seu disco. Não vai para a lixeira e não pode ser desfeito.",
+        recursiveConfirm: "Excluir para sempre",
+      },
+    },
+    list: {
+      title: "Notas",
+      newNote: "Nova nota",
+      loadError: "Não foi possível carregar as notas",
+      empty: {
+        title: "Nenhuma nota aqui ainda",
+        description: "Crie uma nota para começar a escrever.",
+      },
+      form: {
+        title: "Nova nota",
+        titleLabel: "Título",
+        titlePlaceholder: "ex.: Revisão semanal",
+        create: "Criar",
+      },
+      toast: { created: "Nota criada" },
+    },
+    pane: {
+      loadError: "Não foi possível carregar a nota",
+      empty: {
+        title: "Selecione uma nota",
+        description: "Escolha uma nota da lista para abri-la.",
+      },
+    },
   },
   greeting: {
     morning: "Bom dia",

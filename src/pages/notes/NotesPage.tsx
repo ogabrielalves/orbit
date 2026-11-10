@@ -4,6 +4,7 @@ import { ErrorState } from "@/components/molecules/ErrorState";
 import { PageHeader } from "@/components/molecules/PageHeader";
 import { getErrorMessageKey } from "@/lib/appError";
 import { useVaultStatus } from "@/modules/notes/queries";
+import { NotesWorkspace } from "@/pages/notes/NotesWorkspace";
 import { VaultSetup } from "@/pages/notes/VaultSetup";
 
 export function NotesPage() {
@@ -35,6 +36,7 @@ export function NotesPage() {
         />
       )}
       {needsSetup && <VaultSetup status={status} />}
+      {isReady && <NotesWorkspace />}
     </>
   );
 }

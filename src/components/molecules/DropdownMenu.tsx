@@ -16,6 +16,8 @@ type DropdownMenuProps = {
   sections: DropdownMenuItemData[][];
   align?: "start" | "center" | "end";
   onCloseAutoFocus?: (event: Event) => void;
+  isOpen?: boolean;
+  onOpenChange?: (isOpen: boolean) => void;
 };
 
 export function DropdownMenu({
@@ -23,9 +25,11 @@ export function DropdownMenu({
   sections,
   align = "end",
   onCloseAutoFocus,
+  isOpen,
+  onOpenChange,
 }: DropdownMenuProps) {
   return (
-    <RadixMenu.Root>
+    <RadixMenu.Root open={isOpen} onOpenChange={onOpenChange}>
       <RadixMenu.Trigger asChild>{trigger}</RadixMenu.Trigger>
       <RadixMenu.Portal>
         <RadixMenu.Content

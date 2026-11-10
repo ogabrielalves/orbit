@@ -8,6 +8,7 @@ pub mod dashboard;
 pub mod folders;
 pub mod notes;
 pub mod projects;
+pub mod search;
 pub mod settings;
 pub mod tags;
 pub mod tasks;

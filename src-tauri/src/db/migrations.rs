@@ -13,6 +13,7 @@ const MIGRATIONS: &[M<'static>] = &[
     M::up(include_str!("../../migrations/0007_column_kind.sql")),
     M::up(include_str!("../../migrations/0008_activity_task_id.sql")),
     M::up(include_str!("../../migrations/0009_notes.sql")),
+    M::up(include_str!("../../migrations/0010_search.sql")),
 ];
 
 pub fn run(connection: &mut Connection) -> AppResult<()> {
@@ -159,5 +160,43 @@ mod tests {
         .map(|(id, task)| (id.to_string(), task.map(str::to_string)))
         .collect();
         assert_eq!(links, expected);
+    }
+
+    #[test]
+    fn search_migration_indexes_the_data_that_already_exists() {
+        let mut connection = open_in_memory().expect("opens");
+        let migrations = Migrations::from_slice(MIGRATIONS);
+        migrations.to_version(&mut connection, 9).expect("up to 9");
+        connection
+            .execute_batch(
+                "INSERT INTO projects (id, name, description, created_at, updated_at) VALUES ('p', 'Legacy project', 'old description', 'x', 'x');
+                 INSERT INTO boards (id, project_id, name, created_at, updated_at) VALUES ('b', 'p', 'Legacy board', 'x', 'x');
+                 INSERT INTO tasks (id, project_id, title, description, position, created_at, updated_at) VALUES ('t', 'p', 'Legacy task', 'details here', 'V', 'x', 'x');
+                 INSERT INTO tasks (id, project_id, parent_task_id, title, position, created_at, updated_at) VALUES ('s', 'p', 't', 'Legacy subtask', 'V', 'x', 'x');",
+            )
+            .expect("seed");
+
+        migrations.to_latest(&mut connection).expect("up to latest");
+
+        let found = |expression: &str| -> Vec<String> {
+            let mut statement = connection
+                .prepare(
+                    "SELECT e.entity_type || ':' || e.entity_id
+                     FROM search_index JOIN search_entries e ON e.id = search_index.rowid
+                     WHERE search_index MATCH ?1 ORDER BY 1",
+                )
+                .expect("prepares");
+            statement
+                .query_map([expression], |row| row.get::<_, String>(0))
+                .expect("runs")
+                .collect::<Result<_, _>>()
+                .expect("reads")
+        };
+        assert_eq!(
+            found("legacy"),
+            ["board:b", "project:p", "task:s", "task:t"]
+        );
+        assert_eq!(found("details"), ["task:t"]);
+        assert_eq!(found("description"), ["project:p"]);
     }
 }

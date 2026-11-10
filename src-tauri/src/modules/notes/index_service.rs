@@ -9,11 +9,13 @@ use specta::Type;
 use super::models::{LinkRecord, NoteRecord};
 use super::repository;
 use crate::error::{AppError, AppResult};
+use crate::modules::search::repository as search_repository;
 use crate::shared::id;
 use crate::vault::frontmatter;
 use crate::vault::hash::content_hash;
 use crate::vault::indexer::{
-    MAX_NOTE_BYTES, file_claims_id, is_valid_id, modified_time, note_title, same_file, scan,
+    MAX_NOTE_BYTES, file_claims_id, is_valid_id, list_directories, modified_time, note_title,
+    same_file, scan,
 };
 use crate::vault::links::{self, title_key};
 use crate::vault::watcher::ChangeBatch;
@@ -81,6 +83,7 @@ pub fn reconcile(connection: &mut Connection, vault_root: &Path) -> AppResult<In
             report.removed += 1;
         }
     }
+    search_repository::replace_folders(&transaction, &list_directories(vault_root))?;
     transaction.commit()?;
     Ok(report)
 }
@@ -116,8 +119,14 @@ pub fn index_file(
     let hash = content_hash(&bytes);
 
     let at_path = repository::find_by_path(connection, relative_path)?;
-    let is_unchanged = at_path.as_ref().is_some_and(|note| note.hash == hash);
-    if is_unchanged {
+    let has_same_content = at_path.as_ref().is_some_and(|note| note.hash == hash);
+    let is_searchable = match &at_path {
+        Some(note) if has_same_content => {
+            search_repository::has_entry(connection, search_repository::NOTE, &note.id)?
+        }
+        _ => false,
+    };
+    if has_same_content && is_searchable {
         return Ok(Indexed::new(FileOutcome::Unchanged));
     }
 
@@ -181,6 +190,13 @@ pub fn index_file(
         }
     };
     repository::replace_links(connection, &note_id, &link_records(&parsed.body))?;
+    search_repository::upsert_entry(
+        connection,
+        search_repository::NOTE,
+        &note_id,
+        &record.title,
+        &parsed.body,
+    )?;
     Ok(Indexed {
         outcome,
         id_assigned,

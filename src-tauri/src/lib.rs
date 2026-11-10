@@ -40,6 +40,7 @@ use modules::projects::commands::{
     archive_project, create_project, delete_project, get_project, list_projects, restore_project,
     update_project,
 };
+use modules::search::commands::search;
 use modules::settings::commands::{get_settings, update_settings};
 use modules::tags::commands::{
     assign_tag, create_tag, delete_tag, list_tags, list_task_tags, unassign_tag, update_tag,
@@ -135,6 +136,7 @@ pub fn bindings_builder() -> Builder<tauri::Wry> {
             list_unresolved_links,
             save_pasted_image,
             read_vault_image,
+            search,
         ])
         .events(collect_events![VaultChanged])
 }

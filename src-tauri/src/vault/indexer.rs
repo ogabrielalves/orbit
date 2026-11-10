@@ -24,6 +24,42 @@ pub fn scan(vault_root: &Path) -> Vec<String> {
     found
 }
 
+/// Relative paths (`/` separated, sorted ignoring case) of every folder in the vault. Hidden
+/// entries, symlinks and the attachments directory at the root are left out.
+pub fn list_directories(vault_root: &Path) -> Vec<String> {
+    let mut found = Vec::new();
+    collect_directories(vault_root, "", &mut found);
+    found.sort_by_key(|path| path.to_lowercase());
+    found
+}
+
+fn collect_directories(directory: &Path, prefix: &str, found: &mut Vec<String>) {
+    let Ok(entries) = fs::read_dir(directory) else {
+        return;
+    };
+    for entry in entries.flatten() {
+        let Some(name) = entry.file_name().to_str().map(str::to_string) else {
+            continue;
+        };
+        let Ok(file_type) = entry.file_type() else {
+            continue;
+        };
+        let is_visible_directory =
+            file_type.is_dir() && !file_type.is_symlink() && !name.starts_with('.');
+        let is_attachments_root = prefix.is_empty() && name == ATTACHMENTS_DIRECTORY;
+        if !is_visible_directory || is_attachments_root {
+            continue;
+        }
+        let path = if prefix.is_empty() {
+            name
+        } else {
+            format!("{prefix}/{name}")
+        };
+        collect_directories(&entry.path(), &path, found);
+        found.push(path);
+    }
+}
+
 /// Whether a relative path could hold a note: Markdown extension, no hidden segment, not inside
 /// the attachments directory and not one of the writer's temporary files.
 pub fn is_indexable_path(relative_path: &str) -> bool {
@@ -269,5 +305,25 @@ mod tests {
 
         assert!(stamp.ends_with('Z'), "{stamp}");
         assert_eq!(stamp.len(), "2026-11-08T10:00:00.000Z".len());
+    }
+
+    #[test]
+    fn listing_directories_skips_hidden_symlinks_attachments_and_files_and_sorts_ignoring_case() {
+        let vault = tempfile::tempdir().expect("vault");
+        for relative in [
+            "b/inner/x.md",
+            "A/y.md",
+            ".hidden/z.md",
+            "attachments/img.png",
+            "c/attachments/keep.md",
+            "plain.md",
+        ] {
+            write_file(vault.path(), relative, "x");
+        }
+
+        let found = list_directories(vault.path());
+
+        assert_eq!(found, ["A", "b", "b/inner", "c", "c/attachments"]);
+        assert!(list_directories(&vault.path().join("ghost")).is_empty());
     }
 }

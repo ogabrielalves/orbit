@@ -10,8 +10,9 @@ use crate::modules::activity::models::{ActivityAction, ChangeSet, EntityType};
 use crate::modules::activity::service as activity;
 use crate::modules::notes::repository;
 use crate::modules::notes::vault_service::vault_root;
+use crate::modules::search::repository as search_repository;
 use crate::state::AppState;
-use crate::vault::indexer::ATTACHMENTS_DIRECTORY;
+use crate::vault::indexer::{ATTACHMENTS_DIRECTORY, list_directories};
 use crate::vault::names::validate_name;
 use crate::vault::paths::{
     absolute, existing_directory, is_same_or_inside, join, name_is_taken, name_of,
@@ -26,10 +27,7 @@ pub fn list(state: &AppState) -> AppResult<Vec<FolderEntry>> {
         *counts.entry(parent_of(&note.path).to_string()).or_insert(0) += 1;
     }
 
-    let mut paths = Vec::new();
-    collect_directories(&root, "", &mut paths);
-    paths.sort_by_key(|path| path.to_lowercase());
-    Ok(paths
+    Ok(list_directories(&root)
         .into_iter()
         .map(|path| FolderEntry {
             name: name_of(&path).to_string(),
@@ -54,6 +52,7 @@ pub fn create(state: &AppState, input: CreateFolderInput) -> AppResult<FolderEnt
     let mut changes = ChangeSet::new();
     changes.track("path", None, Some(path.as_str()));
     record(&connection, &path, ActivityAction::Created, changes)?;
+    refresh_search(&connection, &root)?;
     entry_of(&connection, path)
 }
 
@@ -128,6 +127,7 @@ pub fn delete(state: &AppState, path: &str, recursive: bool) -> AppResult<()> {
     } else {
         fs::remove_dir(&directory)?;
     }
+    refresh_search(&transaction, &root)?;
     transaction.commit()?;
     Ok(())
 }
@@ -146,7 +146,7 @@ fn relocate(
     fs::rename(&from, &to)?;
 
     let mut connection = state.database();
-    let result = update_index(&mut connection, path, new_path, action);
+    let result = update_index(&mut connection, root, path, new_path, action);
     if let Err(error) = result {
         if let Err(restore_error) = fs::rename(&to, &from) {
             log::error!("could not undo the move of '{path}': {restore_error}");
@@ -158,6 +158,7 @@ fn relocate(
 
 fn update_index(
     connection: &mut Connection,
+    root: &Path,
     path: &str,
     new_path: &str,
     action: ActivityAction,
@@ -167,6 +168,7 @@ fn update_index(
     let mut changes = ChangeSet::new();
     changes.track("path", Some(path), Some(new_path));
     record(&transaction, new_path, action, changes)?;
+    refresh_search(&transaction, root)?;
     transaction.commit()?;
     Ok(())
 }
@@ -182,6 +184,11 @@ fn folder_path(input: &str) -> AppResult<String> {
         ));
     }
     Ok(path)
+}
+
+/// Keeps the search index of folders in step with the directories on disk.
+fn refresh_search(connection: &Connection, root: &Path) -> AppResult<()> {
+    search_repository::replace_folders(connection, &list_directories(root))
 }
 
 fn entry_of(connection: &Connection, path: String) -> AppResult<FolderEntry> {
@@ -214,32 +221,6 @@ fn ensure_name_is_free(directory: &Path, name: &str, except: Option<&Path>) -> A
         )));
     }
     Ok(())
-}
-
-fn collect_directories(directory: &Path, prefix: &str, found: &mut Vec<String>) {
-    let Ok(entries) = fs::read_dir(directory) else {
-        return;
-    };
-    for entry in entries.flatten() {
-        let Some(name) = entry.file_name().to_str().map(str::to_string) else {
-            continue;
-        };
-        let Ok(file_type) = entry.file_type() else {
-            continue;
-        };
-        let is_visible_directory =
-            file_type.is_dir() && !file_type.is_symlink() && !name.starts_with('.');
-        if !is_visible_directory {
-            continue;
-        }
-        let is_attachments_root = prefix.is_empty() && name == ATTACHMENTS_DIRECTORY;
-        if is_attachments_root {
-            continue;
-        }
-        let path = join(prefix, &name);
-        collect_directories(&entry.path(), &path, found);
-        found.push(path);
-    }
 }
 
 fn record(

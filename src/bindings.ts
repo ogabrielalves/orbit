@@ -99,6 +99,8 @@ export const commands = {
 	savePastedImage: (input: PasteImageInput) => typedError<PastedImage, ErrorPayload>(__TAURI_INVOKE("save_pasted_image", { input })),
 	/**  Reads an image stored by `savePastedImage` (path as returned, `attachments/<name>`). */
 	readVaultImage: (path: string) => typedError<VaultImage, ErrorPayload>(__TAURI_INVOKE("read_vault_image", { path })),
+	/**  Global search over projects, boards, tasks, notes and folders, grouped by category. */
+	search: (input: SearchInput) => typedError<SearchResults, ErrorPayload>(__TAURI_INVOKE("search", { input })),
 };
 
 /** Events */
@@ -442,6 +444,35 @@ export type SaveNoteInput = {
 	force?: boolean,
 };
 
+export type SearchHit = {
+	/**  Project, board, task and note ids; the relative path for folders. */
+	entityId: string,
+	title: TextPart[],
+	/**  The part of the text (description, note body, path) around the match. */
+	snippet: TextPart[],
+	/**  Where it lives: the project name for boards and tasks, the folder for notes and folders. */
+	context: string | null,
+	projectId: string | null,
+	boardId: string | null,
+	parentTaskId: string | null,
+	/**  Relative path inside the vault, for notes and folders. */
+	path: string | null,
+};
+
+export type SearchInput = {
+	query?: string,
+	/**  Results per category (default 8, at most 50). */
+	limitPerCategory?: number | null,
+};
+
+export type SearchResults = {
+	projects: SearchHit[],
+	boards: SearchHit[],
+	tasks: SearchHit[],
+	notes: SearchHit[],
+	folders: SearchHit[],
+};
+
 export type Settings = {
 	language: Language | null,
 	vaultPath: string | null,
@@ -487,6 +518,15 @@ export type TaskStateCounts = {
 	pending: number,
 	inProgress: number,
 	completed: number,
+};
+
+/**
+ *  A piece of text, flagged when it is what the query matched. Rendering a list of these as plain
+ *  text with the flagged parts emphasized needs no HTML handling.
+ */
+export type TextPart = {
+	text: string,
+	isMatch: boolean,
 };
 
 /**  A title that notes link to but that no note has, with the notes that link to it. */

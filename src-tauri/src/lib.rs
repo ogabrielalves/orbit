@@ -16,6 +16,7 @@ use modules::attachments::commands::{
     import_attachment, list_attachments, open_attachment, remove_attachment,
 };
 use modules::backlog::commands::{list_backlog, list_backlog_by_project, move_backlog_task};
+use modules::backup::commands::{export_database, import_database};
 use modules::boards::commands::{
     create_board, create_column, delete_board, delete_column, get_board, move_column, update_board,
     update_column,
@@ -60,6 +61,8 @@ pub fn bindings_builder() -> Builder<tauri::Wry> {
     Builder::<tauri::Wry>::new()
         .disable_serde_phases()
         .commands(collect_commands![
+            export_database,
+            import_database,
             get_settings,
             update_settings,
             list_projects,

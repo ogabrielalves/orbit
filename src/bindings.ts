@@ -5,6 +5,8 @@ import * as __TAURI_EVENT from "@tauri-apps/api/event";
 
 /** Commands */
 export const commands = {
+	exportDatabase: (input: ExportBackupInput) => typedError<BackupFile, ErrorPayload>(__TAURI_INVOKE("export_database", { input })),
+	importDatabase: (input: ImportBackupInput) => typedError<ImportReport, ErrorPayload>(__TAURI_INVOKE("import_database", { input })),
 	getSettings: () => typedError<Settings, ErrorPayload>(__TAURI_INVOKE("get_settings")),
 	updateSettings: (input: UpdateSettingsInput) => typedError<Settings, ErrorPayload>(__TAURI_INVOKE("update_settings", { input })),
 	listProjects: (input: ListProjectsInput) => typedError<Project[], ErrorPayload>(__TAURI_INVOKE("list_projects", { input })),
@@ -141,6 +143,11 @@ export type BacklogItem = {
 
 export type BacklogSort = "manual" | "priority" | "due_date" | "created" | "title";
 
+export type BackupFile = {
+	path: string,
+	sizeBytes: number,
+};
+
 export type Board = {
 	id: string,
 	projectId: string,
@@ -267,6 +274,11 @@ export type ErrorPayload = {
 	message: string,
 };
 
+export type ExportBackupInput = {
+	destinationPath: string,
+	overwrite?: boolean,
+};
+
 export type FavoriteEntry = {
 	entityType: FavoriteType,
 	entityId: string,
@@ -323,6 +335,17 @@ export type GraphNode = {
 };
 
 export type GraphNodeKind = "note" | "unresolved";
+
+export type ImportBackupInput = {
+	sourcePath: string,
+};
+
+export type ImportReport = {
+	backupSchemaVersion: number,
+	currentSchemaVersion: number,
+	wasUpgraded: boolean,
+	safetyBackupPath: string | null,
+};
 
 export type IndexReport = {
 	added: number,

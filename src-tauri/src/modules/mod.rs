@@ -1,6 +1,7 @@
 pub mod activity;
 pub mod attachments;
 pub mod backlog;
+pub mod backup;
 pub mod boards;
 pub mod checklist;
 pub mod comments;

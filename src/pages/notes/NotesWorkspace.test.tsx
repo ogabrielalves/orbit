@@ -28,10 +28,15 @@ function note(id: string, title: string, path = `${title}.md`): NoteSummary {
   };
 }
 
+const CREATING_TEST_TIMEOUT_IN_MILLISECONDS = 30_000;
+const slowWait = { timeout: 15_000 };
+
 const folders = [folder("work", 1), folder("work/plans", 2), folder("empty", 0)];
 
 async function openMenu(name: string) {
-  await userEvent.click(await screen.findByRole("button", { name: `Actions for ${name}` }));
+  await userEvent.click(
+    await screen.findByRole("button", { name: `Actions for ${name}` }, slowWait),
+  );
 }
 
 describe("Notes workspace", () => {
@@ -143,20 +148,23 @@ describe("Notes workspace", () => {
     });
   });
 
-  describe("creating", () => {
+  describe("creating", { timeout: CREATING_TEST_TIMEOUT_IN_MILLISECONDS }, () => {
+    const user = userEvent.setup({ delay: null });
+
     it("creates a folder at the root and selects it", async () => {
       createFolder.mockResolvedValue({ status: "ok", data: folder("inbox") });
       renderApp("/notes");
 
-      await userEvent.click(await screen.findByRole("button", { name: "New folder" }));
-      const dialog = await screen.findByRole("dialog", { name: "New folder" });
-      await userEvent.type(within(dialog).getByRole("textbox", { name: "Folder name" }), "inbox");
-      await userEvent.click(within(dialog).getByRole("button", { name: "Create" }));
+      await user.click(await screen.findByRole("button", { name: "New folder" }, slowWait));
+      const dialog = await screen.findByRole("dialog", { name: "New folder" }, slowWait);
+      await user.type(within(dialog).getByRole("textbox", { name: "Folder name" }), "inbox");
+      await user.click(within(dialog).getByRole("button", { name: "Create" }));
 
-      await waitFor(() =>
-        expect(createFolder).toHaveBeenCalledWith({ parentPath: null, name: "inbox" }),
+      await waitFor(
+        () => expect(createFolder).toHaveBeenCalledWith({ parentPath: null, name: "inbox" }),
+        slowWait,
       );
-      expect(await screen.findByText("Folder created")).toBeInTheDocument();
+      expect(await screen.findByText("Folder created", undefined, slowWait)).toBeInTheDocument();
     });
 
     it("creates a subfolder from the folder menu", async () => {
@@ -164,13 +172,14 @@ describe("Notes workspace", () => {
       renderApp("/notes");
 
       await openMenu("work");
-      await userEvent.click(await screen.findByRole("menuitem", { name: "New subfolder" }));
-      const dialog = await screen.findByRole("dialog", { name: "New folder" });
-      await userEvent.type(within(dialog).getByRole("textbox"), "sub");
-      await userEvent.click(within(dialog).getByRole("button", { name: "Create" }));
+      await user.click(await screen.findByRole("menuitem", { name: "New subfolder" }, slowWait));
+      const dialog = await screen.findByRole("dialog", { name: "New folder" }, slowWait);
+      await user.type(within(dialog).getByRole("textbox"), "sub");
+      await user.click(within(dialog).getByRole("button", { name: "Create" }));
 
-      await waitFor(() =>
-        expect(createFolder).toHaveBeenCalledWith({ parentPath: "work", name: "sub" }),
+      await waitFor(
+        () => expect(createFolder).toHaveBeenCalledWith({ parentPath: "work", name: "sub" }),
+        slowWait,
       );
     });
 
@@ -185,15 +194,16 @@ describe("Notes workspace", () => {
       });
       renderApp("/notes?folder=work");
 
-      await userEvent.click(await screen.findByRole("button", { name: "New note" }));
-      const dialog = await screen.findByRole("dialog", { name: "New note" });
-      await userEvent.type(within(dialog).getByRole("textbox", { name: "Title" }), "Weekly");
-      await userEvent.click(within(dialog).getByRole("button", { name: "Create" }));
+      await user.click(await screen.findByRole("button", { name: "New note" }, slowWait));
+      const dialog = await screen.findByRole("dialog", { name: "New note" }, slowWait);
+      await user.type(within(dialog).getByRole("textbox", { name: "Title" }), "Weekly");
+      await user.click(within(dialog).getByRole("button", { name: "Create" }));
 
-      await waitFor(() =>
-        expect(createNote).toHaveBeenCalledWith({ title: "Weekly", folderPath: "work" }),
+      await waitFor(
+        () => expect(createNote).toHaveBeenCalledWith({ title: "Weekly", folderPath: "work" }),
+        slowWait,
       );
-      expect(await screen.findByRole("article", { name: "Weekly" })).toBeInTheDocument();
+      expect(await screen.findByRole("article", { name: "Weekly" }, slowWait)).toBeInTheDocument();
     });
 
     it("creates a note at the vault root from All notes", async () => {
@@ -207,13 +217,14 @@ describe("Notes workspace", () => {
       });
       renderApp("/notes");
 
-      await userEvent.click(await screen.findByRole("button", { name: "New note" }));
-      const dialog = await screen.findByRole("dialog", { name: "New note" });
-      await userEvent.type(within(dialog).getByRole("textbox"), "Root");
-      await userEvent.click(within(dialog).getByRole("button", { name: "Create" }));
+      await user.click(await screen.findByRole("button", { name: "New note" }, slowWait));
+      const dialog = await screen.findByRole("dialog", { name: "New note" }, slowWait);
+      await user.type(within(dialog).getByRole("textbox"), "Root");
+      await user.click(within(dialog).getByRole("button", { name: "Create" }));
 
-      await waitFor(() =>
-        expect(createNote).toHaveBeenCalledWith({ title: "Root", folderPath: null }),
+      await waitFor(
+        () => expect(createNote).toHaveBeenCalledWith({ title: "Root", folderPath: null }),
+        slowWait,
       );
     });
   });

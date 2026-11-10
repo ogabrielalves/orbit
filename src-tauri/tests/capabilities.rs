@@ -14,7 +14,7 @@ fn default_permissions() -> Vec<String> {
 }
 
 #[test]
-fn the_main_window_only_gets_the_core_defaults_the_close_permissions_and_the_file_picker() {
+fn the_main_window_only_gets_the_core_defaults_the_close_permissions_and_the_file_pickers() {
     let permissions = default_permissions();
 
     assert_eq!(
@@ -23,7 +23,8 @@ fn the_main_window_only_gets_the_core_defaults_the_close_permissions_and_the_fil
             "core:default",
             "core:window:allow-close",
             "core:window:allow-destroy",
-            "dialog:allow-open"
+            "dialog:allow-open",
+            "dialog:allow-save"
         ]
     );
 }

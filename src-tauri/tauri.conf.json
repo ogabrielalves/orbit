@@ -27,6 +27,12 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "category": "Productivity",
+    "shortDescription": "Local-first desktop app for projects, Kanban boards, notes and a knowledge graph",
+    "longDescription": "ORBIT keeps your projects, Kanban boards, Markdown notes and knowledge graph in one local-first desktop app. Your data stays on your computer, with no account and no cloud.",
+    "publisher": "Gabriel Alves",
+    "copyright": "Copyright (c) 2026 Gabriel Alves",
+    "license": "MIT",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",

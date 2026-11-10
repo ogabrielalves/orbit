@@ -1,12 +1,15 @@
 use std::path::{Path, PathBuf};
-use std::sync::{Mutex, MutexGuard, PoisonError};
+use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 
 use rusqlite::Connection;
+
+use crate::modules::integrity::models::DatabaseStatus;
 
 pub struct AppState {
     database: Mutex<Connection>,
     vault_path: Mutex<Option<PathBuf>>,
     attachments_directory: Option<PathBuf>,
+    integrity: Arc<Mutex<DatabaseStatus>>,
 }
 
 impl AppState {
@@ -15,6 +18,7 @@ impl AppState {
             database: Mutex::new(connection),
             vault_path: Mutex::new(vault_path),
             attachments_directory: None,
+            integrity: Arc::new(Mutex::new(DatabaseStatus::pending())),
         }
     }
 
@@ -25,6 +29,18 @@ impl AppState {
 
     pub fn attachments_directory(&self) -> Option<&Path> {
         self.attachments_directory.as_deref()
+    }
+
+    pub fn integrity_status(&self) -> DatabaseStatus {
+        let guard = self
+            .integrity
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner);
+        guard.clone()
+    }
+
+    pub fn integrity_slot(&self) -> Arc<Mutex<DatabaseStatus>> {
+        Arc::clone(&self.integrity)
     }
 
     pub fn database(&self) -> MutexGuard<'_, Connection> {

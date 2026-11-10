@@ -6,6 +6,7 @@ import * as __TAURI_EVENT from "@tauri-apps/api/event";
 /** Commands */
 export const commands = {
 	exportDatabase: (input: ExportBackupInput) => typedError<BackupFile, ErrorPayload>(__TAURI_INVOKE("export_database", { input })),
+	getDatabaseStatus: () => typedError<DatabaseStatus, ErrorPayload>(__TAURI_INVOKE("get_database_status")),
 	importDatabase: (input: ImportBackupInput) => typedError<ImportReport, ErrorPayload>(__TAURI_INVOKE("import_database", { input })),
 	getSettings: () => typedError<Settings, ErrorPayload>(__TAURI_INVOKE("get_settings")),
 	updateSettings: (input: UpdateSettingsInput) => typedError<Settings, ErrorPayload>(__TAURI_INVOKE("update_settings", { input })),
@@ -173,6 +174,8 @@ export type BoardDetails = {
 	columns: BoardColumn[],
 };
 
+export type CheckState = "pending" | "healthy" | "problems" | "failed";
+
 export type ChecklistItem = {
 	id: string,
 	taskId: string,
@@ -265,6 +268,13 @@ export type DashboardSummaryInput = {
 	today?: string | null,
 	upcomingDays?: number | null,
 	upcomingLimit?: number | null,
+};
+
+export type DatabaseStatus = {
+	state: CheckState,
+	integrityIssues: string[],
+	foreignKeyViolations: number,
+	checkedAt: string | null,
 };
 
 export type EntityType = "project" | "board" | "column" | "task" | "checklist_item" | "comment" | "tag" | "attachment" | "note" | "folder";

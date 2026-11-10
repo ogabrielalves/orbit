@@ -32,6 +32,7 @@ use modules::folders::commands::{
     create_folder, delete_folder, list_folders, move_folder, rename_folder,
 };
 use modules::graph::commands::{get_graph, get_local_graph};
+use modules::integrity::commands::get_database_status;
 use modules::notes::image_commands::{read_vault_image, save_pasted_image};
 use modules::notes::link_commands::{get_note_links, list_unresolved_links, resolve_note_link};
 use modules::notes::note_commands::{
@@ -62,6 +63,7 @@ pub fn bindings_builder() -> Builder<tauri::Wry> {
         .disable_serde_phases()
         .commands(collect_commands![
             export_database,
+            get_database_status,
             import_database,
             get_settings,
             update_settings,
@@ -184,6 +186,11 @@ pub fn run() -> tauri::Result<()> {
             let state = bootstrap::initialize_state(&data_directory)
                 .map_err(|error| -> Box<dyn Error> { Box::new(error) })?;
             app.manage(state);
+            let database_path = data_directory.join(bootstrap::DATABASE_FILE_NAME);
+            modules::integrity::service::spawn_check(
+                &app.state::<state::AppState>(),
+                database_path,
+            );
             app.manage(VaultWatchSlot::default());
             vault_watch::restart(app.handle());
             Ok(())

@@ -25,11 +25,12 @@ use modules::checklist::commands::{
     update_checklist_item,
 };
 use modules::comments::commands::{create_comment, delete_comment, list_comments, update_comment};
-use modules::dashboard::commands::get_dashboard_summary;
+use modules::dashboard::commands::{get_dashboard_summary, list_recent_notes};
 use modules::favorites::commands::{list_favorites, move_favorite, toggle_favorite};
 use modules::folders::commands::{
     create_folder, delete_folder, list_folders, move_folder, rename_folder,
 };
+use modules::graph::commands::{get_graph, get_local_graph};
 use modules::notes::image_commands::{read_vault_image, save_pasted_image};
 use modules::notes::link_commands::{get_note_links, list_unresolved_links, resolve_note_link};
 use modules::notes::note_commands::{
@@ -141,6 +142,9 @@ pub fn bindings_builder() -> Builder<tauri::Wry> {
             toggle_favorite,
             list_favorites,
             move_favorite,
+            get_graph,
+            get_local_graph,
+            list_recent_notes,
         ])
         .events(collect_events![VaultChanged])
 }

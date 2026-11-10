@@ -15,6 +15,7 @@ const MIGRATIONS: &[M<'static>] = &[
     M::up(include_str!("../../migrations/0009_notes.sql")),
     M::up(include_str!("../../migrations/0010_search.sql")),
     M::up(include_str!("../../migrations/0011_favorites.sql")),
+    M::up(include_str!("../../migrations/0012_notes_recent.sql")),
 ];
 
 pub fn run(connection: &mut Connection) -> AppResult<()> {

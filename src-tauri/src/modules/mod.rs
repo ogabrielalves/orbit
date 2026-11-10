@@ -7,6 +7,7 @@ pub mod comments;
 pub mod dashboard;
 pub mod favorites;
 pub mod folders;
+pub mod graph;
 pub mod notes;
 pub mod projects;
 pub mod search;

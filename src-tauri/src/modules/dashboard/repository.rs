@@ -120,6 +120,40 @@ pub fn find_upcoming(
     Ok(tasks)
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RecentNoteRow {
+    pub id: String,
+    pub title: String,
+    pub path: String,
+    pub created_at: String,
+    pub modified_at: String,
+    pub body_prefix: String,
+}
+
+pub fn find_recent_notes(connection: &Connection, limit: u32) -> AppResult<Vec<RecentNoteRow>> {
+    let mut statement = connection.prepare(
+        "SELECT n.id, n.title, n.path, n.created_at, n.modified_at,
+                COALESCE((SELECT substr(s.body, 1, 1500)
+                          FROM search_entries e JOIN search_index s ON s.rowid = e.id
+                          WHERE e.entity_type = 'note' AND e.entity_id = n.id), '')
+         FROM notes n
+         ORDER BY n.modified_at DESC, n.path
+         LIMIT ?1",
+    )?;
+    let rows = statement.query_map([limit], |row| {
+        Ok(RecentNoteRow {
+            id: row.get(0)?,
+            title: row.get(1)?,
+            path: row.get(2)?,
+            created_at: row.get(3)?,
+            modified_at: row.get(4)?,
+            body_prefix: row.get(5)?,
+        })
+    })?;
+    let notes = rows.collect::<Result<Vec<_>, _>>()?;
+    Ok(notes)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

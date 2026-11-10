@@ -106,6 +106,9 @@ export const commands = {
 	listFavorites: () => typedError<FavoriteEntry[], ErrorPayload>(__TAURI_INVOKE("list_favorites")),
 	/**  Moves a favorite right after `after_reference` (omitted puts it first). */
 	moveFavorite: (reference: FavoriteRef, afterReference: FavoriteRef | null) => typedError<null, ErrorPayload>(__TAURI_INVOKE("move_favorite", { reference, afterReference })),
+	getGraph: (input: GraphInput) => typedError<Graph, ErrorPayload>(__TAURI_INVOKE("get_graph", { input })),
+	getLocalGraph: (input: LocalGraphInput) => typedError<Graph, ErrorPayload>(__TAURI_INVOKE("get_local_graph", { input })),
+	listRecentNotes: (input: RecentNotesInput) => typedError<RecentNote[], ErrorPayload>(__TAURI_INVOKE("list_recent_notes", { input })),
 };
 
 /** Events */
@@ -337,6 +340,32 @@ export type FolderEntry = {
 	noteCount: number,
 };
 
+export type Graph = {
+	nodes: GraphNode[],
+	edges: GraphEdge[],
+};
+
+export type GraphEdge = {
+	source: string,
+	target: string,
+	weight: number,
+};
+
+export type GraphInput = {
+	includeUnresolved?: boolean,
+};
+
+export type GraphNode = {
+	id: string,
+	kind: GraphNodeKind,
+	title: string,
+	path: string | null,
+	degree: number,
+	distance: number | null,
+};
+
+export type GraphNodeKind = "note" | "unresolved";
+
 export type IndexReport = {
 	added: number,
 	updated: number,
@@ -369,6 +398,12 @@ export type ListProjectsInput = {
 	scope?: ProjectScope,
 	status?: ProjectStatus | null,
 	search?: string | null,
+};
+
+export type LocalGraphInput = {
+	noteId: string,
+	depth?: number | null,
+	includeUnresolved?: boolean,
 };
 
 export type NewColumn = {
@@ -459,6 +494,20 @@ export type ProjectDetails = {
 export type ProjectScope = "active" | "archived" | "all";
 
 export type ProjectStatus = "active" | "paused" | "completed";
+
+export type RecentNote = {
+	id: string,
+	title: string,
+	path: string,
+	folder: string | null,
+	excerpt: string,
+	createdAt: string,
+	modifiedAt: string,
+};
+
+export type RecentNotesInput = {
+	limit?: number | null,
+};
 
 export type RenameNoteResult = {
 	note: NoteSummary,

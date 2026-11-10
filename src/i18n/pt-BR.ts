@@ -692,6 +692,22 @@ export const ptBR = {
       unavailable: "Imagem indisponível",
       saveError: "Não foi possível inserir a imagem",
     },
+    move: {
+      handle: "Mover {{name}}",
+      rootName: "Raiz do vault",
+      dnd: {
+        instructions:
+          "Para mover, aperte espaço, use as setas até a pasta de destino e aperte espaço de novo para soltar.",
+        picked: "{{name}} selecionado.",
+        over: "{{name}} sobre {{target}}.",
+        dropped: "{{name}} movido para {{target}}.",
+        cancelled: "Movimento cancelado. {{name}} voltou ao lugar original.",
+      },
+      toast: {
+        note: "Nota “{{name}}” movida para {{target}}",
+        folder: "Pasta “{{name}}” movida para {{target}}",
+      },
+    },
     pane: {
       loadError: "Não foi possível carregar a nota",
       empty: {

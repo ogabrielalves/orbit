@@ -690,6 +690,22 @@ export const en: Widen<typeof ptBR> = {
       unavailable: "Image unavailable",
       saveError: "Could not insert the image",
     },
+    move: {
+      handle: "Move {{name}}",
+      rootName: "Vault root",
+      dnd: {
+        instructions:
+          "To move, press space, use the arrow keys to reach the destination folder and press space again to drop.",
+        picked: "{{name}} picked up.",
+        over: "{{name}} over {{target}}.",
+        dropped: "{{name}} moved to {{target}}.",
+        cancelled: "Move cancelled. {{name}} went back to its original place.",
+      },
+      toast: {
+        note: "Note “{{name}}” moved to {{target}}",
+        folder: "Folder “{{name}}” moved to {{target}}",
+      },
+    },
     pane: {
       loadError: "Could not load the note",
       empty: {

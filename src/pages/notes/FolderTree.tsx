@@ -1,3 +1,4 @@
+import { useDndContext, useDraggable, useDroppable } from "@dnd-kit/core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import ChevronIcon from "@/assets/icons/linha/chevron-baixo.svg?react";
@@ -7,8 +8,15 @@ import MoreIcon from "@/assets/icons/linha/mais-opcoes.svg?react";
 import NewFolderIcon from "@/assets/icons/linha/nova-pasta.svg?react";
 import { IconButton } from "@/components/atoms/IconButton";
 import { DropdownMenu } from "@/components/molecules/DropdownMenu";
+import { DragHandle } from "@/pages/notes/DragHandle";
 import type { FolderNode } from "@/pages/notes/folderModel";
 import { getAncestorPaths } from "@/pages/notes/folderModel";
+import {
+  type DragSource,
+  FOLDER_DRAG_PREFIX,
+  FOLDER_DROP_PREFIX,
+  resolveMove,
+} from "@/pages/notes/noteMove";
 
 type FolderTreeProps = {
   roots: FolderNode[];
@@ -29,6 +37,20 @@ type FolderRowProps = Omit<FolderTreeProps, "roots"> & {
 
 const INDENT_IN_PIXELS = 14;
 
+function useFolderDropState(path: string, name: string) {
+  const { active } = useDndContext();
+  const droppable = useDroppable({
+    id: `${FOLDER_DROP_PREFIX}${path}`,
+    data: { path, name },
+  });
+
+  const source = active?.data.current as DragSource | undefined;
+  const hasSource = source !== undefined;
+  const canDrop = hasSource && resolveMove(source, path) !== null;
+  const isDropTarget = droppable.isOver && canDrop;
+  return { setNodeRef: droppable.setNodeRef, isDropTarget };
+}
+
 function FolderRow({
   node,
   depth,
@@ -45,12 +67,20 @@ function FolderRow({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const { path, name, noteCount } = node.entry;
+  const drop = useFolderDropState(path, name);
+  const drag = useDraggable({
+    id: `${FOLDER_DRAG_PREFIX}${path}`,
+    data: { kind: "folder", path, name } satisfies DragSource,
+  });
   const hasChildren = node.children.length > 0;
   const isExpanded = expanded.has(path);
   const isSelected = selectedPath === path;
-  const rowClass = isSelected
+  const selectedClass = isSelected
     ? "bg-primary-soft text-primary-fg"
     : "text-fg hover:bg-surface-muted";
+  const dropClass = drop.isDropTarget ? "ring-2 ring-primary" : "";
+  const dragClass = drag.isDragging ? "opacity-50" : "";
+  const rowClass = `${selectedClass} ${dropClass} ${dragClass}`;
   const chevronClass = isExpanded ? "" : "-rotate-90";
 
   const sections = [
@@ -87,8 +117,12 @@ function FolderRow({
   return (
     <li>
       <div
+        ref={(element) => {
+          drop.setNodeRef(element);
+          drag.setNodeRef(element);
+        }}
         style={{ paddingLeft: depth * INDENT_IN_PIXELS }}
-        className={`flex items-center gap-0.5 rounded-md pr-1 ${rowClass}`}
+        className={`group flex items-center gap-0.5 rounded-md pr-1 ${rowClass}`}
       >
         {hasChildren ? (
           <button
@@ -119,6 +153,12 @@ function FolderRow({
           <span className="truncate">{name}</span>
           <span className="text-caption text-fg-muted">{noteCount}</span>
         </button>
+        <DragHandle
+          label={t("notes.move.handle", { name })}
+          attributes={drag.attributes}
+          listeners={drag.listeners}
+          setActivatorNodeRef={drag.setActivatorNodeRef}
+        />
         <DropdownMenu
           isOpen={isMenuOpen}
           onOpenChange={setIsMenuOpen}
@@ -164,10 +204,12 @@ export function FolderTree({
   const [expandedByUser, setExpandedByUser] = useState<Set<string>>(new Set());
 
   const expanded = new Set([...expandedByUser, ...getAncestorPaths(selectedPath)]);
+  const allDrop = useFolderDropState("", t("notes.move.rootName"));
   const isAllSelected = selectedPath === "";
-  const allClass = isAllSelected
+  const allSelectedClass = isAllSelected
     ? "bg-primary-soft text-primary-fg"
     : "text-fg hover:bg-surface-muted";
+  const allClass = `${allSelectedClass} ${allDrop.isDropTarget ? "ring-2 ring-primary" : ""}`;
 
   function handleToggle(path: string) {
     setExpandedByUser((previous) => {
@@ -198,6 +240,7 @@ export function FolderTree({
         <li>
           <button
             type="button"
+            ref={allDrop.setNodeRef}
             aria-current={isAllSelected ? "true" : undefined}
             onClick={() => onSelect("")}
             className={`flex w-full items-center rounded-md px-2 py-1.5 text-left text-small ${allClass}`}

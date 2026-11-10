@@ -26,6 +26,7 @@ use modules::checklist::commands::{
 };
 use modules::comments::commands::{create_comment, delete_comment, list_comments, update_comment};
 use modules::dashboard::commands::get_dashboard_summary;
+use modules::favorites::commands::{list_favorites, move_favorite, toggle_favorite};
 use modules::folders::commands::{
     create_folder, delete_folder, list_folders, move_folder, rename_folder,
 };
@@ -137,6 +138,9 @@ pub fn bindings_builder() -> Builder<tauri::Wry> {
             save_pasted_image,
             read_vault_image,
             search,
+            toggle_favorite,
+            list_favorites,
+            move_favorite,
         ])
         .events(collect_events![VaultChanged])
 }

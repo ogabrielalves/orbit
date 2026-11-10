@@ -101,6 +101,11 @@ export const commands = {
 	readVaultImage: (path: string) => typedError<VaultImage, ErrorPayload>(__TAURI_INVOKE("read_vault_image", { path })),
 	/**  Global search over projects, boards, tasks, notes and folders, grouped by category. */
 	search: (input: SearchInput) => typedError<SearchResults, ErrorPayload>(__TAURI_INVOKE("search", { input })),
+	/**  Adds the item to the favorites or removes it. Returns whether it is a favorite afterwards. */
+	toggleFavorite: (reference: FavoriteRef) => typedError<boolean, ErrorPayload>(__TAURI_INVOKE("toggle_favorite", { reference })),
+	listFavorites: () => typedError<FavoriteEntry[], ErrorPayload>(__TAURI_INVOKE("list_favorites")),
+	/**  Moves a favorite right after `after_reference` (omitted puts it first). */
+	moveFavorite: (reference: FavoriteRef, afterReference: FavoriteRef | null) => typedError<null, ErrorPayload>(__TAURI_INVOKE("move_favorite", { reference, afterReference })),
 };
 
 /** Events */
@@ -290,6 +295,33 @@ export type ErrorPayload = {
 	code: string,
 	message: string,
 };
+
+export type FavoriteEntry = {
+	entityType: FavoriteType,
+	entityId: string,
+	title: string,
+	/**  The project name for boards and tasks, the containing folder for notes and folders. */
+	context: string | null,
+	projectId: string | null,
+	boardId: string | null,
+	parentTaskId: string | null,
+	/**  Relative path inside the vault, for notes and folders. */
+	path: string | null,
+	/**  True when the item (or the project or board it belongs to) is archived. */
+	isArchived: boolean,
+	createdAt: string,
+};
+
+/**
+ *  Points at one favoritable thing: an id for projects, boards, tasks and notes, and the
+ *  relative path (`/` separated) for folders.
+ */
+export type FavoriteRef = {
+	entityType: FavoriteType,
+	entityId: string,
+};
+
+export type FavoriteType = "project" | "board" | "task" | "note" | "folder";
 
 export type FieldChange = {
 	from: string | null,

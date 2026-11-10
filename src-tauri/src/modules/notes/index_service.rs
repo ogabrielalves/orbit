@@ -9,6 +9,7 @@ use specta::Type;
 use super::models::{LinkRecord, NoteRecord};
 use super::repository;
 use crate::error::{AppError, AppResult};
+use crate::modules::favorites::repository as favorites_repository;
 use crate::modules::search::repository as search_repository;
 use crate::shared::id;
 use crate::vault::frontmatter;
@@ -83,7 +84,9 @@ pub fn reconcile(connection: &mut Connection, vault_root: &Path) -> AppResult<In
             report.removed += 1;
         }
     }
-    search_repository::replace_folders(&transaction, &list_directories(vault_root))?;
+    let directories = list_directories(vault_root);
+    search_repository::replace_folders(&transaction, &directories)?;
+    favorites_repository::prune_folders(&transaction, &directories)?;
     transaction.commit()?;
     Ok(report)
 }

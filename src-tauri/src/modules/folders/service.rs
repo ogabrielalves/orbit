@@ -8,6 +8,7 @@ use super::models::{CreateFolderInput, FolderEntry};
 use crate::error::{AppError, AppResult};
 use crate::modules::activity::models::{ActivityAction, ChangeSet, EntityType};
 use crate::modules::activity::service as activity;
+use crate::modules::favorites::repository as favorites_repository;
 use crate::modules::notes::repository;
 use crate::modules::notes::vault_service::vault_root;
 use crate::modules::search::repository as search_repository;
@@ -119,6 +120,7 @@ pub fn delete(state: &AppState, path: &str, recursive: bool) -> AppResult<()> {
     let mut connection = state.database();
     let transaction = connection.transaction()?;
     repository::delete_directory(&transaction, &path)?;
+    favorites_repository::delete_folder_tree(&transaction, &path)?;
     let mut changes = ChangeSet::new();
     changes.track("path", Some(path.as_str()), None);
     record(&transaction, &path, ActivityAction::Deleted, changes)?;
@@ -165,6 +167,7 @@ fn update_index(
 ) -> AppResult<()> {
     let transaction = connection.transaction()?;
     repository::rename_directory(&transaction, path, new_path)?;
+    favorites_repository::rename_folder(&transaction, path, new_path)?;
     let mut changes = ChangeSet::new();
     changes.track("path", Some(path), Some(new_path));
     record(&transaction, new_path, action, changes)?;

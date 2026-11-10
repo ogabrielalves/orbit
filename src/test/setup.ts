@@ -15,6 +15,9 @@ vi.mock("@tauri-apps/plugin-dialog", () => ({
 }));
 
 vi.mock("@/bindings", () => ({
+  events: {
+    vaultChanged: { listen: vi.fn().mockResolvedValue(() => undefined) },
+  },
   commands: {
     getSettings: vi.fn().mockResolvedValue({
       status: "ok",
@@ -27,6 +30,23 @@ vi.mock("@/bindings", () => ({
     listBacklog: vi.fn().mockResolvedValue({ status: "ok", data: [] }),
     listBacklogByProject: vi.fn().mockResolvedValue({ status: "ok", data: [] }),
     moveBacklogTask: vi.fn(),
+    getVaultStatus: vi.fn().mockResolvedValue({
+      status: "ok",
+      data: { path: null, isAccessible: false },
+    }),
+    setupVault: vi.fn(),
+    listFolders: vi.fn().mockResolvedValue({ status: "ok", data: [] }),
+    createFolder: vi.fn(),
+    renameFolder: vi.fn(),
+    moveFolder: vi.fn(),
+    deleteFolder: vi.fn(),
+    listNotes: vi.fn().mockResolvedValue({ status: "ok", data: [] }),
+    getNote: vi.fn(),
+    createNote: vi.fn(),
+    saveNote: vi.fn(),
+    renameNote: vi.fn(),
+    moveNote: vi.fn(),
+    deleteNote: vi.fn(),
     getDashboardSummary: vi.fn().mockResolvedValue({
       status: "ok",
       data: {

@@ -7,11 +7,13 @@ import { useHotkey } from "@/hooks/useHotkey";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useUiStore } from "@/hooks/useUiStore";
 import { mediaQueries } from "@/lib/breakpoints";
+import { useVaultEvents } from "@/modules/notes/useVaultEvents";
 import { useSyncLanguage } from "@/modules/settings/useSyncLanguage";
 
 export function RootLayout() {
   const { t } = useTranslation();
   useSyncLanguage();
+  useVaultEvents();
   const matches = useMatches();
   const isTablet = useMediaQuery(mediaQueries.tablet);
   const isDesktop = useMediaQuery(mediaQueries.desktop);

@@ -529,6 +529,23 @@ export const ptBR = {
       clearFilters: "Limpar filtros",
     },
   },
+  notes: {
+    vault: {
+      title: "Escolha onde ficam suas notas",
+      description:
+        "Suas notas são arquivos Markdown em uma pasta deste computador. Escolha uma pasta que você já usa ou crie uma nova.",
+      unreachableTitle: "A pasta das suas notas não está disponível",
+      unreachableDescription:
+        "O ORBIT não consegue ler ou gravar na pasta abaixo. Reconecte o disco ou escolha outra pasta.",
+      chooseExisting: "Escolher uma pasta",
+      createNew: "Criar um novo vault",
+      pickExistingTitle: "Escolha a pasta das suas notas",
+      pickNewTitle: "Escolha ou crie a pasta do novo vault",
+      ready_one: "Vault pronto · {{count}} nota encontrada",
+      ready_other: "Vault pronto · {{count}} notas encontradas",
+      loadError: "Não foi possível verificar a pasta de notas",
+    },
+  },
   greeting: {
     morning: "Bom dia",
     afternoon: "Boa tarde",

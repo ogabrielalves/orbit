@@ -527,6 +527,23 @@ export const en: Widen<typeof ptBR> = {
       clearFilters: "Clear filters",
     },
   },
+  notes: {
+    vault: {
+      title: "Choose where your notes live",
+      description:
+        "Your notes are Markdown files in a folder on this computer. Pick a folder you already use or create a new one.",
+      unreachableTitle: "Your notes folder is not available",
+      unreachableDescription:
+        "ORBIT cannot read or write the folder below. Reconnect the drive, or choose another folder.",
+      chooseExisting: "Choose a folder",
+      createNew: "Create a new vault",
+      pickExistingTitle: "Choose your notes folder",
+      pickNewTitle: "Choose or create the folder for the new vault",
+      ready_one: "Vault ready · {{count}} note found",
+      ready_other: "Vault ready · {{count}} notes found",
+      loadError: "Could not check the notes folder",
+    },
+  },
   greeting: {
     morning: "Good morning",
     afternoon: "Good afternoon",

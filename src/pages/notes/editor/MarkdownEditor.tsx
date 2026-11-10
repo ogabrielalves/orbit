@@ -8,6 +8,7 @@ import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import type { NoteSummary } from "@/bindings";
 import { EditorToolbar } from "@/pages/notes/editor/EditorToolbar";
+import { imageOptionsCtx, imagePlugins } from "@/pages/notes/editor/imagePlugin";
 import { wikiLinkHandlersCtx, wikiLinkPlugins } from "@/pages/notes/editor/wikiLinkPlugin";
 import { useWikiLinkSuggest } from "@/pages/notes/links/useWikiLinkSuggest";
 import { WikiLinkSuggest } from "@/pages/notes/links/WikiLinkSuggest";
@@ -20,6 +21,7 @@ type MarkdownEditorProps = {
   onChange: (markdown: string) => void;
   notes?: NoteSummary[];
   onNavigateLink?: (target: string) => void;
+  onSaveImage?: (data: number[]) => Promise<string | null>;
 };
 
 export function MarkdownEditor({
@@ -27,18 +29,22 @@ export function MarkdownEditor({
   onChange,
   notes = NO_NOTES,
   onNavigateLink,
+  onSaveImage,
 }: MarkdownEditorProps) {
   const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<Editor | null>(null);
   const onChangeRef = useRef(onChange);
   const onNavigateLinkRef = useRef(onNavigateLink);
+  const onSaveImageRef = useRef(onSaveImage);
+  const unavailableLabel = t("notes.images.unavailable");
   const { suggest, items, activeIndex, onSuggest, onKeyDown } = useWikiLinkSuggest(notes);
 
   useEffect(() => {
     onChangeRef.current = onChange;
     onNavigateLinkRef.current = onNavigateLink;
-  }, [onChange, onNavigateLink]);
+    onSaveImageRef.current = onSaveImage;
+  }, [onChange, onNavigateLink, onSaveImage]);
 
   useEffect(() => {
     const root = containerRef.current;
@@ -56,6 +62,10 @@ export function MarkdownEditor({
           onSuggest,
           onKeyDown,
         });
+        ctx.set(imageOptionsCtx.key, {
+          saveImage: async (data) => (await onSaveImageRef.current?.(data)) ?? null,
+          unavailableLabel,
+        });
         ctx.get(listenerCtx).markdownUpdated((_ctx, markdown, previousMarkdown) => {
           const hasChanged = markdown !== previousMarkdown;
           if (hasChanged) {
@@ -66,6 +76,7 @@ export function MarkdownEditor({
       .use(commonmark)
       .use(gfm)
       .use(wikiLinkPlugins)
+      .use(imagePlugins)
       .use(history)
       .use(listener)
       .use(clipboard);
@@ -78,7 +89,7 @@ export function MarkdownEditor({
       editorRef.current = null;
       void creation.then(() => editor.destroy());
     };
-  }, [initialValue, onSuggest, onKeyDown]);
+  }, [initialValue, onSuggest, onKeyDown, unavailableLabel]);
 
   return (
     <section

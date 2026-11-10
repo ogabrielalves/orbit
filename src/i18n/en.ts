@@ -686,6 +686,10 @@ export const en: Widen<typeof ptBR> = {
         count_other: "{{count}} links",
       },
     },
+    images: {
+      unavailable: "Image unavailable",
+      saveError: "Could not insert the image",
+    },
     pane: {
       loadError: "Could not load the note",
       empty: {

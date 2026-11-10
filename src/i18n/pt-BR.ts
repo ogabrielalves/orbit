@@ -688,6 +688,10 @@ export const ptBR = {
         count_other: "{{count}} links",
       },
     },
+    images: {
+      unavailable: "Imagem indisponível",
+      saveError: "Não foi possível inserir a imagem",
+    },
     pane: {
       loadError: "Não foi possível carregar a nota",
       empty: {

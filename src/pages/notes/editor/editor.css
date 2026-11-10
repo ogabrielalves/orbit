@@ -100,3 +100,11 @@
 .orbit-editor .ProseMirror .orbit-wikilink {
   @apply cursor-pointer rounded-sm bg-primary-soft px-1 text-primary;
 }
+
+.orbit-editor .ProseMirror .orbit-image {
+  @apply my-2 max-w-full rounded-lg;
+}
+
+.orbit-editor .ProseMirror .orbit-image-unavailable {
+  @apply min-h-16 min-w-32 border border-dashed border-border bg-surface-muted;
+}

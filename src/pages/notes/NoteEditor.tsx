@@ -11,6 +11,7 @@ import { ConfirmDialog } from "@/components/organisms/ConfirmDialog";
 import { useDeleteNote, useNotes } from "@/modules/notes/queries";
 import { SaveIndicator } from "@/pages/notes/editor/SaveIndicator";
 import { useNoteAutosave } from "@/pages/notes/editor/useNoteAutosave";
+import { useSaveImage } from "@/pages/notes/images/useSaveImage";
 import { BacklinksPanel } from "@/pages/notes/links/BacklinksPanel";
 import { useWikiLinkNavigation } from "@/pages/notes/links/useWikiLinkNavigation";
 import { WikiLinkCreateDialog } from "@/pages/notes/links/WikiLinkCreateDialog";
@@ -35,6 +36,7 @@ export function NoteEditor({ note, folder, onReload }: NoteEditorProps) {
   const autosave = useNoteAutosave(note);
   const notesQuery = useNotes({});
   const linkNavigation = useWikiLinkNavigation(folder);
+  const saveImage = useSaveImage(note.id);
   const [isConflictDismissed, setIsConflictDismissed] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -142,6 +144,7 @@ export function NoteEditor({ note, folder, onReload }: NoteEditorProps) {
           initialValue={autosave.initialContent}
           onChange={autosave.handleChange}
           notes={notesQuery.data}
+          onSaveImage={saveImage}
           onNavigateLink={(target) => void linkNavigation.openLink(target)}
         />
       </Suspense>

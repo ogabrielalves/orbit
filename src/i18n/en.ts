@@ -662,6 +662,30 @@ export const en: Widen<typeof ptBR> = {
         deleted: "Note deleted",
       },
     },
+    links: {
+      suggest: {
+        label: "Note suggestions",
+        empty: "No notes found",
+      },
+      create: {
+        title: "Create “{{name}}”?",
+        description: "No note with this title exists in the vault. Create it now?",
+        confirm: "Create note",
+        created: "Note created",
+      },
+      resolveError: "Could not open the link",
+      panel: {
+        title: "Connections",
+        loadError: "Could not load the links",
+        backlinks: "Mentioned in",
+        outgoing: "Links from this note",
+        noBacklinks: "No note points to this one.",
+        noOutgoing: "This note does not point to others.",
+        unresolved: "No note — create",
+        count_one: "{{count}} link",
+        count_other: "{{count}} links",
+      },
+    },
     pane: {
       loadError: "Could not load the note",
       empty: {

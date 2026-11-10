@@ -8,9 +8,12 @@ import { IconButton } from "@/components/atoms/IconButton";
 import { Skeleton } from "@/components/atoms/Skeleton";
 import { DropdownMenu } from "@/components/molecules/DropdownMenu";
 import { ConfirmDialog } from "@/components/organisms/ConfirmDialog";
-import { useDeleteNote } from "@/modules/notes/queries";
+import { useDeleteNote, useNotes } from "@/modules/notes/queries";
 import { SaveIndicator } from "@/pages/notes/editor/SaveIndicator";
 import { useNoteAutosave } from "@/pages/notes/editor/useNoteAutosave";
+import { BacklinksPanel } from "@/pages/notes/links/BacklinksPanel";
+import { useWikiLinkNavigation } from "@/pages/notes/links/useWikiLinkNavigation";
+import { WikiLinkCreateDialog } from "@/pages/notes/links/WikiLinkCreateDialog";
 import { NoteRenameModal } from "@/pages/notes/NoteRenameModal";
 
 const MarkdownEditor = lazy(() =>
@@ -30,6 +33,8 @@ export function NoteEditor({ note, folder, onReload }: NoteEditorProps) {
   const navigate = useNavigate();
   const deleteNote = useDeleteNote();
   const autosave = useNoteAutosave(note);
+  const notesQuery = useNotes({});
+  const linkNavigation = useWikiLinkNavigation(folder);
   const [isConflictDismissed, setIsConflictDismissed] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -47,6 +52,8 @@ export function NoteEditor({ note, folder, onReload }: NoteEditorProps) {
     withResolver: true,
   });
   const isLeaveDialogOpen = blocker.status === "blocked";
+  const { missingTarget } = linkNavigation;
+  const isCreatePromptOpen = missingTarget !== null;
 
   async function handleReload() {
     const fresh = await onReload();
@@ -134,8 +141,11 @@ export function NoteEditor({ note, folder, onReload }: NoteEditorProps) {
           key={autosave.editorVersion}
           initialValue={autosave.initialContent}
           onChange={autosave.handleChange}
+          notes={notesQuery.data}
+          onNavigateLink={(target) => void linkNavigation.openLink(target)}
         />
       </Suspense>
+      <BacklinksPanel noteId={note.id} folder={folder} onCreateLink={linkNavigation.offerCreate} />
       {isConflictDialogOpen && (
         <ConfirmDialog
           isOpen
@@ -164,6 +174,13 @@ export function NoteEditor({ note, folder, onReload }: NoteEditorProps) {
           }}
           onConfirm={handleLeaveWithoutSaving}
           onCancel={() => blocker.reset?.()}
+        />
+      )}
+      {isCreatePromptOpen && (
+        <WikiLinkCreateDialog
+          target={missingTarget}
+          folder={folder}
+          onClose={linkNavigation.closeCreate}
         />
       )}
       {isRenaming && (

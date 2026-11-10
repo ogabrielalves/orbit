@@ -664,6 +664,30 @@ export const ptBR = {
         deleted: "Nota excluída",
       },
     },
+    links: {
+      suggest: {
+        label: "Sugestões de notas",
+        empty: "Nenhuma nota encontrada",
+      },
+      create: {
+        title: "Criar “{{name}}”?",
+        description: "Nenhuma nota com esse título existe no vault. Deseja criá-la agora?",
+        confirm: "Criar nota",
+        created: "Nota criada",
+      },
+      resolveError: "Não foi possível abrir o link",
+      panel: {
+        title: "Conexões",
+        loadError: "Não foi possível carregar os links",
+        backlinks: "Mencionada em",
+        outgoing: "Links desta nota",
+        noBacklinks: "Nenhuma nota aponta para esta.",
+        noOutgoing: "Esta nota não aponta para outras.",
+        unresolved: "Sem nota — criar",
+        count_one: "{{count}} link",
+        count_other: "{{count}} links",
+      },
+    },
     pane: {
       loadError: "Não foi possível carregar a nota",
       empty: {

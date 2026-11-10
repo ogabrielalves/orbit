@@ -6,23 +6,39 @@ import { commonmark } from "@milkdown/kit/preset/commonmark";
 import { gfm } from "@milkdown/kit/preset/gfm";
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import type { NoteSummary } from "@/bindings";
 import { EditorToolbar } from "@/pages/notes/editor/EditorToolbar";
+import { wikiLinkHandlersCtx, wikiLinkPlugins } from "@/pages/notes/editor/wikiLinkPlugin";
+import { useWikiLinkSuggest } from "@/pages/notes/links/useWikiLinkSuggest";
+import { WikiLinkSuggest } from "@/pages/notes/links/WikiLinkSuggest";
 import "@/pages/notes/editor/editor.css";
+
+const NO_NOTES: NoteSummary[] = [];
 
 type MarkdownEditorProps = {
   initialValue: string;
   onChange: (markdown: string) => void;
+  notes?: NoteSummary[];
+  onNavigateLink?: (target: string) => void;
 };
 
-export function MarkdownEditor({ initialValue, onChange }: MarkdownEditorProps) {
+export function MarkdownEditor({
+  initialValue,
+  onChange,
+  notes = NO_NOTES,
+  onNavigateLink,
+}: MarkdownEditorProps) {
   const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<Editor | null>(null);
   const onChangeRef = useRef(onChange);
+  const onNavigateLinkRef = useRef(onNavigateLink);
+  const { suggest, items, activeIndex, onSuggest, onKeyDown } = useWikiLinkSuggest(notes);
 
   useEffect(() => {
     onChangeRef.current = onChange;
-  }, [onChange]);
+    onNavigateLinkRef.current = onNavigateLink;
+  }, [onChange, onNavigateLink]);
 
   useEffect(() => {
     const root = containerRef.current;
@@ -35,6 +51,11 @@ export function MarkdownEditor({ initialValue, onChange }: MarkdownEditorProps) 
       .config((ctx) => {
         ctx.set(rootCtx, root);
         ctx.set(defaultValueCtx, initialValue);
+        ctx.set(wikiLinkHandlersCtx.key, {
+          onNavigate: (target) => onNavigateLinkRef.current?.(target),
+          onSuggest,
+          onKeyDown,
+        });
         ctx.get(listenerCtx).markdownUpdated((_ctx, markdown, previousMarkdown) => {
           const hasChanged = markdown !== previousMarkdown;
           if (hasChanged) {
@@ -44,6 +65,7 @@ export function MarkdownEditor({ initialValue, onChange }: MarkdownEditorProps) 
       })
       .use(commonmark)
       .use(gfm)
+      .use(wikiLinkPlugins)
       .use(history)
       .use(listener)
       .use(clipboard);
@@ -56,7 +78,7 @@ export function MarkdownEditor({ initialValue, onChange }: MarkdownEditorProps) 
       editorRef.current = null;
       void creation.then(() => editor.destroy());
     };
-  }, [initialValue]);
+  }, [initialValue, onSuggest, onKeyDown]);
 
   return (
     <section
@@ -65,6 +87,15 @@ export function MarkdownEditor({ initialValue, onChange }: MarkdownEditorProps) 
     >
       <EditorToolbar editorRef={editorRef} />
       <div ref={containerRef} className="orbit-editor min-h-60 flex-1" />
+      {suggest !== null && (
+        <WikiLinkSuggest
+          items={items}
+          activeIndex={activeIndex}
+          left={suggest.left}
+          bottom={suggest.bottom}
+          onSelect={suggest.apply}
+        />
+      )}
     </section>
   );
 }

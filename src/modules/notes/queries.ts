@@ -13,6 +13,7 @@ import {
   saveNote,
   setupVault,
 } from "@/modules/notes/api";
+import { noteLinksKeys } from "@/modules/notes/linksQueries";
 import { settingsKeys } from "@/modules/settings/queries";
 
 export const vaultKeys = {
@@ -93,7 +94,10 @@ export function useSaveNote() {
     mutationFn: ({ id, input }: SaveNoteVariables) => saveNote(id, input),
     onSuccess: (note) => {
       queryClient.setQueryData<NoteDetails>(noteKeys.detail(note.id), note);
-      return queryClient.invalidateQueries({ queryKey: noteKeys.lists });
+      return Promise.all([
+        queryClient.invalidateQueries({ queryKey: noteKeys.lists }),
+        queryClient.invalidateQueries({ queryKey: noteLinksKeys.all }),
+      ]);
     },
   });
 }

@@ -96,3 +96,7 @@
 .orbit-editor .ProseMirror .ProseMirror-selectednode {
   @apply outline-2 outline-primary-ring;
 }
+
+.orbit-editor .ProseMirror .orbit-wikilink {
+  @apply cursor-pointer rounded-sm bg-primary-soft px-1 text-primary;
+}

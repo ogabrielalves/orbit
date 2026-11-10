@@ -47,6 +47,12 @@ vi.mock("@/bindings", () => ({
     renameNote: vi.fn(),
     moveNote: vi.fn(),
     deleteNote: vi.fn(),
+    resolveNoteLink: vi.fn().mockResolvedValue({ status: "ok", data: null }),
+    getNoteLinks: vi
+      .fn()
+      .mockResolvedValue({ status: "ok", data: { outgoing: [], backlinks: [] } }),
+    savePastedImage: vi.fn(),
+    readVaultImage: vi.fn(),
     getDashboardSummary: vi.fn().mockResolvedValue({
       status: "ok",
       data: {

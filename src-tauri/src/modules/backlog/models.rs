@@ -7,14 +7,10 @@ use crate::modules::tasks::models::{Task, TaskPriority};
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, Type)]
 #[serde(rename_all = "snake_case")]
 pub enum BacklogSort {
-    /// Project name, then the order the user arranged inside each project.
     #[default]
     Manual,
-    /// Urgent first, then earliest due date.
     Priority,
-    /// Earliest due date first, undated tasks last.
     DueDate,
-    /// Newest first.
     Created,
     Title,
 }

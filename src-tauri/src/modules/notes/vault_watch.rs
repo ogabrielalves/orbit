@@ -10,8 +10,6 @@ use crate::error::AppResult;
 use crate::state::AppState;
 use crate::vault::watcher::{ChangeBatch, DEFAULT_DEBOUNCE, VaultWatcher};
 
-/// Emitted to the frontend when files edited outside ORBIT changed the note index, so open
-/// lists and the open note can refresh. Changes ORBIT made itself never trigger it.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Type, Event)]
 #[serde(rename_all = "camelCase")]
 pub struct VaultChanged {
@@ -20,12 +18,9 @@ pub struct VaultChanged {
     pub removed: u32,
 }
 
-/// Holds the running watcher so it can be replaced when the vault changes.
 #[derive(Default)]
 pub struct VaultWatchSlot(Mutex<Option<VaultWatcher>>);
 
-/// Applies a batch of file changes to the index. Returns the event to announce, or `None` when
-/// nothing in the index actually changed (for instance after ORBIT's own writes).
 pub fn apply_batch(state: &AppState, batch: &ChangeBatch) -> AppResult<Option<VaultChanged>> {
     let Some(root) = state.vault_path() else {
         return Ok(None);
@@ -42,9 +37,6 @@ pub fn apply_batch(state: &AppState, batch: &ChangeBatch) -> AppResult<Option<Va
     }))
 }
 
-/// (Re)starts watching the configured vault, replacing the previous watcher. Never fails: a
-/// missing or unwatchable vault only means edits made outside ORBIT are picked up at the next
-/// start or reindex instead of live.
 pub fn restart(app: &AppHandle) {
     let slot = app.state::<VaultWatchSlot>();
     let mut guard = slot.0.lock().unwrap_or_else(PoisonError::into_inner);

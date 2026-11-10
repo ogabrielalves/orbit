@@ -1,7 +1,5 @@
 use crate::error::{AppError, AppResult};
 
-/// Longest accepted file or folder name, in characters. Well under the 255 limit of common
-/// file systems, which count bytes or UTF-16 units.
 pub const NAME_MAX_LENGTH: usize = 120;
 
 const FORBIDDEN_CHARACTERS: &str = "<>:\"/\\|?*";
@@ -10,9 +8,6 @@ const RESERVED_WINDOWS_NAMES: [&str; 22] = [
     "COM9", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
 ];
 
-/// Checks that `raw` can safely be a single file or folder name on every platform and returns
-/// it trimmed. Rejects separators, traversal, hidden names, characters Windows forbids,
-/// reserved Windows device names and trailing dots or spaces.
 pub fn validate_name(label: &str, raw: &str) -> AppResult<String> {
     let name = raw.trim();
     let invalid = |reason: &str| AppError::Validation(format!("{label} {reason}"));

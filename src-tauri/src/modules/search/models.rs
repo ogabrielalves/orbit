@@ -8,12 +8,9 @@ pub const MAX_LIMIT_PER_CATEGORY: u32 = 50;
 #[serde(rename_all = "camelCase", default)]
 pub struct SearchInput {
     pub query: String,
-    /// Results per category (default 8, at most 50).
     pub limit_per_category: Option<u32>,
 }
 
-/// A piece of text, flagged when it is what the query matched. Rendering a list of these as plain
-/// text with the flagged parts emphasized needs no HTML handling.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct TextPart {
@@ -24,17 +21,13 @@ pub struct TextPart {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct SearchHit {
-    /// Project, board, task and note ids; the relative path for folders.
     pub entity_id: String,
     pub title: Vec<TextPart>,
-    /// The part of the text (description, note body, path) around the match.
     pub snippet: Vec<TextPart>,
-    /// Where it lives: the project name for boards and tasks, the folder for notes and folders.
     pub context: Option<String>,
     pub project_id: Option<String>,
     pub board_id: Option<String>,
     pub parent_task_id: Option<String>,
-    /// Relative path inside the vault, for notes and folders.
     pub path: Option<String>,
 }
 

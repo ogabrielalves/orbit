@@ -9,9 +9,6 @@ use crate::shared::time;
 use crate::state::AppState;
 use crate::vault::paths::{existing_directory, name_of, normalize_relative, parent_of};
 
-/// Adds the item to the favorites (at the end) or removes it if it already is one. Returns
-/// whether it is a favorite afterwards. Adding needs the item to exist; removing never does, so a
-/// favorite can always be dropped.
 pub fn toggle(state: &AppState, reference: FavoriteRef) -> AppResult<bool> {
     let entity_id = canonical_id(&reference)?;
     let kind = reference.entity_type;
@@ -38,8 +35,6 @@ pub fn toggle(state: &AppState, reference: FavoriteRef) -> AppResult<bool> {
     Ok(true)
 }
 
-/// The favorites in the user's order, with their current titles. Items that no longer resolve
-/// (a folder deleted outside the app, a folder while no vault is configured) are left out.
 pub fn list(state: &AppState) -> AppResult<Vec<FavoriteEntry>> {
     let connection = state.database();
     let root = vault_root(state).ok();
@@ -60,7 +55,6 @@ pub fn list(state: &AppState) -> AppResult<Vec<FavoriteEntry>> {
     Ok(entries)
 }
 
-/// Moves a favorite right after another one (`None` puts it first).
 pub fn move_favorite(
     state: &AppState,
     reference: FavoriteRef,
@@ -119,7 +113,6 @@ fn key_of(kind: &FavoriteType, entity_id: &str) -> String {
     format!("{}:{entity_id}", kind.as_str())
 }
 
-/// The id as stored: trimmed, and for folders a normalized path inside the vault.
 fn canonical_id(reference: &FavoriteRef) -> AppResult<String> {
     if reference.entity_type == FavoriteType::Folder {
         let path = normalize_relative(&reference.entity_id)?;
@@ -312,8 +305,6 @@ mod tests {
         assert!(toggle(&fixture.state, reference(kind, id)).expect("toggles"));
     }
 
-    // ---- toggle
-
     #[test]
     fn toggling_adds_then_removes_and_reports_the_new_state() {
         let fixture = fixture();
@@ -458,8 +449,6 @@ mod tests {
         assert_eq!(titles(&fixture), ["Website"]);
     }
 
-    // ---- order
-
     #[test]
     fn favorites_are_listed_in_the_order_they_were_added() {
         let fixture = fixture();
@@ -526,8 +515,6 @@ mod tests {
         ));
         assert_eq!(titles(&fixture), ["A", "B"]);
     }
-
-    // ---- staying in step with the data
 
     #[test]
     fn renamed_items_show_their_new_titles() {

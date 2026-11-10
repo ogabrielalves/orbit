@@ -7,9 +7,6 @@ use crate::shared::id;
 
 const TEMP_PREFIX: &str = ".orbit-tmp-";
 
-/// Writes `content` to `target` without ever exposing a half-written file: the bytes go to a
-/// temporary file in the same directory, are flushed to disk, and then renamed over the target.
-/// A crash leaves either the old file or the new one, never a mix.
 pub fn write_atomic(target: &Path, content: &[u8]) -> AppResult<()> {
     let directory = target
         .parent()
@@ -23,7 +20,6 @@ pub fn write_atomic(target: &Path, content: &[u8]) -> AppResult<()> {
     result
 }
 
-/// True for the temporary files left by `write_atomic`, so scans and watchers can ignore them.
 pub fn is_temp_file(path: &Path) -> bool {
     path.file_name()
         .and_then(|name| name.to_str())
@@ -98,7 +94,6 @@ mod tests {
         let directory = tempfile::tempdir().expect("temp dir");
         let target = directory.path().join("note.md");
         fs::write(&target, "original").expect("seeds");
-        // renaming a file over a directory fails on every platform
         let blocked = directory.path().join("blocked");
         fs::create_dir(&blocked).expect("creates dir");
 

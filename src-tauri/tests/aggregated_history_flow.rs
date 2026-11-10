@@ -141,18 +141,18 @@ fn the_task_history_gathers_checklist_comment_subtask_and_tag_events_newest_firs
     assert_eq!(
         shape(&history),
         [
-            (TaskEntity, Updated),    // tag assigned
-            (ChecklistItem, Deleted), // subtask checklist item removed
+            (TaskEntity, Updated),
+            (ChecklistItem, Deleted),
             (Comment, Deleted),
             (Comment, Updated),
             (Comment, Created),
-            (ChecklistItem, Created), // subtask checklist item
+            (ChecklistItem, Created),
             (ChecklistItem, Completed),
             (ChecklistItem, Created),
-            (TaskEntity, Updated),   // subtask renamed
-            (TaskEntity, Completed), // subtask completed
-            (TaskEntity, Created),   // subtask created
-            (TaskEntity, Created),   // the task itself
+            (TaskEntity, Updated),
+            (TaskEntity, Completed),
+            (TaskEntity, Created),
+            (TaskEntity, Created),
         ]
     );
     let unrelated = activity::task_history(&second_run, &other.id, None).expect("reads");

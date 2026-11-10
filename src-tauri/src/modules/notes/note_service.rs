@@ -53,8 +53,6 @@ pub fn list(state: &AppState, input: ListNotesInput) -> AppResult<Vec<NoteSummar
         .collect())
 }
 
-/// Reads a note from disk (the file is the source of truth), refreshing the index first if the
-/// file was edited outside ORBIT.
 pub fn get(state: &AppState, id: &str) -> AppResult<NoteDetails> {
     let root = vault_root(state)?;
     let connection = state.database();
@@ -89,8 +87,6 @@ pub fn create(state: &AppState, input: CreateNoteInput) -> AppResult<NoteDetails
     details_of(&root, &record)
 }
 
-/// Saves the Markdown text (and optionally the tags). Fails with `Conflict` when the file no
-/// longer has the hash the caller read, unless `force` is set.
 pub fn save(state: &AppState, id: &str, input: SaveNoteInput) -> AppResult<NoteDetails> {
     let root = vault_root(state)?;
     ensure_size(&input.content)?;
@@ -123,8 +119,6 @@ pub fn save(state: &AppState, id: &str, input: SaveNoteInput) -> AppResult<NoteD
     details_of(&root, &saved)
 }
 
-/// Renames the note: the file name and its first heading follow the new title, and `[[links]]`
-/// to the old title in other notes are rewritten (unless another note still has that title).
 pub fn rename(state: &AppState, id: &str, new_title: &str) -> AppResult<RenameNoteResult> {
     let root = vault_root(state)?;
     let new_title = validate_name("note title", new_title)?;
@@ -210,8 +204,6 @@ pub fn move_note(
     Ok(moved.into())
 }
 
-/// Deletes the note file and its index rows. Links to it from other notes stay as they are and
-/// simply become unresolved.
 pub fn delete(state: &AppState, id: &str) -> AppResult<()> {
     let root = vault_root(state)?;
     let connection = state.database();
@@ -230,9 +222,6 @@ pub fn delete(state: &AppState, id: &str) -> AppResult<()> {
     Ok(())
 }
 
-/// Points the note's row at its new path right after the file moved, so indexing the new path
-/// sees the same note moving rather than a second note appearing. The stored hash is blanked so
-/// that indexing re-reads the file: a title taken from the file name changes with the path.
 fn repoint(connection: &Connection, record: &NoteRecord, new_path: &str) -> AppResult<()> {
     let moved = NoteRecord {
         path: new_path.to_string(),
@@ -272,8 +261,6 @@ fn rename_file_and_heading(
     Ok(())
 }
 
-/// Rewrites `[[old title]]` links in the notes that point at it. Skipped when the title only
-/// changed in case or spacing, or when another note still answers to the old title.
 fn rewrite_incoming_links(
     connection: &Connection,
     root: &Path,
@@ -317,8 +304,6 @@ fn find_existing(connection: &Connection, id: &str) -> AppResult<NoteRecord> {
     repository::find_by_id(connection, id)?.ok_or_else(|| AppError::NotFound("note".into()))
 }
 
-/// The note's record after syncing its file into the index, so the hash and title reflect what
-/// is on disk right now.
 fn fresh_record(connection: &Connection, root: &Path, id: &str) -> AppResult<NoteRecord> {
     let record = find_existing(connection, id)?;
     let indexed = index_service::index_file(connection, root, &record.path)?;
@@ -497,8 +482,6 @@ mod tests {
             .collect()
     }
 
-    // ---- create
-
     #[test]
     fn create_writes_a_markdown_file_with_frontmatter_and_a_heading_and_indexes_it() {
         let fixture = fixture();
@@ -612,8 +595,6 @@ mod tests {
         assert!(matches!(get(&state, "x"), Err(AppError::NotFound(_))));
     }
 
-    // ---- get / list
-
     #[test]
     fn get_returns_the_body_tags_and_hash_without_the_frontmatter() {
         let fixture = fixture();
@@ -715,8 +696,6 @@ mod tests {
             Err(AppError::NotFound(_))
         ));
     }
-
-    // ---- save
 
     #[test]
     fn save_writes_the_content_keeps_the_frontmatter_and_refreshes_title_hash_and_links() {
@@ -895,8 +874,6 @@ mod tests {
         assert!(read(&fixture, "Id.md").contains(&format!("id: {}", note.id)));
     }
 
-    // ---- rename
-
     #[test]
     fn rename_changes_the_file_name_and_the_heading_but_not_the_id() {
         let fixture = fixture();
@@ -1064,8 +1041,6 @@ mod tests {
         );
     }
 
-    // ---- move
-
     #[test]
     fn move_relocates_the_file_and_keeps_id_links_and_content() {
         let fixture = fixture();
@@ -1102,8 +1077,6 @@ mod tests {
         assert_eq!(entries(&fixture).len(), before);
     }
 
-    // ---- delete
-
     #[test]
     fn delete_removes_the_file_the_index_rows_and_leaves_incoming_links_unresolved() {
         let fixture = fixture();
@@ -1136,8 +1109,6 @@ mod tests {
         assert!(delete(&fixture.state, &note.id).is_ok());
         assert!(all_paths(&fixture).is_empty());
     }
-
-    // ---- activity
 
     #[test]
     fn creating_renaming_moving_and_deleting_are_logged_but_saving_is_not() {

@@ -103,8 +103,6 @@ pub fn move_folder(
     relocate(state, &root, &path, &new_path, ActivityAction::Moved)
 }
 
-/// Deletes a folder. A non-empty folder is only deleted with `recursive`, which removes
-/// everything inside it (notes and any other file) from the disk.
 pub fn delete(state: &AppState, path: &str, recursive: bool) -> AppResult<()> {
     let root = vault_root(state)?;
     let path = folder_path(path)?;
@@ -134,8 +132,6 @@ pub fn delete(state: &AppState, path: &str, recursive: bool) -> AppResult<()> {
     Ok(())
 }
 
-/// Renames or moves a directory on disk and re-points the indexed notes below it. If the index
-/// update fails the directory is put back, so disk and index never disagree.
 fn relocate(
     state: &AppState,
     root: &Path,
@@ -176,8 +172,6 @@ fn update_index(
     Ok(())
 }
 
-/// A folder path that names a folder inside the vault. The vault root itself is never a valid
-/// target for rename, move or delete.
 fn folder_path(input: &str) -> AppResult<String> {
     let path = normalize_relative(input)?;
     let is_vault_root = path.is_empty();
@@ -189,7 +183,6 @@ fn folder_path(input: &str) -> AppResult<String> {
     Ok(path)
 }
 
-/// Keeps the search index of folders in step with the directories on disk.
 fn refresh_search(connection: &Connection, root: &Path) -> AppResult<()> {
     search_repository::replace_folders(connection, &list_directories(root))
 }

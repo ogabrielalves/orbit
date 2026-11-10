@@ -1,9 +1,3 @@
--- Entities the user pinned to the sidebar, in the order they chose.
---
--- There is no foreign key because the target lives in different tables (and, for folders, on
--- disk). Rows for projects, boards, tasks and notes are removed by the triggers below when the
--- entity is deleted, which also covers cascading deletes. Folder favorites are kept in step by
--- the folders service (rename, move, delete) and pruned when the vault is reindexed.
 CREATE TABLE favorites (
     entity_type TEXT NOT NULL CHECK (
         entity_type IN ('project', 'board', 'task', 'note', 'folder')

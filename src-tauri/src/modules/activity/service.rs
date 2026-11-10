@@ -11,8 +11,6 @@ pub const MAX_RECENT_LIMIT: u32 = 100;
 pub const DEFAULT_HISTORY_LIMIT: u32 = 50;
 pub const MAX_HISTORY_LIMIT: u32 = 200;
 
-/// Records an entry. Entries about tasks, checklist items, comments and attachments are linked
-/// to their top-level task, so the entity must still exist: record deletions *before* deleting.
 pub fn record(
     connection: &Connection,
     entity_type: EntityType,
@@ -45,8 +43,6 @@ pub fn recent(state: &AppState, limit: Option<u32>) -> AppResult<Vec<ActivityEnt
     rows.into_iter().map(to_entry).collect()
 }
 
-/// Entries of one entity, newest first. The log outlives the entity, so the history of a
-/// deleted entity is still readable.
 pub fn history(
     state: &AppState,
     entity_type: EntityType,
@@ -66,9 +62,6 @@ pub fn history(
     rows.into_iter().map(to_entry).collect()
 }
 
-/// Full history of a top-level task, newest first: its own entries plus those of its subtasks,
-/// checklist items, comments and attachments. Asking for a subtask returns that subtask's own
-/// entries. The log outlives the task, so a deleted task's history is still readable.
 pub fn task_history(
     state: &AppState,
     task_id: &str,

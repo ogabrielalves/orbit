@@ -29,9 +29,7 @@ pub struct IndexReport {
     pub updated: u32,
     pub unchanged: u32,
     pub removed: u32,
-    /// Notes that had no usable `id` (or a duplicated one) and got a new one written to the file.
     pub ids_assigned: u32,
-    /// Files that could not be indexed (not UTF-8, too large, unreadable), by relative path.
     pub skipped: Vec<String>,
 }
 
@@ -58,8 +56,6 @@ impl Indexed {
     }
 }
 
-/// Makes the index match the vault: indexes new and changed notes, follows moved ones by `id`,
-/// and drops rows whose file is gone. Runs in a single transaction.
 pub fn reconcile(connection: &mut Connection, vault_root: &Path) -> AppResult<IndexReport> {
     let files = scan(vault_root);
     let on_disk: HashSet<&str> = files.iter().map(String::as_str).collect();
@@ -103,8 +99,6 @@ fn count(report: &mut IndexReport, indexed: Indexed, relative_path: &str) {
     }
 }
 
-/// Indexes one file (path relative to the vault, `/` separated). Writes an `id` into the file's
-/// frontmatter when it has none, or when another note already uses the same one.
 pub fn index_file(
     connection: &Connection,
     vault_root: &Path,
@@ -178,7 +172,6 @@ pub fn index_file(
         modified_at,
     };
 
-    // A different note recorded at this path means the file's identity changed on disk.
     if let Some(occupant) = at_path.filter(|note| note.id != note_id) {
         repository::delete(connection, &occupant.id)?;
     }
@@ -206,7 +199,6 @@ pub fn index_file(
     })
 }
 
-/// Forgets the note stored at `relative_path`. Returns whether there was one.
 pub fn remove_file(connection: &Connection, relative_path: &str) -> AppResult<bool> {
     match repository::find_by_path(connection, relative_path)? {
         Some(note) => Ok(repository::delete(connection, &note.id)? > 0),
@@ -214,9 +206,6 @@ pub fn remove_file(connection: &Connection, relative_path: &str) -> AppResult<bo
     }
 }
 
-/// Decides the note id for a file. The id written in the file wins, unless another note that
-/// still claims it on disk already owns it (a copied file), in which case a new one is generated.
-/// An owner whose file no longer carries the id has moved to this path (or swapped with it).
 fn resolve_id(
     connection: &Connection,
     vault_root: &Path,
@@ -255,8 +244,6 @@ fn link_records(body: &str) -> Vec<LinkRecord> {
     grouped.into_values().collect()
 }
 
-/// Applies a batch to the index in one transaction: changed and new notes are indexed first (so
-/// a moved note is recognized by its id), and only then are the vanished paths forgotten.
 pub fn apply_changes(
     connection: &mut Connection,
     vault_root: &Path,
@@ -493,7 +480,6 @@ mod tests {
         );
         reconcile(&mut connection, vault.path()).expect("first run");
 
-        // "a-copy.md" sorts before the original, which must not matter
         fs::copy(
             vault.path().join("z-original.md"),
             vault.path().join("a-copy.md"),

@@ -16,8 +16,6 @@ pub fn list(state: &AppState, input: ListBacklogInput) -> AppResult<Vec<BacklogI
     load_items(&connection, input)
 }
 
-/// Same items as `list`, grouped by project (projects ordered by name, ignoring case).
-/// Inside each group the chosen sort applies.
 pub fn list_by_project(state: &AppState, input: ListBacklogInput) -> AppResult<Vec<BacklogGroup>> {
     let connection = state.database();
     let items = load_items(&connection, input)?;
@@ -46,7 +44,6 @@ pub fn list_by_project(state: &AppState, input: ListBacklogInput) -> AppResult<V
     Ok(groups)
 }
 
-/// Reorders a backlog task inside its own project's backlog.
 pub fn move_item(state: &AppState, id: &str, after_task_id: Option<String>) -> AppResult<Task> {
     let mut connection = state.database();
     let transaction = connection.transaction()?;

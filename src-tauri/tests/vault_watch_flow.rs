@@ -44,7 +44,6 @@ fn wait_until(mut condition: impl FnMut() -> bool) -> bool {
     false
 }
 
-/// The same wiring the app uses, minus the Tauri event: watcher -> apply_batch -> index.
 fn watch(
     state: &Arc<AppState>,
     vault: &Path,

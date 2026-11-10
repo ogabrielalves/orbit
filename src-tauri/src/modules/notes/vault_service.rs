@@ -15,7 +15,6 @@ use crate::vault::writer;
 #[serde(rename_all = "camelCase")]
 pub struct SetupVaultInput {
     pub path: String,
-    /// Create the directory when it does not exist yet (the "create a new vault" flow).
     #[serde(default)]
     pub create: bool,
 }
@@ -25,7 +24,6 @@ pub struct SetupVaultInput {
 pub struct VaultInfo {
     pub path: String,
     pub was_created: bool,
-    /// Notes found in the vault when it was indexed.
     pub note_count: u32,
 }
 
@@ -33,12 +31,9 @@ pub struct VaultInfo {
 #[serde(rename_all = "camelCase")]
 pub struct VaultStatus {
     pub path: Option<String>,
-    /// False when a vault is configured but its directory is gone or no longer writable.
     pub is_accessible: bool,
 }
 
-/// Chooses (or creates) the vault directory, checks that ORBIT can read and write there, and
-/// saves it in the settings.
 pub fn setup(state: &AppState, input: SetupVaultInput) -> AppResult<VaultInfo> {
     let path = parse_path(&input.path)?;
     let was_created = prepare_directory(&path, input.create)?;
@@ -61,9 +56,6 @@ pub fn setup(state: &AppState, input: SetupVaultInput) -> AppResult<VaultInfo> {
     })
 }
 
-/// Rebuilds the note index from the vault: new and edited files are indexed, moved ones are
-/// followed by id, and rows whose file is gone are dropped. Also adds an `id` to the
-/// frontmatter of notes that have none.
 pub fn reindex(state: &AppState) -> AppResult<IndexReport> {
     let root = vault_root(state)?;
     let mut connection = state.database();
@@ -83,7 +75,6 @@ pub fn status(state: &AppState) -> VaultStatus {
     }
 }
 
-/// The configured vault directory, checked to still be usable. Every note operation starts here.
 pub fn vault_root(state: &AppState) -> AppResult<PathBuf> {
     let path = state
         .vault_path()
@@ -108,7 +99,6 @@ fn parse_path(text: &str) -> AppResult<PathBuf> {
     Ok(path)
 }
 
-/// Returns whether the directory had to be created.
 fn prepare_directory(path: &Path, create: bool) -> AppResult<bool> {
     if path.exists() {
         let is_directory = path.is_dir();

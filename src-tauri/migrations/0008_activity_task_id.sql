@@ -1,6 +1,3 @@
--- Owning top-level task of an entry: the task itself, its subtasks, and their checklist
--- items, comments and attachments all point at the same top-level task. No foreign key:
--- the log outlives the task.
 ALTER TABLE activity_log ADD COLUMN task_id TEXT;
 
 UPDATE activity_log

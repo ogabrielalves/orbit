@@ -15,7 +15,6 @@ pub fn require_text(label: &str, value: &str, max_length: usize) -> AppResult<St
     Ok(trimmed.to_string())
 }
 
-/// Builds a `LIKE` pattern that matches `term` as a literal substring (use with `ESCAPE '\\'`).
 pub fn like_pattern(term: &str) -> String {
     let escaped = term
         .replace('\\', "\\\\")

@@ -1,15 +1,10 @@
-/// Attachments are opened with the system default app, so only a fixed list of inert file types
-/// is accepted. Anything that can run code (executables, scripts, installers, shortcuts) or
-/// render active content (HTML, SVG) is deliberately absent.
 const ALLOWED_TYPES: &[(&str, &str)] = &[
-    // images
     ("png", "image/png"),
     ("jpg", "image/jpeg"),
     ("jpeg", "image/jpeg"),
     ("gif", "image/gif"),
     ("webp", "image/webp"),
     ("bmp", "image/bmp"),
-    // documents
     ("pdf", "application/pdf"),
     ("txt", "text/plain"),
     ("md", "text/markdown"),
@@ -34,7 +29,6 @@ const ALLOWED_TYPES: &[(&str, &str)] = &[
     ("odt", "application/vnd.oasis.opendocument.text"),
     ("ods", "application/vnd.oasis.opendocument.spreadsheet"),
     ("odp", "application/vnd.oasis.opendocument.presentation"),
-    // archives and media
     ("zip", "application/zip"),
     ("mp3", "audio/mpeg"),
     ("wav", "audio/wav"),
@@ -43,14 +37,12 @@ const ALLOWED_TYPES: &[(&str, &str)] = &[
     ("webm", "video/webm"),
 ];
 
-/// Lower-cased extension of `file_name` (without the dot), if it has one.
 pub fn extension_of(file_name: &str) -> Option<String> {
     let (stem, extension) = file_name.rsplit_once('.')?;
     let has_extension = !stem.is_empty() && !extension.is_empty();
     has_extension.then(|| extension.to_lowercase())
 }
 
-/// MIME type for an allowed extension, ignoring case.
 pub fn mime_for_extension(extension: &str) -> Option<&'static str> {
     let lowered = extension.to_lowercase();
     ALLOWED_TYPES

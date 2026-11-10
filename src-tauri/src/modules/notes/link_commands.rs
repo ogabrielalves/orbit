@@ -5,7 +5,6 @@ use super::models::{NoteLinks, NoteSummary, UnresolvedLink};
 use crate::error::AppResult;
 use crate::state::AppState;
 
-/// The note a `[[link]]` points to, or null. Accepts `Title` and `Title#Heading`.
 #[tauri::command]
 #[specta::specta]
 pub async fn resolve_note_link(
@@ -15,7 +14,6 @@ pub async fn resolve_note_link(
     link_service::resolve(&state, &target)
 }
 
-/// Outgoing links (resolved or not) and backlinks of a note.
 #[tauri::command]
 #[specta::specta]
 pub async fn get_note_links(state: State<'_, AppState>, id: String) -> AppResult<NoteLinks> {

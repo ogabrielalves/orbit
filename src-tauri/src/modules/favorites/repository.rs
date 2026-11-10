@@ -3,7 +3,6 @@ use rusqlite::{Connection, OptionalExtension};
 use super::models::FavoriteType;
 use crate::error::AppResult;
 
-/// A favorite as stored.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StoredFavorite {
     pub entity_type: String,
@@ -12,7 +11,6 @@ pub struct StoredFavorite {
     pub created_at: String,
 }
 
-/// What a favorite currently points to, with the fields the sidebar shows.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct Resolved {
     pub title: String,
@@ -95,7 +93,6 @@ pub fn set_position(
     Ok(affected)
 }
 
-/// Whether a project, board, task or note with this id exists. Folders are checked on disk.
 pub fn entity_exists(
     connection: &Connection,
     entity_type: FavoriteType,
@@ -112,8 +109,6 @@ pub fn entity_exists(
     Ok(exists)
 }
 
-/// Looks up the current title and context of a project, board, task or note. `None` when the
-/// entity is gone. Folders are resolved by the service, which knows the vault.
 pub fn resolve(
     connection: &Connection,
     entity_type: FavoriteType,
@@ -196,9 +191,6 @@ pub fn resolve(
     Ok(resolved)
 }
 
-// ---- folder favorites follow the directories on disk
-
-/// A folder was renamed or moved: re-points the favorites of it and of its subfolders.
 pub fn rename_folder(connection: &Connection, old_path: &str, new_path: &str) -> AppResult<usize> {
     let lower = format!("{old_path}/");
     let upper = format!("{old_path}0");
@@ -212,7 +204,6 @@ pub fn rename_folder(connection: &Connection, old_path: &str, new_path: &str) ->
     Ok(affected)
 }
 
-/// A folder was deleted: drops the favorites of it and of its subfolders.
 pub fn delete_folder_tree(connection: &Connection, path: &str) -> AppResult<usize> {
     let lower = format!("{path}/");
     let upper = format!("{path}0");
@@ -225,7 +216,6 @@ pub fn delete_folder_tree(connection: &Connection, path: &str) -> AppResult<usiz
     Ok(affected)
 }
 
-/// Drops folder favorites whose folder is no longer among `existing` (relative paths).
 pub fn prune_folders(connection: &Connection, existing: &[String]) -> AppResult<usize> {
     let mut removed = 0;
     for favorite in list(connection)? {

@@ -21,8 +21,6 @@ pub fn initialize_state(data_directory: &Path) -> AppResult<AppState> {
     Ok(state)
 }
 
-/// Brings the note index in line with the vault. A missing or unreadable vault, or a failing
-/// scan, must never keep the app from starting, so problems are only logged.
 fn reconcile_vault(state: &AppState) {
     if state.vault_path().is_none() {
         return;

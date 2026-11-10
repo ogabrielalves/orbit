@@ -1,15 +1,12 @@
-/// A `[[Target]]`, `[[Target|alias]]` or `[[Target#Heading|alias]]` reference found in a note.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WikiLink {
     pub target: String,
     pub heading: Option<String>,
     pub alias: Option<String>,
-    /// Byte range of the whole `[[...]]` in the scanned text.
     pub start: usize,
     pub end: usize,
 }
 
-/// Normalized form used to compare titles: trimmed, whitespace collapsed, case-insensitive.
 pub fn title_key(title: &str) -> String {
     title
         .split_whitespace()
@@ -18,8 +15,6 @@ pub fn title_key(title: &str) -> String {
         .to_lowercase()
 }
 
-/// Finds the wikilinks of a note. Links inside fenced code blocks or inline code are ignored,
-/// and so are embeds (`![[image]]`). A link never spans lines.
 pub fn extract(text: &str) -> Vec<WikiLink> {
     let mut links = Vec::new();
     let mut in_fence = false;
@@ -37,8 +32,6 @@ pub fn extract(text: &str) -> Vec<WikiLink> {
     links
 }
 
-/// Rewrites every link that points at `old_title` so it points at `new_title`, keeping
-/// headings and aliases. Returns the new text and how many links changed.
 pub fn retarget(text: &str, old_title: &str, new_title: &str) -> (String, usize) {
     let wanted = title_key(old_title);
     let mut output = String::with_capacity(text.len());

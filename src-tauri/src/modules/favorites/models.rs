@@ -35,8 +35,6 @@ impl FavoriteType {
     }
 }
 
-/// Points at one favoritable thing: an id for projects, boards, tasks and notes, and the
-/// relative path (`/` separated) for folders.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct FavoriteRef {
@@ -50,14 +48,11 @@ pub struct FavoriteEntry {
     pub entity_type: FavoriteType,
     pub entity_id: String,
     pub title: String,
-    /// The project name for boards and tasks, the containing folder for notes and folders.
     pub context: Option<String>,
     pub project_id: Option<String>,
     pub board_id: Option<String>,
     pub parent_task_id: Option<String>,
-    /// Relative path inside the vault, for notes and folders.
     pub path: Option<String>,
-    /// True when the item (or the project or board it belongs to) is archived.
     pub is_archived: bool,
     pub created_at: String,
 }

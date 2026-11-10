@@ -1,7 +1,5 @@
 use sha2::{Digest, Sha256};
 
-/// Hex SHA-256 of the raw bytes. Used to tell whether a note changed on disk since ORBIT last
-/// read or wrote it.
 pub fn content_hash(bytes: &[u8]) -> String {
     let digest = Sha256::digest(bytes);
     digest.iter().map(|byte| format!("{byte:02x}")).collect()

@@ -9,9 +9,6 @@ use crate::state::AppState;
 const MAX_TERMS: usize = 8;
 const MAX_TERM_LENGTH: usize = 50;
 
-/// Searches projects, boards, tasks, notes and folders at once, grouped by category. Every word
-/// of the query must match (as a prefix, ignoring case and accents); archived projects, boards
-/// and tasks are left out. A query with no letters or digits finds nothing.
 pub fn search(state: &AppState, input: SearchInput) -> AppResult<SearchResults> {
     let Some(expression) = match_expression(&input.query) else {
         return Ok(SearchResults::default());
@@ -35,10 +32,6 @@ pub fn search(state: &AppState, input: SearchInput) -> AppResult<SearchResults> 
     })
 }
 
-/// Builds a safe FTS5 expression from what the user typed: every run of letters and digits
-/// becomes a quoted prefix term (`"spr"*`), terms are ANDed. Quoting turns FTS operators and
-/// column filters (`AND`, `NOT`, `title:`, `*`, quotes, parentheses) into plain words, so no input
-/// can produce a syntax error or reach other columns. `None` when nothing searchable is left.
 pub fn match_expression(query: &str) -> Option<String> {
     let terms: Vec<String> = query
         .split(|character: char| !character.is_alphanumeric())
@@ -66,7 +59,6 @@ fn hits(raw: Vec<RawHit>) -> Vec<SearchHit> {
         .collect()
 }
 
-/// Splits text carrying the match markers into plain and matched parts.
 pub fn parts(marked: &str) -> Vec<TextPart> {
     let mut result: Vec<TextPart> = Vec::new();
     let mut current = String::new();
@@ -217,8 +209,6 @@ mod tests {
         .id
     }
 
-    // ---- query building
-
     #[test]
     fn every_word_becomes_a_quoted_prefix_term() {
         assert_eq!(
@@ -305,8 +295,6 @@ mod tests {
             }]
         );
     }
-
-    // ---- searching
 
     #[test]
     fn results_are_grouped_by_category_with_context() {
@@ -410,7 +398,6 @@ mod tests {
             );
             assert!(result.is_ok(), "{hostile:?} should not fail");
         }
-        // "title:" is not a column filter: it is just the words "title" and "plain"
         assert_eq!(find(&fixture, "title:plain").tasks.len(), 0);
         let both = task(&fixture, &p, "Title of the plain task", "");
         assert_eq!(ids(&find(&fixture, "title:plain").tasks), [both.as_str()]);
@@ -471,8 +458,6 @@ mod tests {
             [in_title.as_str(), in_description.as_str()]
         );
     }
-
-    // ---- staying in sync with the data
 
     #[test]
     fn edits_renames_and_deletions_are_reflected_immediately() {
@@ -612,8 +597,6 @@ mod tests {
             .expect("parent");
         assert_eq!(parent_hit.parent_task_id, None);
     }
-
-    // ---- notes and folders from the vault
 
     #[test]
     fn notes_are_searchable_by_title_and_body_and_follow_saves_renames_and_deletes() {

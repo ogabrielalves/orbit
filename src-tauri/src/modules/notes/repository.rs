@@ -72,10 +72,9 @@ pub fn list_all(connection: &Connection) -> AppResult<Vec<NoteRecord>> {
     Ok(notes)
 }
 
-/// Notes whose path lies under `directory` (a relative path without a trailing slash).
 pub fn list_under(connection: &Connection, directory: &str) -> AppResult<Vec<NoteRecord>> {
     let lower = format!("{directory}/");
-    let upper = format!("{directory}0"); // '0' is the character right after '/'
+    let upper = format!("{directory}0");
     let sql =
         format!("SELECT {NOTE_COLUMNS} FROM notes WHERE path >= ?1 AND path < ?2 ORDER BY path");
     let mut statement = connection.prepare(&sql)?;
@@ -84,7 +83,6 @@ pub fn list_under(connection: &Connection, directory: &str) -> AppResult<Vec<Not
     Ok(notes)
 }
 
-/// Notes that contain at least one link to `target_key`.
 pub fn list_linking_to(connection: &Connection, target_key: &str) -> AppResult<Vec<NoteRecord>> {
     let sql = "SELECT n.id, n.path, n.title, n.title_key, n.hash, n.created_at, n.modified_at
                FROM notes n JOIN note_links l ON l.source_note_id = n.id
@@ -95,7 +93,6 @@ pub fn list_linking_to(connection: &Connection, target_key: &str) -> AppResult<V
     Ok(notes)
 }
 
-/// How many notes other than `except_id` carry this normalized title.
 pub fn count_with_title_key(
     connection: &Connection,
     title_key: &str,
@@ -114,8 +111,6 @@ pub fn delete(connection: &Connection, id: &str) -> AppResult<usize> {
     Ok(affected)
 }
 
-/// Re-points every note under `old_directory` to `new_directory` after the folder was renamed
-/// or moved on disk. Both are relative paths without a trailing slash.
 pub fn rename_directory(
     connection: &Connection,
     old_directory: &str,
@@ -132,7 +127,6 @@ pub fn rename_directory(
     Ok(affected)
 }
 
-/// Forgets every note under `directory`. Returns how many rows went away.
 pub fn delete_directory(connection: &Connection, directory: &str) -> AppResult<usize> {
     let lower = format!("{directory}/");
     let upper = format!("{directory}0");
@@ -183,8 +177,6 @@ pub fn list_links(connection: &Connection, source_note_id: &str) -> AppResult<Ve
     Ok(links)
 }
 
-/// The note a `[[link]]` with this normalized title points to. When several notes share a title
-/// the oldest one wins (then the first path), so a link never jumps between notes.
 pub fn resolve_title(connection: &Connection, title_key: &str) -> AppResult<Option<NoteRecord>> {
     let sql = format!(
         "SELECT {NOTE_COLUMNS} FROM notes WHERE title_key = ?1 ORDER BY created_at, path LIMIT 1"
@@ -195,8 +187,6 @@ pub fn resolve_title(connection: &Connection, title_key: &str) -> AppResult<Opti
     Ok(note)
 }
 
-/// Notes that link to `note_id` (through its title), other than the note itself, with how many
-/// times each links to it. Links whose title resolves to a different, older note do not count.
 pub fn list_backlinks(connection: &Connection, note_id: &str) -> AppResult<Vec<(NoteRecord, u32)>> {
     let sql = "SELECT n.id, n.path, n.title, n.title_key, n.hash, n.created_at, n.modified_at,
                       l.link_count
@@ -213,7 +203,6 @@ pub fn list_backlinks(connection: &Connection, note_id: &str) -> AppResult<Vec<(
     Ok(backlinks)
 }
 
-/// Every link written in the note, each with the note it resolves to (if any).
 pub fn list_outgoing(
     connection: &Connection,
     source_note_id: &str,
@@ -228,8 +217,6 @@ pub fn list_outgoing(
         .collect()
 }
 
-/// Links whose title matches no note, as (target title as first written, source note), ordered by
-/// target and then by the source's path.
 pub fn list_unresolved(connection: &Connection) -> AppResult<Vec<(String, NoteRecord)>> {
     let sql = "SELECT l.target_title, n.id, n.path, n.title, n.title_key, n.hash, n.created_at,
                       n.modified_at

@@ -169,8 +169,6 @@ enum Origin {
     },
 }
 
-/// `completed_at` after a task changes column: entering a `done` column stamps `now`,
-/// moving between `done` columns keeps the original stamp, and anywhere else clears it.
 fn completion_after_move(
     origin: &Origin,
     target_kind: Option<ColumnKind>,
@@ -263,7 +261,6 @@ mod tests {
 
     const NOW: &str = "2026-11-08T10:00:00.000Z";
 
-    /// Test convention: "Todo" is a todo stage, "Done" is the done stage, anything else is in progress.
     fn kind_of(name: &str) -> ColumnKind {
         match name {
             "Todo" => ColumnKind::Todo,

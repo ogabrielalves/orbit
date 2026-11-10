@@ -13,8 +13,6 @@ pub fn get(state: &AppState) -> AppResult<Settings> {
     load(&connection)
 }
 
-/// Updates the settings the user edits directly (language). The vault is not one of them: it is
-/// chosen with `setup_vault`, which checks the directory first, so a `vaultPath` here is refused.
 pub fn update(state: &AppState, input: UpdateSettingsInput) -> AppResult<Settings> {
     let tries_to_set_the_vault = input.vault_path.is_some();
     if tries_to_set_the_vault {
@@ -25,8 +23,6 @@ pub fn update(state: &AppState, input: UpdateSettingsInput) -> AppResult<Setting
     save(state, input)
 }
 
-/// Stores the settings without the vault check of `update`. Meant for code that already
-/// validated the vault directory (`setup_vault`).
 pub fn save(state: &AppState, input: UpdateSettingsInput) -> AppResult<Settings> {
     let vault_path = normalize_vault_path(input.vault_path)?;
     let now = time::now();

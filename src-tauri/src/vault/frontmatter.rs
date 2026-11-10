@@ -1,6 +1,3 @@
-/// YAML frontmatter of a note, limited to what ORBIT owns: `id`, `created` and `tags`.
-/// Every other key is kept verbatim and written back untouched, so notes edited in other
-/// tools (Obsidian aliases, custom fields) never lose data.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct Frontmatter {
     pub id: Option<String>,
@@ -36,8 +33,6 @@ impl Frontmatter {
     }
 }
 
-/// Splits a note into frontmatter and body. A note without a closed `---` block has no
-/// frontmatter and its whole text is the body.
 pub fn parse(content: &str) -> ParsedNote {
     let text = content.strip_prefix(BOM).unwrap_or(content);
     let Some((block, body)) = split_block(text) else {
@@ -54,7 +49,6 @@ pub fn parse(content: &str) -> ParsedNote {
     }
 }
 
-/// Renders the frontmatter block followed by the body. Always uses `\n` inside the block.
 pub fn render(frontmatter: &Frontmatter, body: &str) -> String {
     let mut lines: Vec<String> = Vec::new();
     if let Some(id) = &frontmatter.id {
@@ -105,7 +99,6 @@ fn split_block(text: &str) -> Option<(Vec<&str>, &str)> {
     }
 }
 
-/// One line without its terminator, plus the text after it. `None` at the end of the input.
 fn next_line(text: &str) -> Option<(&str, &str)> {
     if text.is_empty() {
         return None;

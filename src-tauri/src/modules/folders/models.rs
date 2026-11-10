@@ -1,21 +1,17 @@
 use serde::{Deserialize, Serialize};
 use specta::Type;
 
-/// A directory of the vault. Folders are real directories; this is only a view of them.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct FolderEntry {
-    /// Relative to the vault root, `/` separated.
     pub path: String,
     pub name: String,
-    /// Notes directly inside this folder (not in its subfolders).
     pub note_count: u32,
 }
 
 #[derive(Debug, Clone, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateFolderInput {
-    /// Where to create it; omitted or empty means the vault root.
     #[serde(default)]
     pub parent_path: Option<String>,
     pub name: String,

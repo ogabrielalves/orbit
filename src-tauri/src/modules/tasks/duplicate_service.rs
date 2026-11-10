@@ -16,9 +16,6 @@ use crate::state::AppState;
 
 const COPY_SUFFIX: &str = " (copy)";
 
-/// Duplicates a top-level task right after the original, with its checklist, tags and
-/// subtasks (each subtask with its own checklist and tags). Progress starts over: checklist
-/// items and subtasks are copied as open. Comments and attachments are not copied.
 pub fn duplicate(state: &AppState, id: &str, title: Option<String>) -> AppResult<Task> {
     let mut connection = state.database();
     let transaction = connection.transaction()?;

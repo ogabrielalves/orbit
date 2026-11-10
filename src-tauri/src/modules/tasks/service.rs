@@ -304,7 +304,6 @@ mod tests {
 
     const NOW: &str = "2026-11-08T10:00:00.000Z";
 
-    /// Test convention: "Todo" is a todo stage, "Done" is the done stage, anything else is in progress.
     fn kind_of(name: &str) -> ColumnKind {
         match name {
             "Todo" => ColumnKind::Todo,

@@ -4,9 +4,6 @@ use std::path::{Path, PathBuf};
 use super::indexer::ATTACHMENTS_DIRECTORY;
 use crate::error::{AppError, AppResult};
 
-/// Normalizes a vault-relative path coming from the frontend: `/` separated, no leading or
-/// trailing slash, no empty, `.` or `..` segment, no drive letters, no hidden segment and not
-/// inside the reserved attachments directory. The empty string is the vault root.
 pub fn normalize_relative(input: &str) -> AppResult<String> {
     let trimmed = input.trim().trim_matches('/');
     if trimmed.is_empty() {
@@ -32,7 +29,6 @@ pub fn normalize_relative(input: &str) -> AppResult<String> {
     Ok(segments.join("/"))
 }
 
-/// `root` joined with a normalized relative path.
 pub fn absolute(root: &Path, relative: &str) -> PathBuf {
     let mut path = root.to_path_buf();
     for segment in relative.split('/').filter(|segment| !segment.is_empty()) {
@@ -41,7 +37,6 @@ pub fn absolute(root: &Path, relative: &str) -> PathBuf {
     path
 }
 
-/// The directory at `relative`, which must exist inside the vault and not be a symlink.
 pub fn existing_directory(root: &Path, relative: &str) -> AppResult<PathBuf> {
     let path = absolute(root, relative);
     let metadata = fs::symlink_metadata(&path).map_err(|_| AppError::NotFound("folder".into()))?;
@@ -68,7 +63,6 @@ pub fn join(parent: &str, name: &str) -> String {
     }
 }
 
-/// True when `candidate` is `ancestor` itself or lies somewhere below it.
 pub fn is_same_or_inside(candidate: &str, ancestor: &str) -> bool {
     candidate == ancestor
         || candidate
@@ -76,8 +70,6 @@ pub fn is_same_or_inside(candidate: &str, ancestor: &str) -> bool {
             .is_some_and(|rest| rest.starts_with('/'))
 }
 
-/// Whether `directory` already holds an entry called `name`, ignoring case (Windows and macOS
-/// file systems do), apart from `except` (the entry being renamed or moved itself).
 pub fn name_is_taken(directory: &Path, name: &str, except: Option<&Path>) -> bool {
     let wanted = name.to_lowercase();
     let Ok(entries) = fs::read_dir(directory) else {

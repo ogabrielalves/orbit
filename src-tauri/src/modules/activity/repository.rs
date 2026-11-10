@@ -59,8 +59,6 @@ pub fn find_recent(connection: &Connection, limit: u32) -> AppResult<Vec<StoredR
     Ok(entries)
 }
 
-/// The top-level task an entry belongs to, or `None` for entities that are not task-related
-/// (or whose row is already gone).
 pub fn find_task_id(
     connection: &Connection,
     entity_type: &str,
@@ -88,9 +86,6 @@ pub fn find_task_id(
     Ok(task_id)
 }
 
-/// Everything that happened to a top-level task: its own entries plus those of its subtasks,
-/// checklist items, comments and attachments. Entries written by the task itself are also
-/// matched by entity, so the history of a task that no longer exists is still readable.
 pub fn find_for_task(
     connection: &Connection,
     task_id: &str,

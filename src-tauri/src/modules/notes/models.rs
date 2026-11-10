@@ -1,11 +1,9 @@
 use serde::{Deserialize, Serialize};
 use specta::Type;
 
-/// A row of the `notes` index. The Markdown file is the source of truth; this is derived data.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct NoteRecord {
     pub id: String,
-    /// Relative to the vault root, always with `/` separators.
     pub path: String,
     pub title: String,
     pub title_key: String,
@@ -14,7 +12,6 @@ pub struct NoteRecord {
     pub modified_at: String,
 }
 
-/// One distinct target a note links to.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LinkRecord {
     pub target_key: String,
@@ -26,7 +23,6 @@ pub struct LinkRecord {
 #[serde(rename_all = "camelCase")]
 pub struct NoteSummary {
     pub id: String,
-    /// Relative to the vault root, `/` separated.
     pub path: String,
     pub title: String,
     pub created_at: String,
@@ -54,22 +50,16 @@ pub struct NoteDetails {
     pub tags: Vec<String>,
     pub created_at: String,
     pub modified_at: String,
-    /// The Markdown text without the frontmatter, which ORBIT manages itself.
     pub content: String,
-    /// Hash of the file as it was read. Send it back as `baseHash` when saving, so edits made
-    /// outside ORBIT in the meantime are detected instead of overwritten.
     pub hash: String,
 }
 
 #[derive(Debug, Clone, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateNoteInput {
-    /// Folder to create the note in; omitted or empty means the vault root.
     #[serde(default)]
     pub folder_path: Option<String>,
-    /// Also the file name (`<title>.md`) and the note's first heading.
     pub title: String,
-    /// Initial Markdown text. Defaults to a heading with the title.
     #[serde(default)]
     pub content: Option<String>,
     #[serde(default)]
@@ -80,12 +70,9 @@ pub struct CreateNoteInput {
 #[serde(rename_all = "camelCase")]
 pub struct SaveNoteInput {
     pub content: String,
-    /// The `hash` the note had when it was read.
     pub base_hash: String,
-    /// New tags; omitted keeps the current ones.
     #[serde(default)]
     pub tags: Option<Vec<String>>,
-    /// Save even if the file changed outside ORBIT since `baseHash` (overwrites those changes).
     #[serde(default)]
     pub force: bool,
 }
@@ -93,9 +80,7 @@ pub struct SaveNoteInput {
 #[derive(Debug, Clone, Default, Deserialize, Type)]
 #[serde(rename_all = "camelCase", default)]
 pub struct ListNotesInput {
-    /// Only notes of this folder; omitted lists every note of the vault.
     pub folder_path: Option<String>,
-    /// With `folderPath`, also include the notes of its subfolders.
     pub include_subfolders: bool,
 }
 
@@ -103,23 +88,17 @@ pub struct ListNotesInput {
 #[serde(rename_all = "camelCase")]
 pub struct RenameNoteResult {
     pub note: NoteSummary,
-    /// Other notes whose `[[links]]` were rewritten to the new title.
     pub rewritten_notes: u32,
 }
 
-/// A `[[link]]` written in a note and the note it currently resolves to, if any.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct OutgoingLink {
-    /// The title as written in the note.
     pub target_title: String,
-    /// How many times the note links to it.
     pub link_count: u32,
-    /// `None` when no note has that title (an unresolved link).
     pub resolved: Option<NoteSummary>,
 }
 
-/// A note that links to another one.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct Backlink {
@@ -134,7 +113,6 @@ pub struct NoteLinks {
     pub backlinks: Vec<Backlink>,
 }
 
-/// A title that notes link to but that no note has, with the notes that link to it.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct UnresolvedLink {

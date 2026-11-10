@@ -1,5 +1,3 @@
-/// Image kinds accepted for pasted images. The kind is decided from the file's first bytes, never
-/// from a name or MIME type sent by the caller. SVG is deliberately absent: it can carry scripts.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ImageKind {
     Png,
@@ -30,7 +28,6 @@ impl ImageKind {
         }
     }
 
-    /// The kind for a stored file name, by extension (`jpeg` counts as JPEG).
     pub fn from_extension(extension: &str) -> Option<Self> {
         match extension.to_lowercase().as_str() {
             "png" => Some(Self::Png),
@@ -43,7 +40,6 @@ impl ImageKind {
     }
 }
 
-/// Recognizes the image format from the leading bytes.
 pub fn detect(bytes: &[u8]) -> Option<ImageKind> {
     let is_png = bytes.starts_with(&[0x89, b'P', b'N', b'G', 0x0D, 0x0A, 0x1A, 0x0A]);
     let is_jpeg = bytes.starts_with(&[0xFF, 0xD8, 0xFF]);

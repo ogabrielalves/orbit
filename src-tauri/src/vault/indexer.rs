@@ -9,14 +9,10 @@ use super::title::title_of;
 use super::writer::is_temp_file;
 use crate::shared::time;
 
-/// Pasted images live here (see the notes module); the directory is never scanned for notes.
 pub const ATTACHMENTS_DIRECTORY: &str = "attachments";
-/// Larger Markdown files are not treated as notes.
 pub const MAX_NOTE_BYTES: u64 = 10 * 1024 * 1024;
 const UNTITLED: &str = "Untitled";
 
-/// Relative paths (`/` separated, sorted) of every note file in the vault. Hidden entries,
-/// symlinks, the attachments directory and non-Markdown files are left out.
 pub fn scan(vault_root: &Path) -> Vec<String> {
     let mut found = Vec::new();
     collect(vault_root, "", &mut found);
@@ -24,8 +20,6 @@ pub fn scan(vault_root: &Path) -> Vec<String> {
     found
 }
 
-/// Relative paths (`/` separated, sorted ignoring case) of every folder in the vault. Hidden
-/// entries, symlinks and the attachments directory at the root are left out.
 pub fn list_directories(vault_root: &Path) -> Vec<String> {
     let mut found = Vec::new();
     collect_directories(vault_root, "", &mut found);
@@ -60,8 +54,6 @@ fn collect_directories(directory: &Path, prefix: &str, found: &mut Vec<String>) 
     }
 }
 
-/// Whether a relative path could hold a note: Markdown extension, no hidden segment, not inside
-/// the attachments directory and not one of the writer's temporary files.
 pub fn is_indexable_path(relative_path: &str) -> bool {
     let segments: Vec<&str> = relative_path.split('/').collect();
     let has_hidden_segment = segments
@@ -75,7 +67,6 @@ pub fn is_indexable_path(relative_path: &str) -> bool {
     is_markdown && !has_hidden_segment && !in_attachments && !is_temp_file(Path::new(relative_path))
 }
 
-/// `absolute` made relative to the vault with `/` separators, if it lies inside it.
 pub fn to_relative(vault_root: &Path, absolute: &Path) -> Option<String> {
     let relative = absolute.strip_prefix(vault_root).ok()?;
     let parts: Option<Vec<&str>> = relative.iter().map(|part| part.to_str()).collect();
@@ -114,8 +105,6 @@ fn collect(directory: &Path, prefix: &str, found: &mut Vec<String>) {
     }
 }
 
-/// Two relative paths that differ only in case name the same file on case-insensitive file
-/// systems (Windows, macOS), which is a rename and not a copy.
 pub fn same_file(vault_root: &Path, first: &str, second: &str) -> bool {
     let resolve = |relative: &str| fs::canonicalize(vault_root.join(relative)).ok();
     match (resolve(first), resolve(second)) {
@@ -124,7 +113,6 @@ pub fn same_file(vault_root: &Path, first: &str, second: &str) -> bool {
     }
 }
 
-/// Whether the note file at `relative_path` currently carries `wanted_id` in its frontmatter.
 pub fn file_claims_id(vault_root: &Path, relative_path: &str, wanted_id: &str) -> bool {
     let Ok(text) = fs::read_to_string(vault_root.join(relative_path)) else {
         return false;
@@ -132,14 +120,12 @@ pub fn file_claims_id(vault_root: &Path, relative_path: &str, wanted_id: &str) -
     frontmatter::parse(&text).frontmatter.id.as_deref() == Some(wanted_id)
 }
 
-/// Whether `candidate` is usable as a note id: non-empty, no whitespace, at most 64 bytes.
 pub fn is_valid_id(candidate: &str) -> bool {
     let is_empty = candidate.is_empty();
     let has_whitespace = candidate.chars().any(char::is_whitespace);
     !is_empty && !has_whitespace && candidate.len() <= 64
 }
 
-/// Title of a note: its first heading, or the file name without extension.
 pub fn note_title(body: &str, relative_path: &str) -> String {
     let stem = Path::new(relative_path)
         .file_stem()
@@ -152,7 +138,6 @@ pub fn note_title(body: &str, relative_path: &str) -> String {
     title
 }
 
-/// Last modification time of a file, as an ISO-8601 timestamp.
 pub fn modified_time(metadata: &fs::Metadata) -> String {
     metadata
         .modified()

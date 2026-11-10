@@ -4,8 +4,6 @@ use crate::error::{AppError, AppResult};
 use crate::state::AppState;
 use crate::vault::links::title_key;
 
-/// The note a `[[link]]` with this text points to, if any. Accepts `Title`, `Title#Heading` and
-/// is case and spacing insensitive. With several notes sharing a title, the oldest wins.
 pub fn resolve(state: &AppState, target: &str) -> AppResult<Option<NoteSummary>> {
     let title = target.split('#').next().unwrap_or(target);
     let key = title_key(title);
@@ -17,7 +15,6 @@ pub fn resolve(state: &AppState, target: &str) -> AppResult<Option<NoteSummary>>
     Ok(repository::resolve_title(&connection, &key)?.map(NoteSummary::from))
 }
 
-/// What a note links to (resolved or not) and which notes link to it.
 pub fn for_note(state: &AppState, id: &str) -> AppResult<NoteLinks> {
     let connection = state.database();
     let note_exists = repository::find_by_id(&connection, id)?.is_some();
@@ -46,7 +43,6 @@ pub fn for_note(state: &AppState, id: &str) -> AppResult<NoteLinks> {
     })
 }
 
-/// Titles that notes link to but no note has, each with the notes that link to it.
 pub fn unresolved(state: &AppState) -> AppResult<Vec<UnresolvedLink>> {
     let connection = state.database();
     let mut groups: Vec<(String, UnresolvedLink)> = Vec::new();

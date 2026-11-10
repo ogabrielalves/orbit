@@ -5,7 +5,6 @@ use crate::error::AppResult;
 
 const ATTACHMENT_COLUMNS: &str = "id, task_id, file_name, mime_type, size_bytes, created_at";
 
-/// An attachment together with the name of its file inside the attachments directory.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StoredAttachment {
     pub attachment: Attachment,

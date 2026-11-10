@@ -19,18 +19,14 @@ const NAME_HASH_LENGTH: usize = 12;
 #[derive(Debug, Clone, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct PasteImageInput {
-    /// The note the image is pasted into; the Markdown link is relative to its folder.
     pub note_id: String,
-    /// The raw bytes of the image.
     pub data: Vec<u8>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct PastedImage {
-    /// Where the file is, relative to the vault root (`attachments/<name>`).
     pub path: String,
-    /// Ready to insert in the note: a standard Markdown image link, relative to the note.
     pub markdown: String,
 }
 
@@ -41,9 +37,6 @@ pub struct VaultImage {
     pub data: Vec<u8>,
 }
 
-/// Stores a pasted image in `<vault>/attachments/` and returns the Markdown to embed it. The
-/// format is checked from the bytes; the file name comes from the content hash, so pasting the
-/// same image twice reuses one file.
 pub fn save_pasted(state: &AppState, input: PasteImageInput) -> AppResult<PastedImage> {
     let root = vault_root(state)?;
     let is_empty = input.data.is_empty();
@@ -77,7 +70,6 @@ pub fn save_pasted(state: &AppState, input: PasteImageInput) -> AppResult<Pasted
     })
 }
 
-/// Reads an image previously stored in the attachments directory, so the editor can show it.
 pub fn read(state: &AppState, path: &str) -> AppResult<VaultImage> {
     let root = vault_root(state)?;
     let name = attachment_name(path)?;
@@ -133,14 +125,11 @@ fn ensure_directory(directory: &std::path::Path) -> AppResult<()> {
     }
 }
 
-/// `../` once per folder level of the note, so a link from `a/b/note.md` reaches the vault root.
 fn climb_to_root(note_path: &str) -> String {
     let depth = note_path.matches('/').count();
     "../".repeat(depth)
 }
 
-/// The file name of `attachments/<name>`, which must be a plain name: no other directory, no
-/// traversal, nothing hidden.
 fn attachment_name(path: &str) -> AppResult<&str> {
     let invalid = || AppError::Validation("invalid image path".into());
     let name = path

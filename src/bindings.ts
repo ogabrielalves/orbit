@@ -62,11 +62,6 @@ export const commands = {
 	importAttachment: (taskId: string, sourcePath: string) => typedError<Attachment, ErrorPayload>(__TAURI_INVOKE("import_attachment", { taskId, sourcePath })),
 	listAttachments: (taskId: string) => typedError<Attachment[], ErrorPayload>(__TAURI_INVOKE("list_attachments", { taskId })),
 	removeAttachment: (id: string) => typedError<null, ErrorPayload>(__TAURI_INVOKE("remove_attachment", { id })),
-	/**
-	 *  Opens the stored file with the system default app. The path comes from the database, never
-	 *  from the webview, and the opener plugin is used from Rust only, so no `opener:*` permission
-	 *  is granted to the frontend.
-	 */
 	openAttachment: (id: string) => typedError<null, ErrorPayload>(__TAURI_INVOKE("open_attachment", { id })),
 	setupVault: (input: SetupVaultInput) => typedError<VaultInfo, ErrorPayload>(__TAURI_INVOKE("setup_vault", { input })),
 	getVaultStatus: () => typedError<VaultStatus, ErrorPayload>(__TAURI_INVOKE("get_vault_status")),
@@ -74,37 +69,23 @@ export const commands = {
 	listFolders: () => typedError<FolderEntry[], ErrorPayload>(__TAURI_INVOKE("list_folders")),
 	createFolder: (input: CreateFolderInput) => typedError<FolderEntry, ErrorPayload>(__TAURI_INVOKE("create_folder", { input })),
 	renameFolder: (path: string, newName: string) => typedError<FolderEntry, ErrorPayload>(__TAURI_INVOKE("rename_folder", { path, newName })),
-	/**  `new_parent_path` omitted (or empty) moves the folder to the vault root. */
 	moveFolder: (path: string, newParentPath: string | null) => typedError<FolderEntry, ErrorPayload>(__TAURI_INVOKE("move_folder", { path, newParentPath })),
-	/**
-	 *  A non-empty folder is only deleted with `recursive`, which also removes files that are not
-	 *  notes. The frontend should ask for confirmation first.
-	 */
 	deleteFolder: (path: string, recursive: boolean) => typedError<null, ErrorPayload>(__TAURI_INVOKE("delete_folder", { path, recursive })),
 	listNotes: (input: ListNotesInput) => typedError<NoteSummary[], ErrorPayload>(__TAURI_INVOKE("list_notes", { input })),
 	getNote: (id: string) => typedError<NoteDetails, ErrorPayload>(__TAURI_INVOKE("get_note", { id })),
 	createNote: (input: CreateNoteInput) => typedError<NoteDetails, ErrorPayload>(__TAURI_INVOKE("create_note", { input })),
-	/**  Fails with `CONFLICT` when the file changed outside ORBIT since `baseHash`, unless `force`. */
 	saveNote: (id: string, input: SaveNoteInput) => typedError<NoteDetails, ErrorPayload>(__TAURI_INVOKE("save_note", { id, input })),
 	renameNote: (id: string, newTitle: string) => typedError<RenameNoteResult, ErrorPayload>(__TAURI_INVOKE("rename_note", { id, newTitle })),
-	/**  `new_folder_path` omitted (or empty) moves the note to the vault root. */
 	moveNote: (id: string, newFolderPath: string | null) => typedError<NoteSummary, ErrorPayload>(__TAURI_INVOKE("move_note", { id, newFolderPath })),
 	deleteNote: (id: string) => typedError<null, ErrorPayload>(__TAURI_INVOKE("delete_note", { id })),
-	/**  The note a `[[link]]` points to, or null. Accepts `Title` and `Title#Heading`. */
 	resolveNoteLink: (target: string) => typedError<NoteSummary | null, ErrorPayload>(__TAURI_INVOKE("resolve_note_link", { target })),
-	/**  Outgoing links (resolved or not) and backlinks of a note. */
 	getNoteLinks: (id: string) => typedError<NoteLinks, ErrorPayload>(__TAURI_INVOKE("get_note_links", { id })),
 	listUnresolvedLinks: () => typedError<UnresolvedLink[], ErrorPayload>(__TAURI_INVOKE("list_unresolved_links")),
-	/**  Stores a pasted image in `<vault>/attachments/` and returns the Markdown link to insert. */
 	savePastedImage: (input: PasteImageInput) => typedError<PastedImage, ErrorPayload>(__TAURI_INVOKE("save_pasted_image", { input })),
-	/**  Reads an image stored by `savePastedImage` (path as returned, `attachments/<name>`). */
 	readVaultImage: (path: string) => typedError<VaultImage, ErrorPayload>(__TAURI_INVOKE("read_vault_image", { path })),
-	/**  Global search over projects, boards, tasks, notes and folders, grouped by category. */
 	search: (input: SearchInput) => typedError<SearchResults, ErrorPayload>(__TAURI_INVOKE("search", { input })),
-	/**  Adds the item to the favorites or removes it. Returns whether it is a favorite afterwards. */
 	toggleFavorite: (reference: FavoriteRef) => typedError<boolean, ErrorPayload>(__TAURI_INVOKE("toggle_favorite", { reference })),
 	listFavorites: () => typedError<FavoriteEntry[], ErrorPayload>(__TAURI_INVOKE("list_favorites")),
-	/**  Moves a favorite right after `after_reference` (omitted puts it first). */
 	moveFavorite: (reference: FavoriteRef, afterReference: FavoriteRef | null) => typedError<null, ErrorPayload>(__TAURI_INVOKE("move_favorite", { reference, afterReference })),
 	getGraph: (input: GraphInput) => typedError<Graph, ErrorPayload>(__TAURI_INVOKE("get_graph", { input })),
 	getLocalGraph: (input: LocalGraphInput) => typedError<Graph, ErrorPayload>(__TAURI_INVOKE("get_local_graph", { input })),
@@ -137,7 +118,6 @@ export type Attachment = {
 	createdAt: string,
 };
 
-/**  A note that links to another one. */
 export type Backlink = {
 	note: NoteSummary,
 	linkCount: number,
@@ -159,15 +139,7 @@ export type BacklogItem = {
 	checklistDone: number,
 };
 
-export type BacklogSort = 
-/**  Project name, then the order the user arranged inside each project. */
-"manual" | 
-/**  Urgent first, then earliest due date. */
-"priority" | 
-/**  Earliest due date first, undated tasks last. */
-"due_date" | 
-/**  Newest first. */
-"created" | "title";
+export type BacklogSort = "manual" | "priority" | "due_date" | "created" | "title";
 
 export type Board = {
 	id: string,
@@ -238,17 +210,13 @@ export type CreateCommentInput = {
 };
 
 export type CreateFolderInput = {
-	/**  Where to create it; omitted or empty means the vault root. */
 	parentPath?: string | null,
 	name: string,
 };
 
 export type CreateNoteInput = {
-	/**  Folder to create the note in; omitted or empty means the vault root. */
 	folderPath?: string | null,
-	/**  Also the file name (`<title>.md`) and the note's first heading. */
 	title: string,
-	/**  Initial Markdown text. Defaults to a heading with the title. */
 	content?: string | null,
 	tags?: string[] | null,
 };
@@ -303,22 +271,15 @@ export type FavoriteEntry = {
 	entityType: FavoriteType,
 	entityId: string,
 	title: string,
-	/**  The project name for boards and tasks, the containing folder for notes and folders. */
 	context: string | null,
 	projectId: string | null,
 	boardId: string | null,
 	parentTaskId: string | null,
-	/**  Relative path inside the vault, for notes and folders. */
 	path: string | null,
-	/**  True when the item (or the project or board it belongs to) is archived. */
 	isArchived: boolean,
 	createdAt: string,
 };
 
-/**
- *  Points at one favoritable thing: an id for projects, boards, tasks and notes, and the
- *  relative path (`/` separated) for folders.
- */
 export type FavoriteRef = {
 	entityType: FavoriteType,
 	entityId: string,
@@ -331,12 +292,9 @@ export type FieldChange = {
 	to: string | null,
 };
 
-/**  A directory of the vault. Folders are real directories; this is only a view of them. */
 export type FolderEntry = {
-	/**  Relative to the vault root, `/` separated. */
 	path: string,
 	name: string,
-	/**  Notes directly inside this folder (not in its subfolders). */
 	noteCount: number,
 };
 
@@ -371,9 +329,7 @@ export type IndexReport = {
 	updated: number,
 	unchanged: number,
 	removed: number,
-	/**  Notes that had no usable `id` (or a duplicated one) and got a new one written to the file. */
 	idsAssigned: number,
-	/**  Files that could not be indexed (not UTF-8, too large, unreadable), by relative path. */
 	skipped: string[],
 };
 
@@ -388,9 +344,7 @@ export type ListBacklogInput = {
 };
 
 export type ListNotesInput = {
-	/**  Only notes of this folder; omitted lists every note of the vault. */
 	folderPath?: string | null,
-	/**  With `folderPath`, also include the notes of its subfolders. */
 	includeSubfolders?: boolean,
 };
 
@@ -418,12 +372,7 @@ export type NoteDetails = {
 	tags: string[],
 	createdAt: string,
 	modifiedAt: string,
-	/**  The Markdown text without the frontmatter, which ORBIT manages itself. */
 	content: string,
-	/**
-	 *  Hash of the file as it was read. Send it back as `baseHash` when saving, so edits made
-	 *  outside ORBIT in the meantime are detected instead of overwritten.
-	 */
 	hash: string,
 };
 
@@ -434,34 +383,25 @@ export type NoteLinks = {
 
 export type NoteSummary = {
 	id: string,
-	/**  Relative to the vault root, `/` separated. */
 	path: string,
 	title: string,
 	createdAt: string,
 	modifiedAt: string,
 };
 
-/**  A `[[link]]` written in a note and the note it currently resolves to, if any. */
 export type OutgoingLink = {
-	/**  The title as written in the note. */
 	targetTitle: string,
-	/**  How many times the note links to it. */
 	linkCount: number,
-	/**  `None` when no note has that title (an unresolved link). */
 	resolved: NoteSummary | null,
 };
 
 export type PasteImageInput = {
-	/**  The note the image is pasted into; the Markdown link is relative to its folder. */
 	noteId: string,
-	/**  The raw bytes of the image. */
 	data: number[],
 };
 
 export type PastedImage = {
-	/**  Where the file is, relative to the vault root (`attachments/<name>`). */
 	path: string,
-	/**  Ready to insert in the note: a standard Markdown image link, relative to the note. */
 	markdown: string,
 };
 
@@ -511,38 +451,29 @@ export type RecentNotesInput = {
 
 export type RenameNoteResult = {
 	note: NoteSummary,
-	/**  Other notes whose `[[links]]` were rewritten to the new title. */
 	rewrittenNotes: number,
 };
 
 export type SaveNoteInput = {
 	content: string,
-	/**  The `hash` the note had when it was read. */
 	baseHash: string,
-	/**  New tags; omitted keeps the current ones. */
 	tags?: string[] | null,
-	/**  Save even if the file changed outside ORBIT since `baseHash` (overwrites those changes). */
 	force?: boolean,
 };
 
 export type SearchHit = {
-	/**  Project, board, task and note ids; the relative path for folders. */
 	entityId: string,
 	title: TextPart[],
-	/**  The part of the text (description, note body, path) around the match. */
 	snippet: TextPart[],
-	/**  Where it lives: the project name for boards and tasks, the folder for notes and folders. */
 	context: string | null,
 	projectId: string | null,
 	boardId: string | null,
 	parentTaskId: string | null,
-	/**  Relative path inside the vault, for notes and folders. */
 	path: string | null,
 };
 
 export type SearchInput = {
 	query?: string,
-	/**  Results per category (default 8, at most 50). */
 	limitPerCategory?: number | null,
 };
 
@@ -561,7 +492,6 @@ export type Settings = {
 
 export type SetupVaultInput = {
 	path: string,
-	/**  Create the directory when it does not exist yet (the "create a new vault" flow). */
 	create?: boolean,
 };
 
@@ -601,16 +531,11 @@ export type TaskStateCounts = {
 	completed: number,
 };
 
-/**
- *  A piece of text, flagged when it is what the query matched. Rendering a list of these as plain
- *  text with the flagged parts emphasized needs no HTML handling.
- */
 export type TextPart = {
 	text: string,
 	isMatch: boolean,
 };
 
-/**  A title that notes link to but that no note has, with the notes that link to it. */
 export type UnresolvedLink = {
 	targetTitle: string,
 	sources: NoteSummary[],
@@ -652,10 +577,6 @@ export type UpdateProjectInput = {
 
 export type UpdateSettingsInput = {
 	language?: Language | null,
-	/**
-	 *  Refused by `updateSettings` (it fails with a validation error): choose the vault with
-	 *  `setupVault`, which validates the directory first.
-	 */
 	vaultPath?: string | null,
 };
 
@@ -671,10 +592,6 @@ export type UpdateTaskInput = {
 	dueDate?: string | null,
 };
 
-/**
- *  Emitted to the frontend when files edited outside ORBIT changed the note index, so open
- *  lists and the open note can refresh. Changes ORBIT made itself never trigger it.
- */
 export type VaultChanged = {
 	added: number,
 	updated: number,
@@ -689,13 +606,11 @@ export type VaultImage = {
 export type VaultInfo = {
 	path: string,
 	wasCreated: boolean,
-	/**  Notes found in the vault when it was indexed. */
 	noteCount: number,
 };
 
 export type VaultStatus = {
 	path: string | null,
-	/**  False when a vault is configured but its directory is gone or no longer writable. */
 	isAccessible: boolean,
 };
 

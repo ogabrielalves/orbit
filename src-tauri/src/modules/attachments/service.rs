@@ -25,9 +25,6 @@ pub fn import(state: &AppState, task_id: &str, source_path: &str) -> AppResult<A
     import_with_limit(state, task_id, source_path, MAX_ATTACHMENT_BYTES)
 }
 
-/// Copies the file into the attachments directory and stores its metadata. The copy is made
-/// under a temporary name and renamed once complete; if anything fails afterwards the copied
-/// file is removed, so no half-imported attachment is left behind.
 fn import_with_limit(
     state: &AppState,
     task_id: &str,
@@ -92,7 +89,6 @@ pub fn list(state: &AppState, task_id: &str) -> AppResult<Vec<Attachment>> {
     repository::list_by_task(&connection, task_id)
 }
 
-/// Removes the metadata first and, only after the transaction committed, the stored file.
 pub fn remove(state: &AppState, id: &str) -> AppResult<()> {
     let stored_name = {
         let mut connection = state.database();
@@ -112,7 +108,6 @@ pub fn remove(state: &AppState, id: &str) -> AppResult<()> {
     Ok(())
 }
 
-/// Location of the stored file, for opening it with the system default app.
 pub fn path_for_open(state: &AppState, id: &str) -> AppResult<PathBuf> {
     let directory = attachments_directory(state)?;
     let stored = {
@@ -194,8 +189,6 @@ fn ensure_task_has_room(connection: &Connection, task_id: &str) -> AppResult<()>
     Ok(())
 }
 
-/// Copies at most `max_bytes` (a file that grew since the size check is rejected) to a
-/// temporary name, then renames it. Returns the number of bytes copied.
 fn copy_into(directory: &Path, source: &Path, stored_name: &str, max_bytes: u64) -> AppResult<u32> {
     std::fs::create_dir_all(directory)?;
     let partial_path = directory.join(format!("{stored_name}{PARTIAL_SUFFIX}"));

@@ -9,17 +9,12 @@ use notify::{Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher as _};
 use super::indexer::{ATTACHMENTS_DIRECTORY, is_indexable_path, to_relative};
 use crate::error::{AppError, AppResult};
 
-/// Quiet time after the last file event before the changes are applied.
 pub const DEFAULT_DEBOUNCE: Duration = Duration::from_millis(400);
-/// A constant stream of events (a sync tool, a big copy) is still applied at least this often.
 pub const MAX_WAIT: Duration = Duration::from_secs(3);
 
-/// What changed in the vault since the last flush.
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct ChangeBatch {
-    /// Note files (relative, `/` separated) that were created, edited, moved or removed.
     pub files: BTreeSet<String>,
-    /// A folder changed (created, renamed, moved or removed): the safest answer is a full scan.
     pub needs_full_scan: bool,
 }
 
@@ -34,9 +29,6 @@ impl ChangeBatch {
     }
 }
 
-/// Turns a file system event into the part of the vault it affects. Access events, hidden
-/// paths, the attachments directory, temporary files and files that are not Markdown notes are
-/// ignored; a path that is (or looks like) a folder asks for a full scan.
 pub fn batch_from_event(vault_root: &Path, event: &Event) -> ChangeBatch {
     let mut batch = ChangeBatch::default();
     let is_access = matches!(event.kind, EventKind::Access(_));
@@ -71,8 +63,6 @@ enum Message {
     Stop,
 }
 
-/// Watches the vault directory and hands debounced batches of changes to a callback. Dropping it
-/// stops watching.
 pub struct VaultWatcher {
     watcher: Option<RecommendedWatcher>,
     sender: Sender<Message>,
@@ -111,7 +101,6 @@ impl VaultWatcher {
 
 impl Drop for VaultWatcher {
     fn drop(&mut self) {
-        // Dropping the notify watcher first stops new events from arriving.
         self.watcher.take();
         let _ = self.sender.send(Message::Stop);
         if let Some(worker) = self.worker.take() {
@@ -200,8 +189,6 @@ mod tests {
     fn files(batch: &ChangeBatch) -> Vec<&str> {
         batch.files.iter().map(String::as_str).collect()
     }
-
-    // ---- batch_from_event
 
     #[test]
     fn note_events_become_relative_paths_and_other_files_are_ignored() {
@@ -298,8 +285,6 @@ mod tests {
         assert!(!first.is_empty());
         assert!(ChangeBatch::default().is_empty());
     }
-
-    // ---- the live watcher
 
     type Received = Arc<Mutex<Vec<ChangeBatch>>>;
 

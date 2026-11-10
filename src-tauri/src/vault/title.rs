@@ -1,5 +1,3 @@
-/// Title of a note: its first level-1 heading (`# Title`) outside code fences, or `fallback`
-/// (normally the file name without extension) when there is none.
 pub fn title_of(body: &str, fallback: &str) -> String {
     let mut in_fence = false;
     for line in body.lines() {
@@ -19,9 +17,6 @@ pub fn title_of(body: &str, fallback: &str) -> String {
     fallback.trim().to_string()
 }
 
-/// Rewrites the text of the heading `title_of` would pick, when that heading's text is exactly
-/// `old_title`. Returns `None` when the title does not come from a heading (or is different), so
-/// the caller knows nothing needs to change. Indentation and the line ending are kept.
 pub fn replace_title(body: &str, old_title: &str, new_title: &str) -> Option<String> {
     let mut in_fence = false;
     let mut offset = 0;

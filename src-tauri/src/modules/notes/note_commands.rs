@@ -31,7 +31,6 @@ pub async fn create_note(
     note_service::create(&state, input)
 }
 
-/// Fails with `CONFLICT` when the file changed outside ORBIT since `baseHash`, unless `force`.
 #[tauri::command]
 #[specta::specta]
 pub async fn save_note(
@@ -52,7 +51,6 @@ pub async fn rename_note(
     note_service::rename(&state, &id, &new_title)
 }
 
-/// `new_folder_path` omitted (or empty) moves the note to the vault root.
 #[tauri::command]
 #[specta::specta]
 pub async fn move_note(

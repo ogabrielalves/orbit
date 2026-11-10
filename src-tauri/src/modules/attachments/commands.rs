@@ -31,9 +31,6 @@ pub async fn remove_attachment(state: State<'_, AppState>, id: String) -> AppRes
     service::remove(&state, &id)
 }
 
-/// Opens the stored file with the system default app. The path comes from the database, never
-/// from the webview, and the opener plugin is used from Rust only, so no `opener:*` permission
-/// is granted to the frontend.
 #[tauri::command]
 #[specta::specta]
 pub async fn open_attachment(

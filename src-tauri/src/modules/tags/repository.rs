@@ -38,7 +38,6 @@ pub fn find_by_id(connection: &Connection, id: &str) -> AppResult<Option<Tag>> {
     Ok(tag)
 }
 
-/// Case-insensitive lookup, matching the unique index on `tags.name`.
 pub fn find_id_by_name(connection: &Connection, name: &str) -> AppResult<Option<String>> {
     let id = connection
         .query_row(

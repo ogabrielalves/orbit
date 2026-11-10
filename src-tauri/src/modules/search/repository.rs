@@ -5,8 +5,6 @@ use crate::error::AppResult;
 pub const NOTE: &str = "note";
 pub const FOLDER: &str = "folder";
 
-/// Markers `highlight()` and `snippet()` put around matches (control characters, which never
-/// occur in real text); the service turns them into structured parts.
 pub const MATCH_START: char = '\u{1}';
 pub const MATCH_END: char = '\u{2}';
 
@@ -14,7 +12,6 @@ const TITLE_AND_SNIPPET: &str = "highlight(search_index, 0, char(1), char(2)),
      snippet(search_index, 1, char(1), char(2), '…', 14)";
 const RANK: &str = "bm25(search_index, 10.0, 1.0)";
 
-/// One result as stored, before the markers are split into parts.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct RawHit {
     pub entity_id: String,
@@ -36,9 +33,6 @@ fn base(row: &Row<'_>) -> rusqlite::Result<RawHit> {
     })
 }
 
-// ---- writes for entities that live outside the database tables (notes and folders)
-
-/// Creates or replaces the searchable text of a note or folder.
 pub fn upsert_entry(
     connection: &Connection,
     entity_type: &str,
@@ -72,8 +66,6 @@ pub fn has_entry(connection: &Connection, entity_type: &str, entity_id: &str) ->
     Ok(exists)
 }
 
-/// Makes the folder entries match `paths` (relative, `/` separated): the name is the title and
-/// the path is the body, so a folder is found by its name or by a parent's name.
 pub fn replace_folders(connection: &Connection, paths: &[String]) -> AppResult<()> {
     connection.execute(
         "DELETE FROM search_index
@@ -92,8 +84,6 @@ pub fn replace_folders(connection: &Connection, paths: &[String]) -> AppResult<(
     }
     Ok(())
 }
-
-// ---- queries, one per category (each joins the source table to hide archived items)
 
 pub fn search_projects(
     connection: &Connection,

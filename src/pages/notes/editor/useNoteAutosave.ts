@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { NoteDetails } from "@/bindings";
 import { isAppError } from "@/lib/appError";
+import { registerCloseGuard } from "@/lib/closeGuards";
 import { useSaveNote } from "@/modules/notes/queries";
 
 export const AUTOSAVE_DELAY_IN_MILLISECONDS = 1000;
+const MAX_FLUSH_ATTEMPTS = 3;
 
 export type SaveStatus = "saved" | "dirty" | "saving" | "error" | "conflict";
 
@@ -17,6 +19,7 @@ export function useNoteAutosave(note: NoteDetails) {
   const draftRef = useRef(note.content);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isSavingRef = useRef(false);
+  const inFlightRef = useRef<Promise<boolean> | null>(null);
   const isDiscardedRef = useRef(false);
   const saveRef = useRef<(shouldForce?: boolean) => Promise<boolean>>(async () => true);
   const noteId = note.id;
@@ -41,8 +44,8 @@ export function useNoteAutosave(note: NoteDetails) {
     }, AUTOSAVE_DELAY_IN_MILLISECONDS);
   }, [clearTimer]);
 
-  const save = useCallback(
-    async (shouldForce = false): Promise<boolean> => {
+  const performSave = useCallback(
+    async (shouldForce: boolean): Promise<boolean> => {
       clearTimer();
       const content = draftRef.current;
       const isUnchanged = content === baseRef.current.content;
@@ -51,10 +54,6 @@ export function useNoteAutosave(note: NoteDetails) {
         updateStatus("saved");
         return true;
       }
-      if (isSavingRef.current) {
-        return false;
-      }
-
       isSavingRef.current = true;
       updateStatus("saving");
       try {
@@ -78,6 +77,19 @@ export function useNoteAutosave(note: NoteDetails) {
       }
     },
     [clearTimer, noteId, saveNote, scheduleSave, updateStatus],
+  );
+
+  const save = useCallback(
+    (shouldForce = false): Promise<boolean> => {
+      const isSaving = isSavingRef.current;
+      if (isSaving) {
+        return inFlightRef.current ?? Promise.resolve(false);
+      }
+      const attempt = performSave(shouldForce);
+      inFlightRef.current = attempt;
+      return attempt;
+    },
+    [performSave],
   );
 
   useEffect(() => {
@@ -151,6 +163,28 @@ export function useNoteAutosave(note: NoteDetails) {
       }
     },
     [clearTimer],
+  );
+
+  useEffect(
+    () =>
+      registerCloseGuard({
+        hasPending: () => statusRef.current !== "saved",
+        flush: async () => {
+          for (let attempt = 0; attempt < MAX_FLUSH_ATTEMPTS; attempt += 1) {
+            await saveRef.current();
+            const isSaved = statusRef.current === "saved";
+            const isBlocked = statusRef.current === "error" || statusRef.current === "conflict";
+            if (isSaved) {
+              return true;
+            }
+            if (isBlocked) {
+              return false;
+            }
+          }
+          return false;
+        },
+      }),
+    [],
   );
 
   const discard = useCallback(() => {

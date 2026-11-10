@@ -1,5 +1,6 @@
 import { Outlet, useMatches } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
+import { WindowCloseGuard } from "@/app/WindowCloseGuard";
 import { Sidebar } from "@/components/organisms/Sidebar";
 import { Topbar } from "@/components/organisms/Topbar";
 import { AppShell } from "@/components/templates/AppShell";
@@ -48,6 +49,7 @@ export function RootLayout() {
   return (
     <AppShell sidebar={sidebar} topbar={<Topbar breadcrumb={breadcrumb} />}>
       <Outlet />
+      <WindowCloseGuard />
     </AppShell>
   );
 }

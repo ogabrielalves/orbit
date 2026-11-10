@@ -5,6 +5,13 @@ export const en: Widen<typeof ptBR> = {
   app: {
     name: "ORBIT",
     wordmark: "orbit",
+    closeGuard: {
+      title: "Your changes were not saved",
+      description:
+        "The latest edits could not be written to disk. If you close now, they will be lost.",
+      discard: "Close without saving",
+      retry: "Try saving again",
+    },
   },
   nav: {
     label: "Main navigation",

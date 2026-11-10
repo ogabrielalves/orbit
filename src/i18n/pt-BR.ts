@@ -2,6 +2,13 @@ export const ptBR = {
   app: {
     name: "ORBIT",
     wordmark: "orbit",
+    closeGuard: {
+      title: "Suas alterações não foram salvas",
+      description:
+        "As últimas edições não puderam ser gravadas no disco. Se fechar agora, elas serão perdidas.",
+      discard: "Fechar sem salvar",
+      retry: "Tentar salvar de novo",
+    },
   },
   nav: {
     label: "Navegação principal",

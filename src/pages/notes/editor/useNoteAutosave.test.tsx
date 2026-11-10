@@ -3,6 +3,7 @@ import { act, renderHook } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { NoteDetails } from "@/bindings";
+import { flushCloseGuards, hasPendingCloseGuards } from "@/lib/closeGuards";
 import {
   AUTOSAVE_DELAY_IN_MILLISECONDS,
   useNoteAutosave,
@@ -251,5 +252,101 @@ describe("useNoteAutosave", () => {
     unmount();
 
     expect(commands.saveNote).not.toHaveBeenCalled();
+  });
+
+  describe("window close guard", () => {
+    it("has nothing pending while saved and stops tracking after unmount", async () => {
+      const { result, unmount } = renderAutosave();
+
+      expect(hasPendingCloseGuards()).toBe(false);
+      act(() => result.current.handleChange("pending"));
+      expect(hasPendingCloseGuards()).toBe(true);
+      act(() => result.current.discard());
+      unmount();
+
+      expect(hasPendingCloseGuards()).toBe(false);
+    });
+
+    it("saves the pending draft right away and reports success", async () => {
+      commands.saveNote.mockResolvedValue(saved("h2"));
+      const { result } = renderAutosave();
+      act(() => result.current.handleChange("pending"));
+
+      let canClose = false;
+      await act(async () => {
+        canClose = await flushCloseGuards();
+      });
+
+      expect(canClose).toBe(true);
+      expect(commands.saveNote).toHaveBeenCalledWith("n1", {
+        content: "pending",
+        baseHash: "h1",
+        force: false,
+      });
+      expect(result.current.status).toBe("saved");
+      expect(hasPendingCloseGuards()).toBe(false);
+    });
+
+    it("waits for a save that is already running", async () => {
+      let finishSave: (value: ReturnType<typeof saved>) => void = () => undefined;
+      commands.saveNote.mockReturnValue(
+        new Promise((resolve) => {
+          finishSave = resolve;
+        }),
+      );
+      const { result } = renderAutosave();
+      act(() => result.current.handleChange("pending"));
+      await wait(AUTOSAVE_DELAY_IN_MILLISECONDS);
+      expect(result.current.status).toBe("saving");
+
+      let canClose: boolean | null = null;
+      const flushing = flushCloseGuards().then((value) => {
+        canClose = value;
+      });
+      await wait(0);
+      expect(canClose).toBeNull();
+      await act(async () => {
+        finishSave(saved("h2"));
+        await flushing;
+      });
+
+      expect(canClose).toBe(true);
+      expect(commands.saveNote).toHaveBeenCalledTimes(1);
+    });
+
+    it("reports failure when saving fails", async () => {
+      commands.saveNote.mockResolvedValue({
+        status: "error",
+        error: { code: "IO", message: "disk" },
+      });
+      const { result } = renderAutosave();
+      act(() => result.current.handleChange("pending"));
+
+      let canClose = true;
+      await act(async () => {
+        canClose = await flushCloseGuards();
+      });
+
+      expect(canClose).toBe(false);
+      expect(result.current.status).toBe("error");
+      expect(hasPendingCloseGuards()).toBe(true);
+    });
+
+    it("reports failure when the file changed on disk", async () => {
+      commands.saveNote.mockResolvedValue({
+        status: "error",
+        error: { code: "CONFLICT", message: "changed" },
+      });
+      const { result } = renderAutosave();
+      act(() => result.current.handleChange("pending"));
+
+      let canClose = true;
+      await act(async () => {
+        canClose = await flushCloseGuards();
+      });
+
+      expect(canClose).toBe(false);
+      expect(result.current.status).toBe("conflict");
+    });
   });
 });

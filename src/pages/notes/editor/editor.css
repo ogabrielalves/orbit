@@ -108,3 +108,55 @@
 .orbit-editor .ProseMirror .orbit-image-unavailable {
   @apply min-h-16 min-w-32 border border-dashed border-border bg-surface-muted;
 }
+
+.orbit-editor .ProseMirror pre .hljs-comment,
+.orbit-editor .ProseMirror pre .hljs-quote {
+  @apply text-fg-subtle italic;
+}
+
+.orbit-editor .ProseMirror pre .hljs-keyword,
+.orbit-editor .ProseMirror pre .hljs-selector-tag,
+.orbit-editor .ProseMirror pre .hljs-meta {
+  @apply text-primary-ring;
+}
+
+.orbit-editor .ProseMirror pre .hljs-string,
+.orbit-editor .ProseMirror pre .hljs-regexp,
+.orbit-editor .ProseMirror pre .hljs-addition {
+  @apply text-accent-border;
+}
+
+.orbit-editor .ProseMirror pre .hljs-number,
+.orbit-editor .ProseMirror pre .hljs-literal,
+.orbit-editor .ProseMirror pre .hljs-symbol,
+.orbit-editor .ProseMirror pre .hljs-bullet {
+  @apply text-warning;
+}
+
+.orbit-editor .ProseMirror pre .hljs-title,
+.orbit-editor .ProseMirror pre .hljs-section,
+.orbit-editor .ProseMirror pre .hljs-built_in,
+.orbit-editor .ProseMirror pre .hljs-type,
+.orbit-editor .ProseMirror pre .hljs-class {
+  @apply text-info-border;
+}
+
+.orbit-editor .ProseMirror pre .hljs-attr,
+.orbit-editor .ProseMirror pre .hljs-attribute,
+.orbit-editor .ProseMirror pre .hljs-name,
+.orbit-editor .ProseMirror pre .hljs-variable,
+.orbit-editor .ProseMirror pre .hljs-property {
+  @apply text-project-lagoon;
+}
+
+.orbit-editor .ProseMirror pre .hljs-deletion {
+  @apply text-danger-border;
+}
+
+.orbit-editor .ProseMirror pre .hljs-emphasis {
+  @apply italic;
+}
+
+.orbit-editor .ProseMirror pre .hljs-strong {
+  @apply font-semibold;
+}

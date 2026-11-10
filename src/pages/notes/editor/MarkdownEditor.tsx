@@ -7,6 +7,7 @@ import { gfm } from "@milkdown/kit/preset/gfm";
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import type { NoteSummary } from "@/bindings";
+import { codeHighlightProse } from "@/pages/notes/editor/codeHighlightPlugin";
 import { EditorToolbar } from "@/pages/notes/editor/EditorToolbar";
 import { imageOptionsCtx, imagePlugins } from "@/pages/notes/editor/imagePlugin";
 import { wikiLinkHandlersCtx, wikiLinkPlugins } from "@/pages/notes/editor/wikiLinkPlugin";
@@ -77,6 +78,7 @@ export function MarkdownEditor({
       .use(gfm)
       .use(wikiLinkPlugins)
       .use(imagePlugins)
+      .use(codeHighlightProse)
       .use(history)
       .use(listener)
       .use(clipboard);

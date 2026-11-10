@@ -1,0 +1,98 @@
+@reference "../../../styles/global.css";
+
+.orbit-editor .ProseMirror {
+  @apply min-h-60 text-body text-fg outline-none;
+  line-height: 1.7;
+}
+
+.orbit-editor .ProseMirror > * + * {
+  @apply mt-3;
+}
+
+.orbit-editor .ProseMirror h1 {
+  @apply font-display text-heading-1 font-semibold text-fg;
+}
+
+.orbit-editor .ProseMirror h2 {
+  @apply font-display text-heading-2 font-semibold text-fg;
+}
+
+.orbit-editor .ProseMirror h3 {
+  @apply font-display text-heading-3 font-semibold text-fg;
+}
+
+.orbit-editor .ProseMirror h4,
+.orbit-editor .ProseMirror h5,
+.orbit-editor .ProseMirror h6 {
+  @apply font-semibold text-fg;
+}
+
+.orbit-editor .ProseMirror a {
+  @apply text-primary underline;
+}
+
+.orbit-editor .ProseMirror strong {
+  @apply font-semibold;
+}
+
+.orbit-editor .ProseMirror blockquote {
+  @apply border-l-4 border-primary-border pl-4 text-fg-secondary;
+}
+
+.orbit-editor .ProseMirror ul,
+.orbit-editor .ProseMirror ol {
+  @apply pl-6;
+}
+
+.orbit-editor .ProseMirror ul {
+  @apply list-disc;
+}
+
+.orbit-editor .ProseMirror ol {
+  @apply list-decimal;
+}
+
+.orbit-editor .ProseMirror li > * + * {
+  @apply mt-1;
+}
+
+.orbit-editor .ProseMirror li[data-item-type="task"] {
+  @apply list-none;
+}
+
+.orbit-editor .ProseMirror code {
+  @apply rounded-sm bg-surface-muted px-1 py-0.5 font-mono text-caption text-fg;
+}
+
+.orbit-editor .ProseMirror pre {
+  @apply overflow-x-auto rounded-lg bg-surface-inverse p-4 font-mono text-caption text-fg-on-inverse;
+}
+
+.orbit-editor .ProseMirror pre code {
+  @apply bg-transparent p-0 text-fg-on-inverse;
+}
+
+.orbit-editor .ProseMirror hr {
+  @apply my-5 border-0 border-t border-border-strong;
+}
+
+.orbit-editor .ProseMirror img {
+  @apply max-w-full rounded-lg;
+}
+
+.orbit-editor .ProseMirror table {
+  @apply w-full border-collapse text-small;
+}
+
+.orbit-editor .ProseMirror th,
+.orbit-editor .ProseMirror td {
+  @apply border border-border-strong px-3 py-2 text-left align-top;
+}
+
+.orbit-editor .ProseMirror th {
+  @apply bg-surface-muted font-semibold;
+}
+
+.orbit-editor .ProseMirror .ProseMirror-selectednode {
+  @apply outline-2 outline-primary-ring;
+}

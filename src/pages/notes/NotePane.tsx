@@ -4,12 +4,14 @@ import { EmptyState } from "@/components/molecules/EmptyState";
 import { ErrorState } from "@/components/molecules/ErrorState";
 import { getErrorMessageKey } from "@/lib/appError";
 import { useNote } from "@/modules/notes/queries";
+import { NoteEditor } from "@/pages/notes/NoteEditor";
 
 type NotePaneProps = {
   noteId: string | undefined;
+  folder: string | undefined;
 };
 
-export function NotePane({ noteId }: NotePaneProps) {
+export function NotePane({ noteId, folder }: NotePaneProps) {
   const { t } = useTranslation();
   const hasNote = noteId !== undefined;
   const noteQuery = useNote(noteId ?? "", hasNote);
@@ -44,9 +46,11 @@ export function NotePane({ noteId }: NotePaneProps) {
   }
 
   return (
-    <article aria-label={noteQuery.data.title} className="flex flex-col gap-1">
-      <h2 className="font-display text-heading-2 font-semibold text-fg">{noteQuery.data.title}</h2>
-      <span className="text-caption text-fg-muted">{noteQuery.data.path}</span>
-    </article>
+    <NoteEditor
+      key={noteQuery.data.id}
+      note={noteQuery.data}
+      folder={folder}
+      onReload={async () => (await noteQuery.refetch()).data}
+    />
   );
 }

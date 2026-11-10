@@ -103,7 +103,7 @@ export function NotesWorkspace() {
         onNewNote={() => setNoteForm({ folderPath: selectedPath === "" ? null : selectedPath })}
       />
       <div className="min-w-0 rounded-xl border border-border bg-surface p-5">
-        <NotePane noteId={noteId} />
+        <NotePane noteId={noteId} folder={folder} />
       </div>
       {hasFolderForm && (
         <FolderFormModal

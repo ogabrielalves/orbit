@@ -598,6 +598,70 @@ export const en: Widen<typeof ptBR> = {
       },
       toast: { created: "Note created" },
     },
+    editor: {
+      contentLabel: "Note content",
+      toolbar: {
+        label: "Formatting",
+        heading1: "Heading 1",
+        heading2: "Heading 2",
+        heading3: "Heading 3",
+        bold: "Bold",
+        italic: "Italic",
+        strikethrough: "Strikethrough",
+        code: "Inline code",
+        bulletList: "Bulleted list",
+        orderedList: "Numbered list",
+        quote: "Quote",
+        table: "Table",
+        codeBlock: "Code block",
+        divider: "Divider",
+      },
+      status: {
+        saved: "Saved",
+        dirty: "Unsaved changes",
+        saving: "Saving…",
+        error: "Could not save",
+        conflict: "Changed outside ORBIT",
+        retry: "Try again",
+        resolve: "Resolve",
+      },
+      conflict: {
+        title: "This note changed outside ORBIT",
+        description:
+          "The file on disk is different from the version you started from. Keep your version to overwrite the file, or load the file version and lose your latest edits.",
+        overwrite: "Keep my version",
+        reload: "Load the file version",
+      },
+      leave: {
+        title: "Your changes were not saved",
+        description:
+          "The latest edits of this note could not be written to disk. If you leave now they will be lost.",
+        discard: "Leave without saving",
+        retry: "Try saving again",
+      },
+      menu: {
+        actions: "Note actions",
+        rename: "Rename",
+        delete: "Delete",
+      },
+      rename: {
+        title: "Rename note",
+        label: "Title",
+        hint: "Links to this note in other notes are updated.",
+        confirm: "Rename",
+      },
+      delete: {
+        title: "Delete “{{name}}”?",
+        description: "The note file will be removed from your vault.",
+        confirm: "Delete",
+      },
+      toast: {
+        renamed_zero: "Note renamed",
+        renamed_one: "Note renamed · {{count}} link updated",
+        renamed_other: "Note renamed · {{count}} links updated",
+        deleted: "Note deleted",
+      },
+    },
     pane: {
       loadError: "Could not load the note",
       empty: {

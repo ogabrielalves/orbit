@@ -600,6 +600,70 @@ export const ptBR = {
       },
       toast: { created: "Nota criada" },
     },
+    editor: {
+      contentLabel: "Conteúdo da nota",
+      toolbar: {
+        label: "Formatação",
+        heading1: "Título 1",
+        heading2: "Título 2",
+        heading3: "Título 3",
+        bold: "Negrito",
+        italic: "Itálico",
+        strikethrough: "Tachado",
+        code: "Código em linha",
+        bulletList: "Lista com marcadores",
+        orderedList: "Lista numerada",
+        quote: "Citação",
+        table: "Tabela",
+        codeBlock: "Bloco de código",
+        divider: "Divisor",
+      },
+      status: {
+        saved: "Salvo",
+        dirty: "Alterações não salvas",
+        saving: "Salvando…",
+        error: "Não foi possível salvar",
+        conflict: "Alterada fora do ORBIT",
+        retry: "Tentar de novo",
+        resolve: "Resolver",
+      },
+      conflict: {
+        title: "Esta nota foi alterada fora do ORBIT",
+        description:
+          "O arquivo no disco é diferente da versão de onde você começou. Mantenha a sua versão para sobrescrever o arquivo, ou carregue a versão do arquivo e perca as últimas edições.",
+        overwrite: "Manter a minha versão",
+        reload: "Carregar a versão do arquivo",
+      },
+      leave: {
+        title: "Suas alterações não foram salvas",
+        description:
+          "As últimas edições desta nota não puderam ser gravadas no disco. Se sair agora, elas serão perdidas.",
+        discard: "Sair sem salvar",
+        retry: "Tentar salvar de novo",
+      },
+      menu: {
+        actions: "Ações da nota",
+        rename: "Renomear",
+        delete: "Excluir",
+      },
+      rename: {
+        title: "Renomear nota",
+        label: "Título",
+        hint: "Os links para esta nota em outras notas são atualizados.",
+        confirm: "Renomear",
+      },
+      delete: {
+        title: "Excluir “{{name}}”?",
+        description: "O arquivo da nota será removido do seu vault.",
+        confirm: "Excluir",
+      },
+      toast: {
+        renamed_zero: "Nota renomeada",
+        renamed_one: "Nota renomeada · {{count}} link atualizado",
+        renamed_other: "Nota renomeada · {{count}} links atualizados",
+        deleted: "Nota excluída",
+      },
+    },
     pane: {
       loadError: "Não foi possível carregar a nota",
       empty: {

@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { Kbd } from "@/components/atoms/Kbd";
 import { formatHotkey } from "@/lib/formatHotkey";
 import { creationShortcuts } from "@/lib/shortcuts";
 import { SettingsSection } from "@/pages/settings/SettingsSection";
@@ -31,12 +32,9 @@ export function ShortcutsSection() {
             <span className="text-small text-fg">{t(labelKey)}</span>
             <span className="flex items-center gap-1">
               {formatHotkey(combo, isMac).map((key) => (
-                <kbd
-                  key={key}
-                  className="rounded-xs border border-border-strong bg-surface-muted px-1.5 py-0.5 font-sans text-caption font-medium text-fg-secondary"
-                >
+                <Kbd key={key} variant="strong">
                   {key}
-                </kbd>
+                </Kbd>
               ))}
             </span>
           </li>

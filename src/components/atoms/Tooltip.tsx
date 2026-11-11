@@ -6,6 +6,7 @@ import {
   type ReactNode,
   useContext,
 } from "react";
+import { Kbd } from "@/components/atoms/Kbd";
 
 type TooltipProps = {
   label: string;
@@ -101,7 +102,9 @@ export function Tooltip({
           >
             {label}
             {hasShortcut && (
-              <kbd className="ml-2 font-sans text-fg-on-inverse-muted">{shortcut}</kbd>
+              <span className="ml-2">
+                <Kbd variant="inverse">{shortcut}</Kbd>
+              </span>
             )}
           </RadixTooltip.Content>
         </RadixTooltip.Portal>

@@ -3,6 +3,7 @@ import { Trans, useTranslation } from "react-i18next";
 import type { ProjectStatus } from "@/bindings";
 import { Button } from "@/components/atoms/Button";
 import { Input } from "@/components/atoms/Input";
+import { Kbd } from "@/components/atoms/Kbd";
 import { ProjectTile } from "@/components/atoms/ProjectTile";
 import { Select } from "@/components/atoms/Select";
 import { Textarea } from "@/components/atoms/Textarea";
@@ -97,9 +98,7 @@ export function ProjectFormModal({
             <Trans
               i18nKey="projects.form.shortcutHint"
               components={{
-                key: (
-                  <kbd className="rounded-xs border border-border bg-surface-muted px-1.5 py-px font-sans text-micro text-fg-secondary" />
-                ),
+                key: <Kbd />,
               }}
             />
           </span>

@@ -1,5 +1,6 @@
 import * as RadixMenu from "@radix-ui/react-dropdown-menu";
 import { type ComponentType, Fragment, type ReactElement, type SVGProps } from "react";
+import { Kbd } from "@/components/atoms/Kbd";
 
 export type DropdownMenuItemData = {
   id: string;
@@ -61,9 +62,7 @@ export function DropdownMenu({
                     >
                       {hasIcon && <Icon aria-hidden="true" className="size-4 shrink-0" />}
                       <span className="flex-1">{item.label}</span>
-                      {hasShortcut && (
-                        <kbd className="font-sans text-micro text-fg-muted">{item.shortcut}</kbd>
-                      )}
+                      {hasShortcut && <Kbd variant="plain">{item.shortcut}</Kbd>}
                     </RadixMenu.Item>
                   );
                 })}

@@ -3,6 +3,7 @@ import { Trans, useTranslation } from "react-i18next";
 import type { NewColumn } from "@/bindings";
 import { Button } from "@/components/atoms/Button";
 import { Input } from "@/components/atoms/Input";
+import { Kbd } from "@/components/atoms/Kbd";
 import { FormField } from "@/components/molecules/FormField";
 import { Modal } from "@/components/organisms/Modal";
 import { matchesHotkey } from "@/lib/hotkey";
@@ -88,9 +89,7 @@ export function BoardFormModal({
             <Trans
               i18nKey="projects.form.shortcutHint"
               components={{
-                key: (
-                  <kbd className="rounded-xs border border-border bg-surface-muted px-1.5 py-px font-sans text-micro text-fg-secondary" />
-                ),
+                key: <Kbd />,
               }}
             />
           </span>

@@ -1,4 +1,5 @@
 import SearchIcon from "@/assets/icons/linha/busca.svg?react";
+import { Kbd } from "@/components/atoms/Kbd";
 
 type SearchTriggerProps = {
   label: string;
@@ -15,9 +16,9 @@ export function SearchTrigger({ label, shortcut, onClick }: SearchTriggerProps) 
     >
       <SearchIcon aria-hidden="true" className="size-4 shrink-0" />
       <span className="hidden sm:inline">{label}</span>
-      <kbd className="hidden rounded-xs border border-border bg-surface-muted px-1.5 py-px font-sans text-micro text-fg-secondary md:inline">
-        {shortcut}
-      </kbd>
+      <span className="hidden md:inline">
+        <Kbd>{shortcut}</Kbd>
+      </span>
     </button>
   );
 }

@@ -18,6 +18,7 @@ import PlusIcon from "@/assets/icons/linha/mais.svg?react";
 import FolderIcon from "@/assets/icons/linha/nova-pasta.svg?react";
 import type { Project, SearchHit } from "@/bindings";
 import { Input } from "@/components/atoms/Input";
+import { Kbd } from "@/components/atoms/Kbd";
 import { ProjectTile } from "@/components/atoms/ProjectTile";
 import { Spinner } from "@/components/atoms/Spinner";
 import { HighlightedText } from "@/components/molecules/HighlightedText";
@@ -112,14 +113,6 @@ function HitRow({ category, hit }: { category: SearchCategory; hit: SearchHit })
         <span className="max-w-40 shrink-0 truncate text-caption text-fg-muted">{hit.context}</span>
       )}
     </>
-  );
-}
-
-function Kbd({ children }: { children: ReactNode }) {
-  return (
-    <kbd className="rounded-xs border border-border bg-surface-muted px-1.5 py-px font-sans text-micro text-fg-secondary">
-      {children}
-    </kbd>
   );
 }
 

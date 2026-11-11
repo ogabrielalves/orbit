@@ -54,7 +54,7 @@ export function TaskCard({
       {...dragProps}
       onClick={onOpen}
       onKeyDown={handleKeyDown}
-      className={`flex flex-col gap-2 rounded-lg border border-border bg-surface p-3 shadow-xs ${dragClass} ${draggingClass}`}
+      className={`flex flex-col gap-2 rounded-lg border border-border bg-surface p-3 shadow-xs [contain-intrinsic-size:auto_88px] [content-visibility:auto] ${dragClass} ${draggingClass}`}
     >
       <span className="text-small font-medium break-words text-fg">{task.title}</span>
       <div className="flex flex-wrap items-center justify-between gap-2">

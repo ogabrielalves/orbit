@@ -1,4 +1,4 @@
-import { useDraggable } from "@dnd-kit/core";
+import { useDndContext, useDraggable } from "@dnd-kit/core";
 import { Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import PlusIcon from "@/assets/icons/linha/mais.svg?react";
@@ -7,6 +7,7 @@ import { Button } from "@/components/atoms/Button";
 import { Skeleton } from "@/components/atoms/Skeleton";
 import { EmptyState } from "@/components/molecules/EmptyState";
 import { ErrorState } from "@/components/molecules/ErrorState";
+import { LIST_PRIMARY_ATTRIBUTE, VirtualList } from "@/components/organisms/VirtualList";
 import { getErrorMessageKey } from "@/lib/appError";
 import { formatRelativeTime } from "@/lib/dates";
 import { useNotes } from "@/modules/notes/queries";
@@ -21,6 +22,9 @@ type NotesListProps = {
 };
 
 const placeholderIds = ["a", "b", "c", "d"];
+const NOTE_ROW_ESTIMATE_IN_PIXELS = 58;
+const NOTE_ROW_GAP_IN_PIXELS = 6;
+const listPrimaryProps = { [LIST_PRIMARY_ATTRIBUTE]: "" };
 
 type NoteListItemProps = {
   note: NoteSummary;
@@ -47,12 +51,13 @@ function NoteListItem({ note, isSelected, isAllNotes, folderSearch }: NoteListIt
   const dragClass = drag.isDragging ? "opacity-50" : "";
 
   return (
-    <li ref={drag.setNodeRef} className={`group relative ${dragClass}`}>
+    <div ref={drag.setNodeRef} className={`group relative ${dragClass}`}>
       <Link
         to="/notes/$noteId"
         params={{ noteId: note.id }}
         search={{ folder: folderSearch }}
         aria-current={isSelected ? "page" : undefined}
+        {...listPrimaryProps}
         className={`flex flex-col gap-0.5 rounded-lg border px-3 py-2.5 pr-9 ${itemClass}`}
       >
         <span className="truncate text-small font-medium text-fg">{note.title}</span>
@@ -69,7 +74,7 @@ function NoteListItem({ note, isSelected, isAllNotes, folderSearch }: NoteListIt
           setActivatorNodeRef={drag.setActivatorNodeRef}
         />
       </div>
-    </li>
+    </div>
   );
 }
 
@@ -77,6 +82,11 @@ export function NotesList({ folderPath, folderName, selectedNoteId, onNewNote }:
   const { t } = useTranslation();
   const isAllNotes = folderPath === "";
   const notesQuery = useNotes(isAllNotes ? {} : { folderPath, includeSubfolders: false });
+  const { active } = useDndContext();
+  const activeId = String(active?.id ?? "");
+  const pinnedKey = activeId.startsWith(NOTE_DRAG_PREFIX)
+    ? activeId.slice(NOTE_DRAG_PREFIX.length)
+    : null;
 
   const notes = notesQuery.data ?? [];
   const isLoading = notesQuery.isPending;
@@ -116,17 +126,24 @@ export function NotesList({ folderPath, folderName, selectedNoteId, onNewNote }:
         />
       )}
       {hasNotes && (
-        <ul aria-label={t("notes.list.title")} className="flex flex-col gap-1.5">
-          {notes.map((note) => (
+        <VirtualList
+          items={notes}
+          getKey={(note) => note.id}
+          estimateSize={NOTE_ROW_ESTIMATE_IN_PIXELS}
+          gap={NOTE_ROW_GAP_IN_PIXELS}
+          label={t("notes.list.title")}
+          scrollClassName="-m-1.5 max-h-96 overflow-y-auto p-1.5 lg:max-h-[calc(100vh-15rem)]"
+          pinnedKey={pinnedKey}
+          scrollToKey={selectedNoteId ?? null}
+          renderItem={(note) => (
             <NoteListItem
-              key={note.id}
               note={note}
               isSelected={note.id === selectedNoteId}
               isAllNotes={isAllNotes}
               folderSearch={folderSearch}
             />
-          ))}
-        </ul>
+          )}
+        />
       )}
     </section>
   );

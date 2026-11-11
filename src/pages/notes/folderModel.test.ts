@@ -5,6 +5,7 @@ import {
   countFoldersDeep,
   countNotesDeep,
   findFolderNode,
+  flattenVisibleFolders,
   getAncestorPaths,
   isFolderEmpty,
   isPathInside,
@@ -74,5 +75,48 @@ describe("tree helpers", () => {
     expect(getAncestorPaths("a/b/c")).toEqual(["a", "a/b"]);
     expect(getAncestorPaths("a")).toEqual([]);
     expect(getAncestorPaths("")).toEqual([]);
+  });
+});
+
+describe("flattenVisibleFolders", () => {
+  const roots = buildFolderTree(entries, "en");
+
+  it("lists only the root folders when nothing is expanded", () => {
+    const rows = flattenVisibleFolders(roots, new Set());
+
+    expect(rows.map((row) => [row.node.entry.path, row.depth])).toEqual([
+      ["alpha", 0],
+      ["work", 0],
+    ]);
+  });
+
+  it("lists the children of an expanded folder right after it with their depth", () => {
+    const rows = flattenVisibleFolders(roots, new Set(["work"]));
+
+    expect(rows.map((row) => [row.node.entry.path, row.depth])).toEqual([
+      ["alpha", 0],
+      ["work", 0],
+      ["work/archive", 1],
+      ["work/plans", 1],
+    ]);
+  });
+
+  it("goes as deep as the expanded folders allow", () => {
+    const rows = flattenVisibleFolders(roots, new Set(["work", "work/plans"]));
+
+    expect(rows.map((row) => row.node.entry.path)).toEqual([
+      "alpha",
+      "work",
+      "work/archive",
+      "work/plans",
+      "work/plans/q4",
+    ]);
+    expect(rows[4]?.depth).toBe(2);
+  });
+
+  it("ignores an expanded folder that is hidden by a collapsed parent", () => {
+    const rows = flattenVisibleFolders(roots, new Set(["work/plans"]));
+
+    expect(rows.map((row) => row.node.entry.path)).toEqual(["alpha", "work"]);
   });
 });

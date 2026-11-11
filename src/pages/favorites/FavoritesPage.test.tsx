@@ -97,16 +97,25 @@ describe("FavoritesPage", () => {
       entry({ entityType: "folder", entityId: "work", title: "Work", path: "work" }),
     ]);
     renderApp("/favorites");
-    const page = within(await screen.findByRole("main"));
+    const content = within(await screen.findByRole("main"));
 
-    expect(await page.findByRole("link", { name: "Sprint" })).toHaveAttribute("href", "/boards/b1");
-    expect(page.getByRole("link", { name: "Fix bug" })).toHaveAttribute(
+    expect(await content.findByRole("link", { name: "Sprint" })).toHaveAttribute(
+      "href",
+      "/boards/b1",
+    );
+    expect(content.getByRole("link", { name: "Fix bug" })).toHaveAttribute(
       "href",
       "/boards/b1?task=t1",
     );
-    expect(page.getByRole("link", { name: "Someday" })).toHaveAttribute("href", "/backlog?task=t2");
-    expect(page.getByRole("link", { name: "Ideas" })).toHaveAttribute("href", "/notes/n1");
-    expect(page.getByRole("link", { name: "Work" })).toHaveAttribute("href", "/notes?folder=work");
+    expect(content.getByRole("link", { name: "Someday" })).toHaveAttribute(
+      "href",
+      "/backlog?task=t2",
+    );
+    expect(content.getByRole("link", { name: "Ideas" })).toHaveAttribute("href", "/notes/n1");
+    expect(content.getByRole("link", { name: "Work" })).toHaveAttribute(
+      "href",
+      "/notes?folder=work",
+    );
   });
 
   it("shows the context and flags archived favorites", async () => {

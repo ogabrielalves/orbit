@@ -50,7 +50,7 @@ export function BacklogItemCard({
       ref={innerRef}
       style={style}
       {...dragProps}
-      className={`relative flex flex-col gap-2 rounded-lg border border-border bg-surface p-3 shadow-xs has-focus-visible:shadow-focus ${dragClass} ${draggingClass}`}
+      className={`relative flex flex-col gap-2 rounded-lg border border-border bg-surface p-3 shadow-xs [contain-intrinsic-size:auto_112px] [content-visibility:auto] has-focus-visible:shadow-focus ${dragClass} ${draggingClass}`}
     >
       <div className="flex flex-wrap items-start justify-between gap-2">
         <button

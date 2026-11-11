@@ -23,6 +23,15 @@ describe("TaskCard", () => {
     vi.useRealTimers();
   });
 
+  it("lets the browser skip the layout of cards that are far off screen", () => {
+    renderCard();
+
+    const card = screen.getByRole("listitem");
+
+    expect(card).toHaveClass("[content-visibility:auto]");
+    expect(card.className).toContain("[contain-intrinsic-size:auto_");
+  });
+
   it("shows the title and the priority", () => {
     renderCard({ title: "Write the spec", priority: "urgent" });
 

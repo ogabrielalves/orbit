@@ -35,6 +35,26 @@ export function buildFolderTree(entries: FolderEntry[], locale: string): FolderN
   return roots.sort(byName);
 }
 
+export type FolderRowItem = {
+  node: FolderNode;
+  depth: number;
+};
+
+export function flattenVisibleFolders(roots: FolderNode[], expanded: Set<string>): FolderRowItem[] {
+  const rows: FolderRowItem[] = [];
+  const visit = (nodes: FolderNode[], depth: number) => {
+    for (const node of nodes) {
+      rows.push({ node, depth });
+      const isExpanded = expanded.has(node.entry.path);
+      if (isExpanded) {
+        visit(node.children, depth + 1);
+      }
+    }
+  };
+  visit(roots, 0);
+  return rows;
+}
+
 export function findFolderNode(roots: FolderNode[], path: string): FolderNode | undefined {
   for (const node of roots) {
     if (node.entry.path === path) {

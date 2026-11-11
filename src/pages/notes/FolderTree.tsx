@@ -9,10 +9,11 @@ import NewFolderIcon from "@/assets/icons/linha/nova-pasta.svg?react";
 import { IconButton } from "@/components/atoms/IconButton";
 import { Tooltip } from "@/components/atoms/Tooltip";
 import { DropdownMenu } from "@/components/molecules/DropdownMenu";
+import { LIST_PRIMARY_ATTRIBUTE, VirtualList } from "@/components/organisms/VirtualList";
 import { useIsFavorite, useToggleFavorite } from "@/modules/favorites/queries";
 import { DragHandle } from "@/pages/notes/DragHandle";
 import type { FolderNode } from "@/pages/notes/folderModel";
-import { getAncestorPaths } from "@/pages/notes/folderModel";
+import { flattenVisibleFolders, getAncestorPaths } from "@/pages/notes/folderModel";
 import {
   type DragSource,
   FOLDER_DRAG_PREFIX,
@@ -33,11 +34,14 @@ type FolderTreeProps = {
 type FolderRowProps = Omit<FolderTreeProps, "roots"> & {
   node: FolderNode;
   depth: number;
-  expanded: Set<string>;
+  isExpanded: boolean;
   onToggle: (path: string) => void;
 };
 
 const INDENT_IN_PIXELS = 14;
+const FOLDER_ROW_ESTIMATE_IN_PIXELS = 34;
+const FOLDER_ROW_GAP_IN_PIXELS = 2;
+const listPrimaryProps = { [LIST_PRIMARY_ATTRIBUTE]: "" };
 
 function useFolderDropState(path: string, name: string) {
   const { active } = useDndContext();
@@ -56,7 +60,7 @@ function useFolderDropState(path: string, name: string) {
 function FolderRow({
   node,
   depth,
-  expanded,
+  isExpanded,
   selectedPath,
   onToggle,
   onSelect,
@@ -78,7 +82,6 @@ function FolderRow({
     data: { kind: "folder", path, name } satisfies DragSource,
   });
   const hasChildren = node.children.length > 0;
-  const isExpanded = expanded.has(path);
   const isSelected = selectedPath === path;
   const selectedClass = isSelected
     ? "bg-primary-soft text-primary-fg"
@@ -126,81 +129,61 @@ function FolderRow({
   ];
 
   return (
-    <li>
-      <div
-        ref={(element) => {
-          drop.setNodeRef(element);
-          drag.setNodeRef(element);
-        }}
-        style={{ paddingLeft: depth * INDENT_IN_PIXELS }}
-        className={`group flex items-center gap-0.5 rounded-md pr-1 ${rowClass}`}
-      >
-        {hasChildren ? (
-          <Tooltip label={toggleLabel} labelsTrigger>
-            <button
-              type="button"
-              aria-expanded={isExpanded}
-              aria-label={toggleLabel}
-              onClick={() => onToggle(path)}
-              className="flex size-6 shrink-0 items-center justify-center text-fg-muted"
-            >
-              <ChevronIcon
-                aria-hidden="true"
-                className={`size-3.5 transition-transform ${chevronClass}`}
-              />
-            </button>
-          </Tooltip>
-        ) : (
-          <span aria-hidden="true" className="size-6 shrink-0" />
-        )}
-        <button
-          type="button"
-          aria-current={isSelected ? "true" : undefined}
-          onClick={() => onSelect(path)}
-          onContextMenu={(event) => {
-            event.preventDefault();
-            setIsMenuOpen(true);
-          }}
-          className="flex min-w-0 flex-1 items-center justify-between gap-2 py-1.5 text-left text-small"
-        >
-          <span className="truncate">{name}</span>
-          <span className="text-caption text-fg-muted">{noteCount}</span>
-        </button>
-        <DragHandle
-          label={t("notes.move.handle", { name })}
-          attributes={drag.attributes}
-          listeners={drag.listeners}
-          setActivatorNodeRef={drag.setActivatorNodeRef}
-        />
-        <DropdownMenu
-          isOpen={isMenuOpen}
-          onOpenChange={setIsMenuOpen}
-          trigger={
-            <IconButton icon={MoreIcon} size="sm" label={t("notes.folders.actions", { name })} />
-          }
-          sections={sections}
-        />
-      </div>
-      {hasChildren && isExpanded && (
-        <ul>
-          {node.children.map((child) => (
-            <FolderRow
-              key={child.entry.path}
-              node={child}
-              depth={depth + 1}
-              expanded={expanded}
-              selectedPath={selectedPath}
-              onToggle={onToggle}
-              onSelect={onSelect}
-              onNewFolder={onNewFolder}
-              onNewNote={onNewNote}
-              onRename={onRename}
-              onDelete={onDelete}
+    <div
+      ref={(element) => {
+        drop.setNodeRef(element);
+        drag.setNodeRef(element);
+      }}
+      style={{ paddingLeft: depth * INDENT_IN_PIXELS }}
+      className={`group flex items-center gap-0.5 rounded-md pr-1 ${rowClass}`}
+    >
+      {hasChildren ? (
+        <Tooltip label={toggleLabel} labelsTrigger>
+          <button
+            type="button"
+            aria-expanded={isExpanded}
+            aria-label={toggleLabel}
+            onClick={() => onToggle(path)}
+            className="flex size-6 shrink-0 items-center justify-center text-fg-muted"
+          >
+            <ChevronIcon
+              aria-hidden="true"
+              className={`size-3.5 transition-transform ${chevronClass}`}
             />
-          ))}
-        </ul>
+          </button>
+        </Tooltip>
+      ) : (
+        <span aria-hidden="true" className="size-6 shrink-0" />
       )}
-    </li>
+      <button
+        type="button"
+        aria-current={isSelected ? "true" : undefined}
+        onClick={() => onSelect(path)}
+        onContextMenu={(event) => {
+          event.preventDefault();
+          setIsMenuOpen(true);
+        }}
+        {...listPrimaryProps}
+        className="flex min-w-0 flex-1 items-center justify-between gap-2 py-1.5 text-left text-small"
+      >
+        <span className="truncate">{name}</span>
+        <span className="text-caption text-fg-muted">{noteCount}</span>
+      </button>
+      <DragHandle
+        label={t("notes.move.handle", { name })}
+        attributes={drag.attributes}
+        listeners={drag.listeners}
+        setActivatorNodeRef={drag.setActivatorNodeRef}
+      />
+      <DropdownMenu
+        isOpen={isMenuOpen}
+        onOpenChange={setIsMenuOpen}
+        trigger={
+          <IconButton icon={MoreIcon} size="sm" label={t("notes.folders.actions", { name })} />
+        }
+        sections={sections}
+      />
+    </div>
   );
 }
 
@@ -214,15 +197,21 @@ export function FolderTree({
   onDelete,
 }: FolderTreeProps) {
   const { t } = useTranslation();
+  const { active } = useDndContext();
   const [expandedByUser, setExpandedByUser] = useState<Set<string>>(new Set());
 
   const expanded = new Set([...expandedByUser, ...getAncestorPaths(selectedPath)]);
+  const rows = flattenVisibleFolders(roots, expanded);
   const allDrop = useFolderDropState("", t("notes.move.rootName"));
   const isAllSelected = selectedPath === "";
   const allSelectedClass = isAllSelected
     ? "bg-primary-soft text-primary-fg"
     : "text-fg hover:bg-surface-muted";
   const allClass = `${allSelectedClass} ${allDrop.isDropTarget ? "ring-2 ring-primary" : ""}`;
+  const activeId = String(active?.id ?? "");
+  const pinnedKey = activeId.startsWith(FOLDER_DRAG_PREFIX)
+    ? activeId.slice(FOLDER_DRAG_PREFIX.length)
+    : null;
 
   function handleToggle(path: string) {
     setExpandedByUser((previous) => {
@@ -249,24 +238,29 @@ export function FolderTree({
           onClick={() => onNewFolder(null)}
         />
       </div>
-      <ul className="flex flex-col gap-0.5">
-        <li>
-          <button
-            type="button"
-            ref={allDrop.setNodeRef}
-            aria-current={isAllSelected ? "true" : undefined}
-            onClick={() => onSelect("")}
-            className={`flex w-full items-center rounded-md px-2 py-1.5 text-left text-small ${allClass}`}
-          >
-            {t("notes.folders.all")}
-          </button>
-        </li>
-        {roots.map((node) => (
+      <button
+        type="button"
+        ref={allDrop.setNodeRef}
+        aria-current={isAllSelected ? "true" : undefined}
+        onClick={() => onSelect("")}
+        className={`flex w-full items-center rounded-md px-2 py-1.5 text-left text-small ${allClass}`}
+      >
+        {t("notes.folders.all")}
+      </button>
+      <VirtualList
+        items={rows}
+        getKey={(row) => row.node.entry.path}
+        estimateSize={FOLDER_ROW_ESTIMATE_IN_PIXELS}
+        gap={FOLDER_ROW_GAP_IN_PIXELS}
+        label={t("notes.folders.title")}
+        scrollClassName="-m-1.5 max-h-72 overflow-y-auto p-1.5 lg:max-h-[calc(100vh-18rem)]"
+        pinnedKey={pinnedKey}
+        scrollToKey={selectedPath === "" ? null : selectedPath}
+        renderItem={(row) => (
           <FolderRow
-            key={node.entry.path}
-            node={node}
-            depth={0}
-            expanded={expanded}
+            node={row.node}
+            depth={row.depth}
+            isExpanded={expanded.has(row.node.entry.path)}
             selectedPath={selectedPath}
             onToggle={handleToggle}
             onSelect={onSelect}
@@ -275,8 +269,8 @@ export function FolderTree({
             onRename={onRename}
             onDelete={onDelete}
           />
-        ))}
-      </ul>
+        )}
+      />
     </nav>
   );
 }

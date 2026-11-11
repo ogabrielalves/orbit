@@ -3,6 +3,7 @@ import { cleanup, configure } from "@testing-library/react";
 import { toast } from "sonner";
 import { afterEach, beforeAll, vi } from "vitest";
 import { installMatchMedia, resetViewport } from "@/test/viewport";
+import { installVirtualLayout, resetVirtualLayout } from "@/test/virtualLayout";
 
 vi.mock("@tauri-apps/api/webview", () => ({
   getCurrentWebview: () => ({
@@ -140,6 +141,7 @@ configure({ asyncUtilTimeout: 10_000 });
 
 beforeAll(() => {
   installMatchMedia();
+  installVirtualLayout();
   globalThis.ResizeObserver = ResizeObserverStub;
   window.scrollTo = () => {};
 });
@@ -148,4 +150,5 @@ afterEach(() => {
   toast.dismiss();
   cleanup();
   resetViewport();
+  resetVirtualLayout();
 });

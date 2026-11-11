@@ -1,4 +1,4 @@
-import { Outlet, useMatches } from "@tanstack/react-router";
+import { Outlet, useLocation, useMatches } from "@tanstack/react-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { WindowCloseGuard } from "@/app/WindowCloseGuard";
@@ -11,6 +11,7 @@ import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useUiStore } from "@/hooks/useUiStore";
 import { mediaQueries } from "@/lib/breakpoints";
 import { useVaultEvents } from "@/modules/notes/useVaultEvents";
+import { useOnboardingGuard, WELCOME_PATH } from "@/modules/settings/useOnboardingGuard";
 import { useSyncLanguage } from "@/modules/settings/useSyncLanguage";
 import { CommandPalette } from "@/pages/search/CommandPalette";
 
@@ -33,6 +34,19 @@ export function RootLayout() {
 
   useHotkey("mod+\\", handleToggleSidebar);
   useHotkey("mod+k", () => setIsPaletteOpen((isOpen) => !isOpen));
+
+  const gate = useOnboardingGuard();
+  const pathname = useLocation({ select: (location) => location.pathname });
+  const isWelcome = pathname === WELCOME_PATH;
+  const isGateReady = gate === "ready";
+
+  if (!isGateReady) {
+    return <div aria-hidden="true" className="min-h-screen bg-canvas" />;
+  }
+
+  if (isWelcome) {
+    return <Outlet />;
+  }
 
   const isSidebarCollapsed = !isDesktop || isCollapsedByUser;
 

@@ -12,7 +12,7 @@ const { getSettings, updateSettings } = vi.hoisted(() => ({
 
 vi.mock("@/bindings", () => ({ commands: { getSettings, updateSettings } }));
 
-const settings: Settings = { language: "pt-BR", vaultPath: null };
+const settings: Settings = { language: "pt-BR", vaultPath: null, userName: null };
 
 function createWrapper() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -39,7 +39,10 @@ describe("settings queries", () => {
   });
 
   it("loads settings that follow the system language", async () => {
-    getSettings.mockResolvedValue({ status: "ok", data: { language: null, vaultPath: null } });
+    getSettings.mockResolvedValue({
+      status: "ok",
+      data: { language: null, vaultPath: null, userName: null },
+    });
     const { wrapper } = createWrapper();
 
     const { result } = renderHook(() => useSettings(), { wrapper });

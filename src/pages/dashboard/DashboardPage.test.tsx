@@ -86,9 +86,9 @@ describe("DashboardPage", () => {
 
   describe("greeting", () => {
     it.each([
-      [6, "Good morning"],
-      [14, "Good afternoon"],
-      [21, "Good evening"],
+      [6, "Good morning, Gabriel"],
+      [14, "Good afternoon, Gabriel"],
+      [21, "Good evening, Gabriel"],
     ])("greets at %i:00 with %s", async (hour, greeting) => {
       vi.useFakeTimers({ toFake: ["Date"] });
       vi.setSystemTime(new Date(2026, 10, 8, hour, 0));
@@ -465,7 +465,7 @@ describe("DashboardPage", () => {
   it("follows the language saved in the settings", async () => {
     vi.mocked(commands.getSettings).mockResolvedValueOnce({
       status: "ok",
-      data: { language: "pt-BR", vaultPath: null },
+      data: { language: "pt-BR", vaultPath: "/vault", userName: "Gabriel" },
     });
     mockActivity([createEntry({ entityType: "task", action: "completed", changes: null })]);
     renderApp("/");

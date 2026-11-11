@@ -10,6 +10,7 @@ fn settings_survive_a_restart_on_a_real_database_file() {
     let input = UpdateSettingsInput {
         language: Some(Some(Language::PtBr)),
         vault_path: Some("notes-vault".into()),
+        ..Default::default()
     };
     service::save(&first_run, input).expect("updates");
     drop(first_run);
@@ -19,6 +20,64 @@ fn settings_survive_a_restart_on_a_real_database_file() {
     let settings = service::get(&second_run).expect("reads");
     assert_eq!(settings.language, Some(Language::PtBr));
     assert_eq!(settings.vault_path.as_deref(), Some("notes-vault"));
+}
+
+#[test]
+fn the_user_name_survives_a_restart_and_can_be_cleared() {
+    let directory = tempfile::tempdir().expect("creates temp dir");
+    let first_run = initialize_state(directory.path()).expect("first start");
+    let set = UpdateSettingsInput {
+        user_name: Some(Some("  Ana  ".into())),
+        ..Default::default()
+    };
+    service::update(&first_run, set).expect("sets the name");
+    drop(first_run);
+
+    let second_run = initialize_state(directory.path()).expect("second start");
+    assert_eq!(
+        service::get(&second_run)
+            .expect("reads")
+            .user_name
+            .as_deref(),
+        Some("Ana")
+    );
+    let clear = UpdateSettingsInput {
+        user_name: Some(None),
+        ..Default::default()
+    };
+    service::update(&second_run, clear).expect("clears the name");
+    drop(second_run);
+
+    let third_run = initialize_state(directory.path()).expect("third start");
+    assert_eq!(service::get(&third_run).expect("reads").user_name, None);
+}
+
+#[test]
+fn an_over_long_user_name_is_rejected_and_the_stored_one_survives_a_restart() {
+    let directory = tempfile::tempdir().expect("creates temp dir");
+    let first_run = initialize_state(directory.path()).expect("first start");
+    let set = UpdateSettingsInput {
+        user_name: Some(Some("Ana".into())),
+        ..Default::default()
+    };
+    service::update(&first_run, set).expect("sets the name");
+    let too_long = UpdateSettingsInput {
+        user_name: Some(Some("a".repeat(61))),
+        ..Default::default()
+    };
+
+    let result = service::update(&first_run, too_long);
+    drop(first_run);
+
+    assert!(matches!(result, Err(AppError::Validation(_))));
+    let second_run = initialize_state(directory.path()).expect("second start");
+    assert_eq!(
+        service::get(&second_run)
+            .expect("reads")
+            .user_name
+            .as_deref(),
+        Some("Ana")
+    );
 }
 
 #[test]
@@ -38,6 +97,7 @@ fn invalid_update_is_rejected_and_leaves_stored_settings_untouched() {
     let input = UpdateSettingsInput {
         language: Some(Some(Language::PtBr)),
         vault_path: Some("  ".into()),
+        ..Default::default()
     };
 
     let result = service::save(&state, input);

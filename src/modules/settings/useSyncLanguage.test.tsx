@@ -20,7 +20,7 @@ function createWrapper() {
 }
 
 function mockSavedLanguage(language: Language | null) {
-  const settings: Settings = { language, vaultPath: null };
+  const settings: Settings = { language, vaultPath: null, userName: null };
   getSettings.mockResolvedValue({ status: "ok", data: settings });
 }
 
@@ -98,7 +98,11 @@ describe("useSyncLanguage", () => {
     renderHook(() => useSyncLanguage(), { wrapper });
     await waitFor(() => expect(i18next.language).toBe("pt-BR"));
 
-    queryClient.setQueryData<Settings>(settingsKeys.all, { language: null, vaultPath: null });
+    queryClient.setQueryData<Settings>(settingsKeys.all, {
+      language: null,
+      vaultPath: null,
+      userName: null,
+    });
 
     await waitFor(() => expect(i18next.language).toBe("en"));
   });

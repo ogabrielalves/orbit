@@ -299,7 +299,7 @@ describe("TaskDrawer", () => {
     it("duplicates with the Portuguese suffix", async () => {
       vi.mocked(commands.getSettings).mockResolvedValueOnce({
         status: "ok",
-        data: { language: "pt-BR", vaultPath: null },
+        data: { language: "pt-BR", vaultPath: "/vault", userName: "Gabriel" },
       });
       duplicateTask.mockResolvedValue({ status: "ok", data: task });
       renderApp("/boards/b1?task=t1");

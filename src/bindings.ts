@@ -521,6 +521,7 @@ export type SearchResults = {
 export type Settings = {
 	language: Language | null,
 	vaultPath: string | null,
+	userName: string | null,
 };
 
 export type SetupVaultInput = {
@@ -611,6 +612,7 @@ export type UpdateProjectInput = {
 export type UpdateSettingsInput = {
 	language?: Language | null,
 	vaultPath?: string | null,
+	userName?: string | null,
 };
 
 export type UpdateTagInput = {

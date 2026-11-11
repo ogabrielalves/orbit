@@ -9,7 +9,7 @@ const { getSettings, updateSettings } = vi.hoisted(() => ({
 
 vi.mock("@/bindings", () => ({ commands: { getSettings, updateSettings } }));
 
-const settings: Settings = { language: "pt-BR", vaultPath: null };
+const settings: Settings = { language: "pt-BR", vaultPath: null, userName: null };
 
 describe("settings api", () => {
   beforeEach(() => {
@@ -40,7 +40,10 @@ describe("settings api", () => {
   });
 
   it("returns a null language when the system language is followed", async () => {
-    getSettings.mockResolvedValue({ status: "ok", data: { language: null, vaultPath: null } });
+    getSettings.mockResolvedValue({
+      status: "ok",
+      data: { language: null, vaultPath: null, userName: null },
+    });
 
     const loaded = await fetchSettings();
 
@@ -48,7 +51,10 @@ describe("settings api", () => {
   });
 
   it("sends a null language to clear the saved one", async () => {
-    updateSettings.mockResolvedValue({ status: "ok", data: { language: null, vaultPath: null } });
+    updateSettings.mockResolvedValue({
+      status: "ok",
+      data: { language: null, vaultPath: null, userName: null },
+    });
 
     const saved = await saveSettings({ language: null });
 

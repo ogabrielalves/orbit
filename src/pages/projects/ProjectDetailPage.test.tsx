@@ -269,7 +269,7 @@ describe("ProjectDetailPage", () => {
     it("sends the column names in the current language", async () => {
       vi.mocked(commands.getSettings).mockResolvedValueOnce({
         status: "ok",
-        data: { language: "pt-BR", vaultPath: null },
+        data: { language: "pt-BR", vaultPath: "/vault", userName: "Gabriel" },
       });
       mockDetails(createDetails());
       createBoard.mockResolvedValue({ status: "ok", data: createBoardDetailsFixture() });
@@ -450,7 +450,7 @@ describe("ProjectDetailPage", () => {
   it("follows the language saved in the settings", async () => {
     vi.mocked(commands.getSettings).mockResolvedValueOnce({
       status: "ok",
-      data: { language: "pt-BR", vaultPath: null },
+      data: { language: "pt-BR", vaultPath: "/vault", userName: "Gabriel" },
     });
     mockDetails(
       createDetails({
@@ -460,7 +460,7 @@ describe("ProjectDetailPage", () => {
     renderApp("/projects/p1");
 
     expect(await screen.findByRole("link", { name: "Voltar para projetos" })).toBeInTheDocument();
-    expect(screen.getByText("Ativo")).toBeInTheDocument();
+    expect(await screen.findByText("Ativo")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Sprint 1/ })).toHaveTextContent("2 tarefas");
   });
 });

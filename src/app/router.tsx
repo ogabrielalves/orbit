@@ -21,6 +21,7 @@ import { ProjectsPage } from "@/pages/projects/ProjectsPage";
 import { parseProjectDetailSearch } from "@/pages/projects/projectDetailSearch";
 import { parseProjectsSearch } from "@/pages/projects/projectsSearch";
 import { SettingsPage } from "@/pages/settings/SettingsPage";
+import { WelcomePage } from "@/pages/welcome/WelcomePage";
 
 const rootRoute = createRootRoute({
   component: RootLayout,
@@ -103,7 +104,14 @@ const settingsRoute = createRoute({
   staticData: { titleKey: "nav.settings" },
 });
 
+const welcomeRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/welcome",
+  component: WelcomePage,
+});
+
 const routeTree = rootRoute.addChildren([
+  welcomeRoute,
   dashboardRoute,
   projectsRoute,
   projectDetailRoute,

@@ -7,6 +7,7 @@ import { ProjectFormModal } from "@/components/organisms/ProjectFormModal";
 import { formatLongDate, toLocalIsoDate } from "@/lib/dates";
 import { getGreetingPeriod } from "@/lib/greeting";
 import { useProjectForm } from "@/modules/projects/useProjectForm";
+import { useSettings } from "@/modules/settings/queries";
 import { ActiveProjectsCard } from "@/pages/dashboard/ActiveProjectsCard";
 import { RecentActivityCard } from "@/pages/dashboard/RecentActivityCard";
 import { SummaryStrip } from "@/pages/dashboard/SummaryStrip";
@@ -16,6 +17,11 @@ export function DashboardPage() {
   const { t, i18n } = useTranslation();
   const now = new Date();
   const greetingPeriod = getGreetingPeriod(now);
+  const userName = useSettings().data?.userName ?? null;
+  const hasUserName = userName !== null;
+  const greeting = hasUserName
+    ? t(`greetingNamed.${greetingPeriod}`, { name: userName })
+    : t(`greeting.${greetingPeriod}`);
   const today = toLocalIsoDate(now);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const projectForm = useProjectForm(undefined, () => setIsFormOpen(false));
@@ -24,7 +30,7 @@ export function DashboardPage() {
     <>
       <PageHeader
         variant="display"
-        title={t(`greeting.${greetingPeriod}`)}
+        title={greeting}
         subtitle={formatLongDate(now, i18n.language)}
         actions={
           <Button icon={PlusIcon} onClick={() => setIsFormOpen(true)}>

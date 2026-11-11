@@ -7,6 +7,8 @@ use crate::shared::patch::distinguish_null_from_absent;
 
 pub const KEY_LANGUAGE: &str = "language";
 pub const KEY_VAULT_PATH: &str = "vault_path";
+pub const KEY_USER_NAME: &str = "user_name";
+pub const USER_NAME_MAX_LENGTH: usize = 60;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Type)]
 pub enum Language {
@@ -38,6 +40,7 @@ impl Language {
 pub struct Settings {
     pub language: Option<Language>,
     pub vault_path: Option<String>,
+    pub user_name: Option<String>,
 }
 
 impl Settings {
@@ -47,6 +50,7 @@ impl Settings {
                 .get(KEY_LANGUAGE)
                 .and_then(|value| Language::parse(value)),
             vault_path: stored.get(KEY_VAULT_PATH).cloned(),
+            user_name: stored.get(KEY_USER_NAME).cloned(),
         }
     }
 }
@@ -58,6 +62,9 @@ pub struct UpdateSettingsInput {
     #[specta(type = Option<Language>)]
     pub language: Option<Option<Language>>,
     pub vault_path: Option<String>,
+    #[serde(deserialize_with = "distinguish_null_from_absent")]
+    #[specta(type = Option<String>)]
+    pub user_name: Option<Option<String>>,
 }
 
 #[cfg(test)]
@@ -103,13 +110,14 @@ mod tests {
         let settings = Settings {
             language: Some(Language::PtBr),
             vault_path: Some("vault".into()),
+            user_name: Some("Ana".into()),
         };
 
         let json = serde_json::to_value(&settings).expect("serializes");
 
         assert_eq!(
             json,
-            serde_json::json!({ "language": "pt-BR", "vaultPath": "vault" })
+            serde_json::json!({ "language": "pt-BR", "vaultPath": "vault", "userName": "Ana" })
         );
     }
 
@@ -119,8 +127,54 @@ mod tests {
 
         assert_eq!(
             json,
-            serde_json::json!({ "language": null, "vaultPath": null })
+            serde_json::json!({ "language": null, "vaultPath": null, "userName": null })
         );
+    }
+
+    #[test]
+    fn reads_a_stored_user_name() {
+        let stored = HashMap::from([(KEY_USER_NAME.to_string(), "Ana".to_string())]);
+
+        let settings = Settings::from_stored(&stored);
+
+        assert_eq!(settings.user_name.as_deref(), Some("Ana"));
+    }
+
+    #[test]
+    fn settings_stored_before_the_user_name_existed_load_with_no_name() {
+        let stored = HashMap::from([
+            (KEY_LANGUAGE.to_string(), "en".to_string()),
+            (KEY_VAULT_PATH.to_string(), "vault".to_string()),
+        ]);
+
+        let settings = Settings::from_stored(&stored);
+
+        assert_eq!(settings.user_name, None);
+        assert_eq!(settings.vault_path.as_deref(), Some("vault"));
+    }
+
+    #[test]
+    fn update_input_with_a_user_name_sets_it() {
+        let input: UpdateSettingsInput =
+            serde_json::from_str(r#"{ "userName": "Ana" }"#).expect("deserializes");
+
+        assert_eq!(input.user_name, Some(Some("Ana".to_string())));
+    }
+
+    #[test]
+    fn update_input_with_null_user_name_clears_it() {
+        let input: UpdateSettingsInput =
+            serde_json::from_str(r#"{ "userName": null }"#).expect("deserializes");
+
+        assert_eq!(input.user_name, Some(None));
+    }
+
+    #[test]
+    fn update_input_without_user_name_leaves_it_unchanged() {
+        let input: UpdateSettingsInput =
+            serde_json::from_str(r#"{ "language": "en" }"#).expect("deserializes");
+
+        assert_eq!(input.user_name, None);
     }
 
     #[test]

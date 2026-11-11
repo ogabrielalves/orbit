@@ -55,14 +55,14 @@ describe("routes", () => {
     ).toBeInTheDocument();
   });
 
-  it("greets by time of day on the dashboard without a name", async () => {
+  it("greets by time of day on the dashboard with the saved name", async () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date(2026, 10, 8, 9, 0));
 
     renderApp("/");
 
     expect(
-      await screen.findByRole("heading", { level: 1, name: "Good morning" }),
+      await screen.findByRole("heading", { level: 1, name: "Good morning, Gabriel" }),
     ).toBeInTheDocument();
     expect(screen.getByText("Sunday, November 8")).toBeInTheDocument();
   });

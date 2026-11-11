@@ -270,7 +270,7 @@ describe("BoardPage cards drag and drop", () => {
     it("announces in Portuguese", async () => {
       vi.mocked(commands.getSettings).mockResolvedValueOnce({
         status: "ok",
-        data: { language: "pt-BR", vaultPath: null },
+        data: { language: "pt-BR", vaultPath: "/vault", userName: "Gabriel" },
       });
       renderApp("/boards/b1");
       await screen.findByText("Third");

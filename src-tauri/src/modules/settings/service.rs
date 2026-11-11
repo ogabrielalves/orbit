@@ -2,10 +2,13 @@ use std::path::PathBuf;
 
 use rusqlite::Connection;
 
-use super::models::{KEY_LANGUAGE, KEY_VAULT_PATH, Settings, UpdateSettingsInput};
+use super::models::{
+    KEY_LANGUAGE, KEY_USER_NAME, KEY_VAULT_PATH, Settings, USER_NAME_MAX_LENGTH,
+    UpdateSettingsInput,
+};
 use super::repository;
 use crate::error::{AppError, AppResult};
-use crate::shared::time;
+use crate::shared::{text, time};
 use crate::state::AppState;
 
 pub fn get(state: &AppState) -> AppResult<Settings> {
@@ -25,6 +28,7 @@ pub fn update(state: &AppState, input: UpdateSettingsInput) -> AppResult<Setting
 
 pub fn save(state: &AppState, input: UpdateSettingsInput) -> AppResult<Settings> {
     let vault_path = normalize_vault_path(input.vault_path)?;
+    let user_name = normalize_user_name(input.user_name)?;
     let now = time::now();
 
     let settings = {
@@ -39,6 +43,11 @@ pub fn save(state: &AppState, input: UpdateSettingsInput) -> AppResult<Settings>
         }
         if let Some(path) = &vault_path {
             repository::upsert(&transaction, KEY_VAULT_PATH, path, &now)?;
+        }
+        match user_name {
+            Some(Some(name)) => repository::upsert(&transaction, KEY_USER_NAME, &name, &now)?,
+            Some(None) => repository::delete(&transaction, KEY_USER_NAME)?,
+            None => {}
         }
         transaction.commit()?;
         load(&connection)?
@@ -69,6 +78,17 @@ fn normalize_vault_path(vault_path: Option<String>) -> AppResult<Option<String>>
         return Err(AppError::Validation("vault path cannot be empty".into()));
     }
     Ok(Some(trimmed.to_string()))
+}
+
+fn normalize_user_name(user_name: Option<Option<String>>) -> AppResult<Option<Option<String>>> {
+    let Some(patch) = user_name else {
+        return Ok(None);
+    };
+    let Some(name) = text::optional_text(patch) else {
+        return Ok(Some(None));
+    };
+    let valid = text::require_text("user name", &name, USER_NAME_MAX_LENGTH)?;
+    Ok(Some(Some(valid)))
 }
 
 #[cfg(test)]
@@ -141,6 +161,7 @@ mod tests {
         let setup = UpdateSettingsInput {
             language: Some(Some(Language::PtBr)),
             vault_path: Some("my-vault".into()),
+            ..Default::default()
         };
         save(&state, setup).expect("sets both");
         let clear = UpdateSettingsInput {
@@ -178,6 +199,7 @@ mod tests {
         let input = UpdateSettingsInput {
             language: Some(Some(Language::PtBr)),
             vault_path: Some("  my-vault  ".into()),
+            ..Default::default()
         };
 
         save(&state, input).expect("updates");
@@ -206,6 +228,7 @@ mod tests {
         let input = UpdateSettingsInput {
             language: Some(Some(Language::PtBr)),
             vault_path: Some("   ".into()),
+            ..Default::default()
         };
 
         let result = save(&state, input);
@@ -239,6 +262,7 @@ mod tests {
         let input = UpdateSettingsInput {
             language: Some(Some(Language::PtBr)),
             vault_path: Some("/some/vault".into()),
+            ..Default::default()
         };
 
         let result = update(&state, input);
@@ -275,5 +299,129 @@ mod tests {
         assert_eq!(settings.language, Some(Language::PtBr));
         assert_eq!(settings.vault_path.as_deref(), Some("my-vault"));
         assert_eq!(state.vault_path(), Some(PathBuf::from("my-vault")));
+    }
+
+    fn name_patch(name: Option<&str>) -> UpdateSettingsInput {
+        UpdateSettingsInput {
+            user_name: Some(name.map(String::from)),
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn fresh_database_has_no_user_name() {
+        let state = fresh_state();
+
+        assert_eq!(get(&state).expect("reads").user_name, None);
+    }
+
+    #[test]
+    fn user_name_is_trimmed_and_stored() {
+        let state = fresh_state();
+
+        let settings = update(&state, name_patch(Some("  Ana  "))).expect("sets the name");
+
+        assert_eq!(settings.user_name.as_deref(), Some("Ana"));
+        assert_eq!(
+            get(&state).expect("reads").user_name.as_deref(),
+            Some("Ana")
+        );
+    }
+
+    #[test]
+    fn blank_user_name_after_trim_clears_it() {
+        let state = fresh_state();
+        update(&state, name_patch(Some("Ana"))).expect("sets the name");
+
+        let settings = update(&state, name_patch(Some("   "))).expect("clears");
+
+        assert_eq!(settings.user_name, None);
+        assert_eq!(get(&state).expect("reads").user_name, None);
+    }
+
+    #[test]
+    fn null_user_name_clears_it() {
+        let state = fresh_state();
+        update(&state, name_patch(Some("Ana"))).expect("sets the name");
+
+        let settings = update(&state, name_patch(None)).expect("clears");
+
+        assert_eq!(settings.user_name, None);
+    }
+
+    #[test]
+    fn absent_user_name_keeps_the_stored_one() {
+        let state = fresh_state();
+        update(&state, name_patch(Some("Ana"))).expect("sets the name");
+        let language_only = UpdateSettingsInput {
+            language: Some(Some(Language::En)),
+            ..Default::default()
+        };
+
+        let settings = update(&state, language_only).expect("updates language");
+
+        assert_eq!(settings.user_name.as_deref(), Some("Ana"));
+    }
+
+    #[test]
+    fn user_name_accepts_exactly_the_maximum_length_in_characters() {
+        let state = fresh_state();
+        let name = "ç".repeat(USER_NAME_MAX_LENGTH);
+
+        let settings = update(&state, name_patch(Some(&name))).expect("sets the name");
+
+        assert_eq!(settings.user_name.as_deref(), Some(name.as_str()));
+    }
+
+    #[test]
+    fn user_name_above_the_maximum_is_rejected_without_changing_anything() {
+        let state = fresh_state();
+        update(&state, name_patch(Some("Ana"))).expect("sets the name");
+        let too_long = "a".repeat(USER_NAME_MAX_LENGTH + 1);
+        let input = UpdateSettingsInput {
+            language: Some(Some(Language::PtBr)),
+            user_name: Some(Some(too_long)),
+            ..Default::default()
+        };
+
+        let result = update(&state, input);
+
+        assert!(matches!(result, Err(AppError::Validation(_))));
+        let settings = get(&state).expect("reads");
+        assert_eq!(settings.user_name.as_deref(), Some("Ana"));
+        assert_eq!(settings.language, None);
+    }
+
+    #[test]
+    fn user_name_does_not_touch_the_vault_path() {
+        let state = fresh_state();
+        save(
+            &state,
+            UpdateSettingsInput {
+                vault_path: Some("my-vault".into()),
+                ..Default::default()
+            },
+        )
+        .expect("saves the vault");
+
+        let settings = update(&state, name_patch(Some("Ana"))).expect("sets the name");
+
+        assert_eq!(settings.vault_path.as_deref(), Some("my-vault"));
+        assert_eq!(state.vault_path(), Some(PathBuf::from("my-vault")));
+    }
+
+    #[test]
+    fn a_database_saved_before_the_user_name_existed_loads_with_no_name() {
+        let state = fresh_state();
+        {
+            let connection = state.database();
+            repository::upsert(&connection, KEY_LANGUAGE, "en", "2026-01-01T00:00:00.000Z")
+                .expect("stores");
+        }
+
+        let settings = get(&state).expect("reads");
+
+        assert_eq!(settings.language, Some(Language::En));
+        assert_eq!(settings.user_name, None);
     }
 }

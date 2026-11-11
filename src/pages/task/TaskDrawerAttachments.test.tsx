@@ -241,7 +241,7 @@ describe("TaskDrawer attachments", () => {
     it("speaks Portuguese", async () => {
       vi.mocked(commands.getSettings).mockResolvedValueOnce({
         status: "ok",
-        data: { language: "pt-BR", vaultPath: null },
+        data: { language: "pt-BR", vaultPath: "/vault", userName: "Gabriel" },
       });
       renderApp("/boards/b1?task=t1");
 

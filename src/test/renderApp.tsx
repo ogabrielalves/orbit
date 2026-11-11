@@ -1,3 +1,11 @@
+import "@/pages/backlog/BacklogPage";
+import "@/pages/board/BoardPage";
+import "@/pages/favorites/FavoritesPage";
+import "@/pages/graph/GraphPage";
+import "@/pages/notes/NotesPage";
+import "@/pages/projects/ProjectDetailPage";
+import "@/pages/projects/ProjectsPage";
+import "@/pages/settings/SettingsPage";
 import { createMemoryHistory, RouterProvider } from "@tanstack/react-router";
 import { render } from "@testing-library/react";
 import { Providers } from "@/app/providers";

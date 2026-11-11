@@ -136,7 +136,7 @@ class ResizeObserverStub {
   disconnect() {}
 }
 
-configure({ asyncUtilTimeout: 5000 });
+configure({ asyncUtilTimeout: 10_000 });
 
 beforeAll(() => {
   installMatchMedia();

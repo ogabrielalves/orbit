@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
-import { Tooltip } from "@/components/atoms/Tooltip";
+import { Tooltip, TooltipProvider } from "@/components/atoms/Tooltip";
 
 function renderTooltip(
   props: { isDisabled?: boolean; shortcut?: string; labelsTrigger?: boolean } = {},
@@ -76,6 +76,29 @@ describe("Tooltip", () => {
     await userEvent.hover(screen.getByRole("button", { name: "Trigger" }));
 
     expect(await screen.findByRole("tooltip")).toBeInTheDocument();
+  });
+
+  it("shares one provider between tooltips and opens right after another one", async () => {
+    render(
+      <TooltipProvider>
+        <Tooltip label="First tip">
+          <button type="button">One</button>
+        </Tooltip>
+        <Tooltip label="Second tip">
+          <button type="button">Two</button>
+        </Tooltip>
+      </TooltipProvider>,
+    );
+
+    await userEvent.hover(screen.getByRole("button", { name: "One" }));
+    expect(
+      await screen.findByText("First tip", { selector: ".bg-surface-inverse" }),
+    ).toBeInTheDocument();
+    await userEvent.hover(screen.getByRole("button", { name: "Two" }));
+
+    expect(
+      await screen.findByText("Second tip", { selector: ".bg-surface-inverse" }),
+    ).toBeInTheDocument();
   });
 
   it("describes the trigger by default", async () => {

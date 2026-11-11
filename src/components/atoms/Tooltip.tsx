@@ -1,5 +1,11 @@
 import * as RadixTooltip from "@radix-ui/react-tooltip";
-import type { FocusEvent, ReactElement } from "react";
+import {
+  createContext,
+  type FocusEvent,
+  type ReactElement,
+  type ReactNode,
+  useContext,
+} from "react";
 
 type TooltipProps = {
   label: string;
@@ -13,6 +19,8 @@ type TooltipProps = {
 const SILENT_DESCRIPTION = " ";
 
 const OPEN_DELAY_IN_MILLISECONDS = 300;
+
+const TooltipProviderContext = createContext(false);
 
 let isTabNavigation = false;
 let isTracking = false;
@@ -44,6 +52,24 @@ function handleFocus(event: FocusEvent) {
   }
 }
 
+export function TooltipProvider({ children }: { children: ReactNode }) {
+  return (
+    <TooltipProviderContext value>
+      <RadixTooltip.Provider
+        delayDuration={OPEN_DELAY_IN_MILLISECONDS}
+        skipDelayDuration={OPEN_DELAY_IN_MILLISECONDS}
+      >
+        {children}
+      </RadixTooltip.Provider>
+    </TooltipProviderContext>
+  );
+}
+
+function ProviderIfMissing({ children }: { children: ReactNode }) {
+  const hasProvider = useContext(TooltipProviderContext);
+  return hasProvider ? children : <TooltipProvider>{children}</TooltipProvider>;
+}
+
 export function Tooltip({
   label,
   shortcut,
@@ -61,10 +87,7 @@ export function Tooltip({
   const spokenDescription = labelsTrigger ? (shortcut ?? SILENT_DESCRIPTION) : undefined;
 
   return (
-    <RadixTooltip.Provider
-      delayDuration={OPEN_DELAY_IN_MILLISECONDS}
-      skipDelayDuration={OPEN_DELAY_IN_MILLISECONDS}
-    >
+    <ProviderIfMissing>
       <RadixTooltip.Root>
         <RadixTooltip.Trigger asChild onFocus={handleFocus}>
           {children}
@@ -83,6 +106,6 @@ export function Tooltip({
           </RadixTooltip.Content>
         </RadixTooltip.Portal>
       </RadixTooltip.Root>
-    </RadixTooltip.Provider>
+    </ProviderIfMissing>
   );
 }

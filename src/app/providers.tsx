@@ -1,9 +1,9 @@
-import * as RadixTooltip from "@radix-ui/react-tooltip";
 import { type QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { I18nextProvider } from "react-i18next";
 import { Toaster } from "sonner";
 import { createQueryClient } from "@/app/queryClient";
+import { TooltipProvider } from "@/components/atoms/Tooltip";
 import { i18next } from "@/i18n";
 
 const defaultQueryClient = createQueryClient();
@@ -26,7 +26,7 @@ export function Providers({ children, queryClient = defaultQueryClient }: Provid
   return (
     <I18nextProvider i18n={i18next}>
       <QueryClientProvider client={queryClient}>
-        <RadixTooltip.Provider delayDuration={300}>{children}</RadixTooltip.Provider>
+        <TooltipProvider>{children}</TooltipProvider>
         <Toaster
           position="bottom-right"
           toastOptions={{ unstyled: true, classNames: toastClassNames }}

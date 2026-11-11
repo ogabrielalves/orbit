@@ -3,6 +3,7 @@ import { createRecorder } from "./activity";
 import { createBoards } from "./boards";
 import { createDetails } from "./details";
 import { fail } from "./failure";
+import { createFavorites } from "./favorites";
 import { createFolders } from "./folders";
 import { createLinks } from "./links";
 import { createNotes } from "./notes";
@@ -42,6 +43,7 @@ export function createHandlers(state: State, clock: Clock): Handlers {
   const folders = createFolders(state, record);
   const notes = createNotes(state, clock, record);
   const links = createLinks(state);
+  const favorites = createFavorites(state, clock);
 
   function updateSettings(input: UpdateSettingsInput): Settings {
     const next: Settings = { ...state.settings };
@@ -104,7 +106,6 @@ export function createHandlers(state: State, clock: Clock): Handlers {
       upcomingTasks: [],
     }),
     listRecentNotes: () => [],
-    listFavorites: () => state.favorites,
     getBoard: boards.details,
     createBoard: boards.create,
     updateBoard: boards.update,
@@ -150,5 +151,6 @@ export function createHandlers(state: State, clock: Clock): Handlers {
     ...folders,
     ...notes,
     ...links,
+    ...favorites,
   };
 }

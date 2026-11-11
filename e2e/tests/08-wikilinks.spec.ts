@@ -276,7 +276,7 @@ test.describe("keeping links in sync", () => {
     await page.getByRole("button", { name: "Note actions" }).click();
     await page.getByRole("menuitem", { name: "Delete" }).click();
     await page.getByRole("alertdialog").getByRole("button", { name: "Delete" }).click();
-    await expect(page.getByText("Note deleted")).toBeVisible();
+    await expect(page.getByText("Select a note")).toBeVisible();
     await page.goto("/notes/seed-alpha");
 
     await expect(linksFromThisNote(page).getByRole("button", { name: /Beta/ })).toContainText(

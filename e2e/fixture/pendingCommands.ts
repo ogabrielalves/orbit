@@ -13,6 +13,4 @@ export const pendingCommands = [
   "savePastedImage",
   "readVaultImage",
   "search",
-  "toggleFavorite",
-  "moveFavorite",
 ] as const satisfies readonly CommandName[];

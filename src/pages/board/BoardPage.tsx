@@ -173,9 +173,11 @@ export function BoardPage() {
               </SortableContext>
               <DragOverlay>
                 {dnd.activeTask !== undefined && (
-                  <ul className="rotate-1 shadow-lg">
-                    <TaskCard task={dnd.activeTask} />
-                  </ul>
+                  <div>
+                    <ul className="rotate-1 shadow-lg">
+                      <TaskCard task={dnd.activeTask} />
+                    </ul>
+                  </div>
                 )}
               </DragOverlay>
             </DndContext>

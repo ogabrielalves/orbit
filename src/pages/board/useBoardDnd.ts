@@ -9,7 +9,6 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { BoardColumn, Task } from "@/bindings";
@@ -17,6 +16,7 @@ import { getColumnMove } from "@/modules/boards/columns";
 import { useMoveColumn } from "@/modules/boards/queries";
 import { type DropTarget, getTaskMove } from "@/modules/tasks/moves";
 import { useMoveTask } from "@/modules/tasks/queries";
+import { boardKeyboardCoordinates } from "@/pages/board/boardCollision";
 
 type BoardDndParams = {
   boardId: string;
@@ -34,7 +34,7 @@ export function useBoardDnd({ boardId, columns, tasksByColumn }: BoardDndParams)
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
+      coordinateGetter: boardKeyboardCoordinates,
       keyboardCodes: { start: ["Space"], cancel: ["Escape"], end: ["Space"] },
     }),
   );

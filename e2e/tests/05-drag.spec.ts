@@ -243,7 +243,6 @@ test.describe("dragging cards with the keyboard", () => {
     await first.focus();
     await step(page, "Space");
     await step(page, "ArrowRight");
-    await step(page, "ArrowRight");
     await expect(live).toContainText("Card Write the spec is over In Progress.");
     await step(page, "Space");
 
@@ -336,7 +335,6 @@ test.describe("reordering columns", () => {
     await step(page, "Space");
     await expect(page.locator('[aria-live="assertive"]')).toContainText("Column To Do");
     await step(page, "ArrowRight");
-    await step(page, "ArrowRight");
     await expect(page.locator('[aria-live="assertive"]')).toContainText(
       "Column To Do moved to position 2 of 3.",
     );
@@ -350,6 +348,46 @@ test.describe("reordering columns", () => {
     expect(move?.args).toEqual({ id: "seed-c1", afterColumnId: "seed-c2" });
   });
 
+  test("moves a column to the end with the arrows and back with the left arrow", async ({
+    page,
+    orbit,
+  }) => {
+    await page.goto(board);
+    const handle = page.getByRole("button", { name: "Reorder column To Do" });
+    await expect(handle).toBeVisible();
+    const live = page.locator('[aria-live="assertive"]');
+
+    await handle.focus();
+    await step(page, "Space");
+    await step(page, "ArrowRight");
+    await expect(live).toContainText("Column To Do moved to position 2 of 3.");
+    await step(page, "ArrowRight");
+    await expect(live).toContainText("Column To Do moved to position 3 of 3.");
+    await step(page, "ArrowLeft");
+    await expect(live).toContainText("Column To Do moved to position 2 of 3.");
+    await step(page, "Space");
+
+    await expect.poll(() => columnNames(page)).toEqual(["In Progress", "To Do", "Done"]);
+    expect(await orbit.calls("move_column")).toHaveLength(1);
+  });
+
+  test("a single arrow press never leaves the column where it was", async ({ page, orbit }) => {
+    await page.goto(board);
+    const handle = page.getByRole("button", { name: "Reorder column In Progress" });
+    await expect(handle).toBeVisible();
+    const live = page.locator('[aria-live="assertive"]');
+
+    await handle.focus();
+    await step(page, "Space");
+    await step(page, "ArrowLeft");
+    await expect(live).toContainText("Column In Progress moved to position 1 of 3.");
+    await step(page, "Space");
+
+    await expect.poll(() => columnNames(page)).toEqual(["In Progress", "To Do", "Done"]);
+    const [move] = await orbit.calls("move_column");
+    expect(move?.args).toEqual({ id: "seed-c2", afterColumnId: null });
+  });
+
   test("restores the column order when the backend refuses the move", async ({ page, orbit }) => {
     await page.goto(board);
     await orbit.failNext("move_column", { code: "NOT_FOUND", message: "gone" });
@@ -358,7 +396,6 @@ test.describe("reordering columns", () => {
     await expect(handle).toBeVisible();
     await handle.focus();
     await step(page, "Space");
-    await step(page, "ArrowRight");
     await step(page, "ArrowRight");
     await expect(page.locator('[aria-live="assertive"]')).toContainText(
       "Column To Do moved to position 2 of 3.",

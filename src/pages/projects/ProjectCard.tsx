@@ -88,7 +88,7 @@ export function ProjectCard({ project, onEdit, onArchive, onRestore, onDelete }:
       </div>
 
       <p
-        className={`line-clamp-2 min-h-10 text-small ${hasDescription ? "text-fg-secondary" : "text-fg-subtle"}`}
+        className={`line-clamp-2 min-h-10 text-small ${hasDescription ? "text-fg-secondary" : "text-fg-muted"}`}
       >
         {hasDescription ? project.description : t("projects.noDescription")}
       </p>

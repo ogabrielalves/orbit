@@ -57,7 +57,7 @@ export function DropdownMenu({
                       key={item.id}
                       disabled={item.isDisabled}
                       onSelect={item.onSelect}
-                      className={`flex cursor-pointer items-center gap-2.5 rounded-sm px-2.5 py-2 text-small outline-none data-disabled:pointer-events-none data-disabled:text-fg-disabled data-highlighted:bg-surface-muted ${toneClass}`}
+                      className={`flex cursor-pointer items-center gap-2.5 rounded-sm px-2.5 py-2 text-small outline-none data-disabled:pointer-events-none data-disabled:text-fg-disabled data-highlighted:bg-primary-soft data-highlighted:ring-2 data-highlighted:ring-primary data-highlighted:ring-inset ${toneClass}`}
                     >
                       {hasIcon && <Icon aria-hidden="true" className="size-4 shrink-0" />}
                       <span className="flex-1">{item.label}</span>

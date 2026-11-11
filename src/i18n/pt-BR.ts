@@ -845,6 +845,10 @@ export const ptBR = {
     afternoon: "Boa tarde",
     evening: "Boa noite",
   },
+  a11y: {
+    skipToContent: "Ir para o conteúdo",
+    welcomePageTitle: "Boas-vindas",
+  },
   greetingNamed: {
     morning: "Bom dia, {{name}}",
     afternoon: "Boa tarde, {{name}}",

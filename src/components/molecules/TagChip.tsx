@@ -26,7 +26,7 @@ export function TagChip({ name, color, removeLabel, onRemove }: TagChipProps) {
             type="button"
             aria-label={removeLabel}
             onClick={onRemove}
-            className="-mr-1 flex size-4 shrink-0 items-center justify-center rounded-full text-fg-muted transition-colors hover:bg-border hover:text-fg"
+            className="-my-1 -mr-2 flex size-6 shrink-0 items-center justify-center rounded-full text-fg-muted transition-colors hover:bg-border hover:text-fg"
           >
             <CloseIcon aria-hidden="true" className="size-3" />
           </button>

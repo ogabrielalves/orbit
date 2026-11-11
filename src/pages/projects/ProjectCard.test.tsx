@@ -49,7 +49,10 @@ describe("ProjectCard", () => {
   it("shows a muted fallback when there is no description", async () => {
     renderCard(createProjectFixture({ description: "   " }));
 
-    expect(await screen.findByText("No description")).toBeInTheDocument();
+    const fallback = await screen.findByText("No description");
+    expect(fallback).toBeInTheDocument();
+    expect(fallback).toHaveClass("text-fg-muted");
+    expect(fallback).not.toHaveClass("text-fg-subtle");
   });
 
   it.each([

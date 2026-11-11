@@ -10,6 +10,12 @@ describe("TagChip", () => {
     expect(screen.getByText("Bug")).toBeInTheDocument();
   });
 
+  it("gives the remove button a 24px target", () => {
+    render(<TagChip name="Bug" color={null} removeLabel="Remove Bug" onRemove={() => undefined} />);
+
+    expect(screen.getByRole("button", { name: "Remove Bug" })).toHaveClass("size-6");
+  });
+
   it("has no remove button without a handler", () => {
     render(<TagChip name="Bug" color={null} />);
 

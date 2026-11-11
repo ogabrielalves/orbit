@@ -48,6 +48,18 @@ describe("DropdownMenu", () => {
     expect(await screen.findByText("F2")).toBeInTheDocument();
   });
 
+  it("marks the highlighted item with a ring and a tint, not only a faint background", async () => {
+    renderMenu();
+    await userEvent.click(screen.getByRole("button", { name: "Project actions" }));
+
+    const item = await screen.findByRole("menuitem", { name: /Edit project/ });
+
+    expect(item).toHaveClass("data-highlighted:ring-2");
+    expect(item).toHaveClass("data-highlighted:ring-primary");
+    expect(item).toHaveClass("data-highlighted:bg-primary-soft");
+    expect(item).not.toHaveClass("data-highlighted:bg-surface-muted");
+  });
+
   it("calls onSelect and closes when an item is chosen", async () => {
     const { onEdit } = renderMenu();
 

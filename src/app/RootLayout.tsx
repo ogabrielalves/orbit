@@ -2,8 +2,11 @@ import { Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useBreadcrumb } from "@/app/useBreadcrumb";
+import { useDocumentMeta } from "@/app/useDocumentMeta";
+import { useRouteFocus } from "@/app/useRouteFocus";
 import { WindowCloseGuard } from "@/app/WindowCloseGuard";
 import { SearchTrigger } from "@/components/molecules/SearchTrigger";
+import { SkipLink } from "@/components/molecules/SkipLink";
 import { Sidebar } from "@/components/organisms/Sidebar";
 import { Topbar } from "@/components/organisms/Topbar";
 import { AppShell } from "@/components/templates/AppShell";
@@ -35,6 +38,11 @@ export function RootLayout() {
   const isWelcome = pathname === WELCOME_PATH;
   const isGateReady = gate === "ready";
   const isShellActive = isGateReady && !isWelcome;
+  const titleLabels = isWelcome
+    ? [t("a11y.welcomePageTitle")]
+    : breadcrumb.map((item) => item.label);
+  const documentTitle = useDocumentMeta(titleLabels);
+  const announcement = useRouteFocus(documentTitle, isShellActive);
 
   function handleToggleSidebar() {
     if (isDesktop) {
@@ -92,24 +100,34 @@ export function RootLayout() {
   ) : null;
 
   return (
-    <AppShell
-      sidebar={sidebar}
-      topbar={
-        <Topbar
-          breadcrumb={breadcrumb}
-          actions={
-            <SearchTrigger
-              label={t("topbar.searchPlaceholder")}
-              shortcut="Ctrl K"
-              onClick={() => openPalette(undefined)}
-            />
-          }
+    <>
+      <SkipLink label={t("a11y.skipToContent")} />
+      <div aria-live="polite" className="sr-only">
+        {announcement}
+      </div>
+      <AppShell
+        sidebar={sidebar}
+        topbar={
+          <Topbar
+            breadcrumb={breadcrumb}
+            actions={
+              <SearchTrigger
+                label={t("topbar.searchPlaceholder")}
+                shortcut="Ctrl K"
+                onClick={() => openPalette(undefined)}
+              />
+            }
+          />
+        }
+      >
+        <Outlet />
+        <WindowCloseGuard />
+        <CommandPalette
+          isOpen={isPaletteOpen}
+          onClose={closePalette}
+          initialAction={paletteAction}
         />
-      }
-    >
-      <Outlet />
-      <WindowCloseGuard />
-      <CommandPalette isOpen={isPaletteOpen} onClose={closePalette} initialAction={paletteAction} />
-    </AppShell>
+      </AppShell>
+    </>
   );
 }

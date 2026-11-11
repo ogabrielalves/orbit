@@ -841,6 +841,10 @@ export const en: Widen<typeof ptBR> = {
     afternoon: "Good afternoon",
     evening: "Good evening",
   },
+  a11y: {
+    skipToContent: "Skip to content",
+    welcomePageTitle: "Welcome",
+  },
   greetingNamed: {
     morning: "Good morning, {{name}}",
     afternoon: "Good afternoon, {{name}}",

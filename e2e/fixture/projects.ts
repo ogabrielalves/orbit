@@ -6,6 +6,7 @@ import type {
   ProjectDetails,
   UpdateProjectInput,
 } from "@/bindings";
+import { removeProjectContents } from "./cascade";
 import { fail } from "./failure";
 import type { State } from "./state";
 
@@ -130,6 +131,7 @@ export function createProjects(state: State, clock: Clock) {
 
   function remove(id: string): null {
     const current = findProject(state, id);
+    removeProjectContents(state, id);
     state.projects = state.projects.filter((candidate) => candidate.id !== id);
     state.favorites = state.favorites.filter((favorite) => favorite.entityId !== id);
     record(id, "deleted", { name: { from: current.name, to: null } });
@@ -137,11 +139,26 @@ export function createProjects(state: State, clock: Clock) {
   }
 
   function get(id: string): ProjectDetails {
+    const project = findProject(state, id);
+    const visible = state.tasks.filter(
+      (task) => task.projectId === id && task.archivedAt === null && task.parentTaskId === null,
+    );
+    const boards = state.boards
+      .filter((board) => board.projectId === id)
+      .sort((a, b) =>
+        a.createdAt === b.createdAt ? (a.id < b.id ? -1 : 1) : a.createdAt < b.createdAt ? -1 : 1,
+      )
+      .map((board) => ({
+        id: board.id,
+        name: board.name,
+        createdAt: board.createdAt,
+        taskCount: visible.filter((task) => task.boardId === board.id).length,
+      }));
     return {
-      project: findProject(state, id),
-      boards: [],
-      taskCount: 0,
-      backlogTaskCount: 0,
+      project,
+      boards,
+      taskCount: visible.length,
+      backlogTaskCount: visible.filter((task) => task.boardId === null).length,
     };
   }
 

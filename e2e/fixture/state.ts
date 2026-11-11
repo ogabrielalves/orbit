@@ -1,4 +1,22 @@
-import type { ActivityEntry, FavoriteEntry, Project, Settings } from "@/bindings";
+import type {
+  ActivityEntry,
+  Attachment,
+  Board,
+  BoardColumn,
+  ChecklistItem,
+  Comment,
+  FavoriteEntry,
+  Project,
+  Settings,
+  Tag,
+  Task,
+} from "@/bindings";
+
+import { type SeedNote, type StoredNote, storedNoteFrom } from "./vaultTypes";
+
+export type StoredColumn = Omit<BoardColumn, "taskCount">;
+export type StoredTag = Omit<Tag, "taskCount">;
+export type TaskTag = { taskId: string; tagId: string };
 
 export type State = {
   sequence: number;
@@ -6,11 +24,28 @@ export type State = {
   projects: Project[];
   activity: ActivityEntry[];
   favorites: FavoriteEntry[];
+  boards: Board[];
+  columns: StoredColumn[];
+  tasks: Task[];
+  checklist: ChecklistItem[];
+  comments: Comment[];
+  tags: StoredTag[];
+  taskTags: TaskTag[];
+  attachments: Attachment[];
+  folders: string[];
+  notes: StoredNote[];
 };
 
 export type Seed = {
+  folders?: string[];
+  notes?: SeedNote[];
   settings?: Partial<Settings>;
   projects?: Project[];
+  boards?: Board[];
+  columns?: StoredColumn[];
+  tasks?: Task[];
+  tags?: StoredTag[];
+  taskTags?: TaskTag[];
 };
 
 export const STORAGE_KEY = "orbit-e2e-state";
@@ -22,6 +57,16 @@ export function createInitialState(seed: Seed): State {
     projects: seed.projects ?? [],
     activity: [],
     favorites: [],
+    boards: seed.boards ?? [],
+    columns: seed.columns ?? [],
+    tasks: seed.tasks ?? [],
+    checklist: [],
+    comments: [],
+    tags: seed.tags ?? [],
+    taskTags: seed.taskTags ?? [],
+    attachments: [],
+    folders: seed.folders ?? [],
+    notes: (seed.notes ?? []).map(storedNoteFrom),
   };
 }
 

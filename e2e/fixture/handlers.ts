@@ -1,7 +1,14 @@
 import type { Project, Settings } from "@/bindings";
+import { createRecorder } from "./activity";
+import { createBoards } from "./boards";
+import { createDetails } from "./details";
 import { fail } from "./failure";
+import { createFolders } from "./folders";
+import { createLinks } from "./links";
+import { createNotes } from "./notes";
 import { type Clock, createProjects } from "./projects";
 import type { State } from "./state";
+import { createTasks } from "./tasks";
 import type { Handlers } from "./types";
 
 const USER_NAME_MAX_LENGTH = 60;
@@ -28,6 +35,13 @@ function sortByRecency(projects: Project[]): Project[] {
 
 export function createHandlers(state: State, clock: Clock): Handlers {
   const projects = createProjects(state, clock);
+  const record = createRecorder(state, clock);
+  const boards = createBoards(state, clock, record);
+  const tasks = createTasks(state, clock, record);
+  const details = createDetails(state, clock, record);
+  const folders = createFolders(state, record);
+  const notes = createNotes(state, clock, record);
+  const links = createLinks(state);
 
   function updateSettings(input: UpdateSettingsInput): Settings {
     const next: Settings = { ...state.settings };
@@ -91,5 +105,50 @@ export function createHandlers(state: State, clock: Clock): Handlers {
     }),
     listRecentNotes: () => [],
     listFavorites: () => state.favorites,
+    getBoard: boards.details,
+    createBoard: boards.create,
+    updateBoard: boards.update,
+    deleteBoard: boards.remove,
+    createColumn: boards.createColumn,
+    updateColumn: boards.updateColumn,
+    moveColumn: boards.moveColumn,
+    deleteColumn: boards.deleteColumn,
+    createTask: tasks.create,
+    getTask: tasks.find,
+    listBoardTasks: tasks.listByBoard,
+    updateTask: tasks.update,
+    archiveTask: tasks.archive,
+    restoreTask: tasks.restore,
+    deleteTask: tasks.remove,
+    moveTask: tasks.move,
+    duplicateTask: tasks.duplicate,
+    getTaskHistory: tasks.history,
+    createSubtask: tasks.createSubtask,
+    listSubtasks: tasks.listSubtasks,
+    setSubtaskDone: tasks.setSubtaskDone,
+    moveSubtask: tasks.moveSubtask,
+    createChecklistItem: details.checklist.create,
+    listChecklistItems: details.checklist.list,
+    updateChecklistItem: details.checklist.update,
+    moveChecklistItem: details.checklist.move,
+    deleteChecklistItem: details.checklist.remove,
+    createComment: details.comments.create,
+    listComments: details.comments.list,
+    updateComment: details.comments.update,
+    deleteComment: details.comments.remove,
+    createTag: details.tags.create,
+    listTags: details.tags.list,
+    updateTag: details.tags.update,
+    deleteTag: details.tags.remove,
+    listTaskTags: details.tags.listForTask,
+    assignTag: details.tags.assign,
+    unassignTag: details.tags.unassign,
+    importAttachment: details.attachments.import,
+    listAttachments: details.attachments.list,
+    removeAttachment: details.attachments.remove,
+    openAttachment: details.attachments.open,
+    ...folders,
+    ...notes,
+    ...links,
   };
 }

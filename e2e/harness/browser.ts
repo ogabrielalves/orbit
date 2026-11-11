@@ -76,7 +76,7 @@ function install() {
       const values = Object.values((args ?? {}) as Record<string, unknown>);
       const result = handler(...values);
       saveState(state, window.sessionStorage);
-      return result;
+      return structuredClone(result);
     },
     { shouldMockEvents: true },
   );

@@ -12,6 +12,7 @@ vi.mock("@tauri-apps/api/webview", () => ({
 
 vi.mock("@tauri-apps/plugin-dialog", () => ({
   open: vi.fn().mockResolvedValue(null),
+  save: vi.fn().mockResolvedValue(null),
 }));
 
 vi.mock("@/bindings", () => ({
@@ -35,6 +36,13 @@ vi.mock("@/bindings", () => ({
       data: { path: null, isAccessible: false },
     }),
     setupVault: vi.fn(),
+    reindexVault: vi.fn(),
+    exportDatabase: vi.fn(),
+    importDatabase: vi.fn(),
+    getDatabaseStatus: vi.fn().mockResolvedValue({
+      status: "ok",
+      data: { state: "healthy", integrityIssues: [], foreignKeyViolations: 0, checkedAt: null },
+    }),
     listFolders: vi.fn().mockResolvedValue({ status: "ok", data: [] }),
     createFolder: vi.fn(),
     renameFolder: vi.fn(),

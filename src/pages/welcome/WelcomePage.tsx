@@ -8,9 +8,8 @@ import { Input } from "@/components/atoms/Input";
 import { FormField } from "@/components/molecules/FormField";
 import { getErrorMessageKey } from "@/lib/appError";
 import { useSetupVault } from "@/modules/notes/queries";
+import { USER_NAME_MAX_LENGTH } from "@/modules/settings/limits";
 import { useSettings, useUpdateSettings } from "@/modules/settings/queries";
-
-export const USER_NAME_MAX_LENGTH = 60;
 
 export function WelcomePage() {
   const { t } = useTranslation();

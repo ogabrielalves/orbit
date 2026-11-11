@@ -6,6 +6,7 @@ import TrashIcon from "@/assets/icons/linha/lixeira.svg?react";
 import type { Attachment } from "@/bindings";
 import { Button } from "@/components/atoms/Button";
 import { IconButton } from "@/components/atoms/IconButton";
+import { QueryStatus } from "@/components/molecules/QueryStatus";
 import { ConfirmDialog } from "@/components/organisms/ConfirmDialog";
 import { formatFileSize } from "@/lib/format";
 import {
@@ -88,6 +89,12 @@ export function TaskAttachments({ taskId }: TaskAttachmentsProps) {
           {t("tasks.attachments.attach")}
         </Button>
       </div>
+      <QueryStatus
+        isPending={attachmentsQuery.isPending}
+        isError={attachmentsQuery.isError}
+        errorTitle={t("tasks.attachments.loadError")}
+        onRetry={() => void attachmentsQuery.refetch()}
+      />
       {hasAttachments && (
         <ul aria-label={t("tasks.attachments.list")} className="flex flex-col gap-2">
           {attachments.map((attachment) => (

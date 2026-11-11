@@ -305,6 +305,7 @@ export const en: Widen<typeof ptBR> = {
     },
     subtasks: {
       title: "Subtasks",
+      loadError: "Could not load the subtasks",
       list: "Subtask list",
       progress: "{{done}}/{{total}} done",
       addLabel: "New subtask",
@@ -318,6 +319,7 @@ export const en: Widen<typeof ptBR> = {
     },
     checklist: {
       title: "Checklist",
+      loadError: "Could not load the checklist",
       list: "Checklist items",
       progress: "{{done}}/{{total}} done",
       addLabel: "New checklist item",
@@ -331,6 +333,7 @@ export const en: Widen<typeof ptBR> = {
     },
     tags: {
       title: "Tags",
+      loadError: "Could not load the tags",
       list: "Tags of this task",
       empty: "No tags yet",
       add: "Add tag",
@@ -345,6 +348,7 @@ export const en: Widen<typeof ptBR> = {
     },
     comments: {
       title: "Comments",
+      loadError: "Could not load the comments",
       list: "Comments list",
       empty: "No comments yet",
       newLabel: "New comment",
@@ -385,6 +389,7 @@ export const en: Widen<typeof ptBR> = {
     },
     attachments: {
       attach: "Attach",
+      loadError: "Could not load the attachments",
       title: "Attachments",
       list: "Attached files",
       open: "Open {{name}}",
@@ -522,6 +527,7 @@ export const en: Widen<typeof ptBR> = {
       columnLabel: "Column",
       confirm: "Send",
       noBoards: "This project has no boards yet. Create one first.",
+      loadError: "Could not load the boards",
       toast: "Task sent to “{{board}}”",
     },
     dnd: {

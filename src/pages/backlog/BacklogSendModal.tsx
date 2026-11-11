@@ -6,6 +6,7 @@ import { Button } from "@/components/atoms/Button";
 import { Select } from "@/components/atoms/Select";
 import { Skeleton } from "@/components/atoms/Skeleton";
 import { FormField } from "@/components/molecules/FormField";
+import { QueryStatus } from "@/components/molecules/QueryStatus";
 import { Modal } from "@/components/organisms/Modal";
 import { useBoard } from "@/modules/boards/queries";
 import { useProject } from "@/modules/projects/queries";
@@ -34,7 +35,10 @@ export function BacklogSendModal({ item, onClose }: BacklogSendModalProps) {
     ? chosenColumnId
     : (columns[0]?.id ?? "");
 
-  const isLoading = projectQuery.isPending || (hasBoard && boardQuery.isPending);
+  const hasBoardQueryFailed = hasBoard && boardQuery.isError;
+  const failedQuery = projectQuery.isError ? projectQuery : boardQuery;
+  const hasFailed = projectQuery.isError || hasBoardQueryFailed;
+  const isLoading = !hasFailed && (projectQuery.isPending || (hasBoard && boardQuery.isPending));
   const hasNoBoards = projectQuery.isSuccess && boards.length === 0;
   const canSend = hasBoard && columnId !== "";
 
@@ -86,8 +90,16 @@ export function BacklogSendModal({ item, onClose }: BacklogSendModalProps) {
             <Skeleton className="h-10 w-full" />
           </div>
         )}
+        {hasFailed && (
+          <QueryStatus
+            isPending={false}
+            isError
+            errorTitle={t("backlog.send.loadError")}
+            onRetry={() => void failedQuery.refetch()}
+          />
+        )}
         {hasNoBoards && <p className="text-small text-fg-muted">{t("backlog.send.noBoards")}</p>}
-        {!isLoading && !hasNoBoards && (
+        {!isLoading && !hasFailed && !hasNoBoards && (
           <>
             <FormField label={t("backlog.send.boardLabel")}>
               {({ id }) => (

@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import PlusIcon from "@/assets/icons/linha/mais.svg?react";
 import { Button } from "@/components/atoms/Button";
 import { Input } from "@/components/atoms/Input";
+import { QueryStatus } from "@/components/molecules/QueryStatus";
 import { TagChip } from "@/components/molecules/TagChip";
 import { projectColorKeys } from "@/modules/projects/colors";
 import { TAG_NAME_MAX_LENGTH } from "@/modules/tags/limits";
@@ -40,6 +41,9 @@ export function TaskTags({ taskId }: TaskTagsProps) {
   const hasSameName = allTags.some((tag) => tag.name.toLowerCase() === lowerName);
   const canCreate = typedName !== "" && !hasSameName;
   const hasAssignedTags = assignedTags.length > 0;
+  const isPending = tagsQuery.isPending || taskTagsQuery.isPending;
+  const isError = tagsQuery.isError || taskTagsQuery.isError;
+  const isReady = tagsQuery.isSuccess && taskTagsQuery.isSuccess;
   const hasAvailableTags = availableTags.length > 0;
   const isBusy = createTag.isPending || assignTag.isPending;
   const nextColor = projectColorKeys[allTags.length % projectColorKeys.length];
@@ -104,7 +108,16 @@ export function TaskTags({ taskId }: TaskTagsProps) {
           </Button>
         )}
       </div>
-      {hasAssignedTags ? (
+      <QueryStatus
+        isPending={isPending && !isError}
+        isError={isError}
+        errorTitle={t("tasks.tags.loadError")}
+        onRetry={() => {
+          void tagsQuery.refetch();
+          void taskTagsQuery.refetch();
+        }}
+      />
+      {hasAssignedTags && (
         <ul aria-label={t("tasks.tags.list")} className="flex flex-wrap gap-1.5">
           {assignedTags.map((tag) => (
             <li key={tag.id} className="max-w-full">
@@ -117,7 +130,8 @@ export function TaskTags({ taskId }: TaskTagsProps) {
             </li>
           ))}
         </ul>
-      ) : (
+      )}
+      {isReady && !hasAssignedTags && (
         <p className="text-small text-fg-muted">{t("tasks.tags.empty")}</p>
       )}
       {isPickerOpen && (

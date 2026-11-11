@@ -7,6 +7,7 @@ import { Button } from "@/components/atoms/Button";
 import { IconButton } from "@/components/atoms/IconButton";
 import { Textarea } from "@/components/atoms/Textarea";
 import { DropdownMenu } from "@/components/molecules/DropdownMenu";
+import { QueryStatus } from "@/components/molecules/QueryStatus";
 import { ConfirmDialog } from "@/components/organisms/ConfirmDialog";
 import { formatRelativeTime } from "@/lib/dates";
 import { matchesHotkey } from "@/lib/hotkey";
@@ -155,6 +156,7 @@ export function TaskComments({ taskId }: TaskCommentsProps) {
 
   const comments = commentsQuery.data ?? [];
   const hasComments = comments.length > 0;
+  const hasNoComments = commentsQuery.isSuccess && !hasComments;
   const isBodyBlank = body.trim() === "";
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -170,15 +172,20 @@ export function TaskComments({ taskId }: TaskCommentsProps) {
       <h3 className="font-display text-heading-3 font-semibold text-fg">
         {t("tasks.comments.title")}
       </h3>
-      {hasComments ? (
+      <QueryStatus
+        isPending={commentsQuery.isPending}
+        isError={commentsQuery.isError}
+        errorTitle={t("tasks.comments.loadError")}
+        onRetry={() => void commentsQuery.refetch()}
+      />
+      {hasComments && (
         <ul aria-label={t("tasks.comments.list")} className="flex flex-col gap-2">
           {comments.map((comment) => (
             <CommentItem key={comment.id} taskId={taskId} comment={comment} />
           ))}
         </ul>
-      ) : (
-        <p className="text-small text-fg-muted">{t("tasks.comments.empty")}</p>
       )}
+      {hasNoComments && <p className="text-small text-fg-muted">{t("tasks.comments.empty")}</p>}
       <form onSubmit={handleSubmit} onKeyDown={submitOnShortcut} className="flex flex-col gap-2">
         <Textarea
           rows={3}

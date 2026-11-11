@@ -303,6 +303,7 @@ export const ptBR = {
     },
     subtasks: {
       title: "Subtarefas",
+      loadError: "Não foi possível carregar as subtarefas",
       list: "Lista de subtarefas",
       progress: "{{done}}/{{total}} concluídas",
       addLabel: "Nova subtarefa",
@@ -316,6 +317,7 @@ export const ptBR = {
     },
     checklist: {
       title: "Checklist",
+      loadError: "Não foi possível carregar o checklist",
       list: "Itens do checklist",
       progress: "{{done}}/{{total}} concluídos",
       addLabel: "Novo item do checklist",
@@ -329,6 +331,7 @@ export const ptBR = {
     },
     tags: {
       title: "Tags",
+      loadError: "Não foi possível carregar as tags",
       list: "Tags desta tarefa",
       empty: "Nenhuma tag ainda",
       add: "Adicionar tag",
@@ -343,6 +346,7 @@ export const ptBR = {
     },
     comments: {
       title: "Comentários",
+      loadError: "Não foi possível carregar os comentários",
       list: "Lista de comentários",
       empty: "Nenhum comentário ainda",
       newLabel: "Novo comentário",
@@ -386,6 +390,7 @@ export const ptBR = {
     },
     attachments: {
       attach: "Anexar",
+      loadError: "Não foi possível carregar os anexos",
       title: "Anexos",
       list: "Arquivos anexados",
       open: "Abrir {{name}}",
@@ -523,6 +528,7 @@ export const ptBR = {
       columnLabel: "Coluna",
       confirm: "Enviar",
       noBoards: "Este projeto ainda não tem quadros. Crie um primeiro.",
+      loadError: "Não foi possível carregar os quadros",
       toast: "Tarefa enviada para “{{board}}”",
     },
     dnd: {

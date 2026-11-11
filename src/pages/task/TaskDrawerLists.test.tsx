@@ -287,7 +287,9 @@ describe("TaskDrawer subtasks and checklist", () => {
       renderApp("/boards/b1?task=t1");
 
       expect(await screen.findByRole("heading", { name: "Subtarefas" })).toBeInTheDocument();
-      expect(screen.getByRole("textbox", { name: "Novo item do checklist" })).toBeInTheDocument();
+      expect(
+        await screen.findByRole("textbox", { name: "Novo item do checklist" }),
+      ).toBeInTheDocument();
     });
   });
 });

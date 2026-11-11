@@ -2,26 +2,44 @@ import {
   createRootRoute,
   createRoute,
   createRouter,
+  lazyRouteComponent,
   type RouterHistory,
 } from "@tanstack/react-router";
 import type { ParseKeys } from "i18next";
 import { RootLayout } from "@/app/RootLayout";
-import { BacklogPage } from "@/pages/backlog/BacklogPage";
+import { RoutePending } from "@/components/molecules/RoutePending";
 import { parseBacklogSearch } from "@/pages/backlog/backlogSearch";
-import { BoardPage } from "@/pages/board/BoardPage";
 import { parseBoardSearch } from "@/pages/board/boardSearch";
 import { DashboardPage } from "@/pages/dashboard/DashboardPage";
-import { FavoritesPage } from "@/pages/favorites/FavoritesPage";
-import { GraphPage } from "@/pages/graph/GraphPage";
 import { NotFoundPage } from "@/pages/not-found/NotFoundPage";
-import { NotesPage } from "@/pages/notes/NotesPage";
 import { parseNotesSearch } from "@/pages/notes/notesSearch";
-import { ProjectDetailPage } from "@/pages/projects/ProjectDetailPage";
-import { ProjectsPage } from "@/pages/projects/ProjectsPage";
 import { parseProjectDetailSearch } from "@/pages/projects/projectDetailSearch";
 import { parseProjectsSearch } from "@/pages/projects/projectsSearch";
-import { SettingsPage } from "@/pages/settings/SettingsPage";
 import { WelcomePage } from "@/pages/welcome/WelcomePage";
+
+const lazyBacklogPage = lazyRouteComponent(
+  () => import("@/pages/backlog/BacklogPage"),
+  "BacklogPage",
+);
+const lazyBoardPage = lazyRouteComponent(() => import("@/pages/board/BoardPage"), "BoardPage");
+const lazyFavoritesPage = lazyRouteComponent(
+  () => import("@/pages/favorites/FavoritesPage"),
+  "FavoritesPage",
+);
+const lazyGraphPage = lazyRouteComponent(() => import("@/pages/graph/GraphPage"), "GraphPage");
+const lazyNotesPage = lazyRouteComponent(() => import("@/pages/notes/NotesPage"), "NotesPage");
+const lazyProjectDetailPage = lazyRouteComponent(
+  () => import("@/pages/projects/ProjectDetailPage"),
+  "ProjectDetailPage",
+);
+const lazyProjectsPage = lazyRouteComponent(
+  () => import("@/pages/projects/ProjectsPage"),
+  "ProjectsPage",
+);
+const lazySettingsPage = lazyRouteComponent(
+  () => import("@/pages/settings/SettingsPage"),
+  "SettingsPage",
+);
 
 const rootRoute = createRootRoute({
   component: RootLayout,
@@ -38,7 +56,7 @@ const dashboardRoute = createRoute({
 const projectsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/projects",
-  component: ProjectsPage,
+  component: lazyProjectsPage,
   validateSearch: parseProjectsSearch,
   staticData: { titleKey: "nav.projects" },
 });
@@ -46,7 +64,7 @@ const projectsRoute = createRoute({
 const projectDetailRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/projects/$projectId",
-  component: ProjectDetailPage,
+  component: lazyProjectDetailPage,
   validateSearch: parseProjectDetailSearch,
   staticData: { titleKey: "nav.projects" },
 });
@@ -54,7 +72,7 @@ const projectDetailRoute = createRoute({
 const boardRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/boards/$boardId",
-  component: BoardPage,
+  component: lazyBoardPage,
   validateSearch: parseBoardSearch,
   staticData: { titleKey: "nav.boards" },
 });
@@ -62,7 +80,7 @@ const boardRoute = createRoute({
 const backlogRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/backlog",
-  component: BacklogPage,
+  component: lazyBacklogPage,
   validateSearch: parseBacklogSearch,
   staticData: { titleKey: "nav.backlog" },
 });
@@ -70,7 +88,7 @@ const backlogRoute = createRoute({
 const notesRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/notes",
-  component: NotesPage,
+  component: lazyNotesPage,
   validateSearch: parseNotesSearch,
   staticData: { titleKey: "nav.notes" },
 });
@@ -78,7 +96,7 @@ const notesRoute = createRoute({
 const noteDetailRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/notes/$noteId",
-  component: NotesPage,
+  component: lazyNotesPage,
   validateSearch: parseNotesSearch,
   staticData: { titleKey: "nav.notes" },
 });
@@ -86,21 +104,21 @@ const noteDetailRoute = createRoute({
 const graphRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/graph",
-  component: GraphPage,
+  component: lazyGraphPage,
   staticData: { titleKey: "nav.graph" },
 });
 
 const favoritesRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/favorites",
-  component: FavoritesPage,
+  component: lazyFavoritesPage,
   staticData: { titleKey: "nav.favorites" },
 });
 
 const settingsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/settings",
-  component: SettingsPage,
+  component: lazySettingsPage,
   staticData: { titleKey: "nav.settings" },
 });
 
@@ -125,7 +143,12 @@ const routeTree = rootRoute.addChildren([
 ]);
 
 export function createAppRouter(history?: RouterHistory) {
-  return createRouter({ routeTree, history });
+  return createRouter({
+    routeTree,
+    history,
+    defaultPendingComponent: RoutePending,
+    defaultPendingMs: 120,
+  });
 }
 
 export const router = createAppRouter();

@@ -926,6 +926,26 @@ mod tests {
     }
 
     #[test]
+    fn rename_skips_a_linking_note_that_became_unreadable_and_still_rewrites_the_others() {
+        let fixture = fixture();
+        let target = new_note(&fixture, None, "Hibernate");
+        write(&fixture, "a.md", "---\nid: a1\n---\n# A\n[[Hibernate]]\n");
+        write(&fixture, "c.md", "---\nid: c1\n---\n# C\n[[Hibernate]]\n");
+        reindex(&fixture.state).expect("indexes");
+        let broken = [0xff, 0xfe, 0xfd];
+        fs::write(fixture.vault.path().join("a.md"), broken).expect("corrupts");
+
+        let result = rename(&fixture.state, &target.id, "JPA").expect("renames");
+
+        assert_eq!(result.rewritten_notes, 1);
+        assert_eq!(read(&fixture, "c.md"), "---\nid: c1\n---\n# C\n[[JPA]]\n");
+        assert_eq!(
+            fs::read(fixture.vault.path().join("a.md")).expect("reads"),
+            broken
+        );
+    }
+
+    #[test]
     fn rename_also_updates_links_the_note_has_to_itself() {
         let fixture = fixture();
         let note = new_note(&fixture, None, "Self");

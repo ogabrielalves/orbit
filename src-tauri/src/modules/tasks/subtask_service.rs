@@ -214,6 +214,16 @@ mod tests {
     }
 
     #[test]
+    fn a_task_without_a_parent_reference_is_an_internal_error_when_asked_for_its_parent() {
+        let state = state();
+        let top_level = parent(&state, "Top level");
+        let child = subtask(&state, &top_level.id, "Child");
+
+        assert_eq!(parent_of(&child).expect("has a parent"), top_level.id);
+        assert!(matches!(parent_of(&top_level), Err(AppError::Internal)));
+    }
+
+    #[test]
     fn create_inherits_the_project_and_stays_off_every_board() {
         let state = state();
         let task = parent(&state, "Parent");

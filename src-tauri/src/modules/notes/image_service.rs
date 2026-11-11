@@ -448,6 +448,34 @@ mod tests {
     }
 
     #[test]
+    fn a_folder_named_like_an_image_is_not_served() {
+        let fixture = fixture();
+        fs::create_dir_all(fixture.vault.path().join("attachments/trap.png")).expect("creates dir");
+
+        let result = read(&fixture.state, "attachments/trap.png");
+
+        assert!(matches!(result, Err(AppError::NotFound(_))));
+    }
+
+    #[test]
+    fn pasting_fails_without_overwriting_when_the_target_name_is_a_folder() {
+        let fixture = fixture();
+        let note = note_in(&fixture, None, "Note");
+        let hash = content_hash(PNG);
+        let blocked = fixture.vault.path().join(format!(
+            "attachments/pasted-{}.png",
+            &hash[..NAME_HASH_LENGTH]
+        ));
+        fs::create_dir_all(&blocked).expect("creates dir");
+
+        let result = paste(&fixture, &note, PNG);
+
+        assert!(result.is_err());
+        assert!(blocked.is_dir());
+        assert_eq!(stored(&fixture).len(), 1);
+    }
+
+    #[test]
     fn the_depth_prefix_matches_the_folder_level() {
         assert_eq!(climb_to_root("note.md"), "");
         assert_eq!(climb_to_root("a/note.md"), "../");

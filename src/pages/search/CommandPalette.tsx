@@ -23,6 +23,8 @@ import { Spinner } from "@/components/atoms/Spinner";
 import { HighlightedText } from "@/components/molecules/HighlightedText";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { getErrorMessageKey } from "@/lib/appError";
+import { formatHotkey } from "@/lib/formatHotkey";
+import { creationShortcuts, isMacPlatform } from "@/lib/shortcuts";
 import { resolveProjectColor } from "@/modules/projects/colors";
 import { useProjects } from "@/modules/projects/queries";
 import { useSearchResults } from "@/modules/search/queries";
@@ -41,7 +43,7 @@ import {
 
 const SEARCH_DEBOUNCE_IN_MILLISECONDS = 200;
 
-type ProjectAction = "board" | "task";
+export type ProjectAction = "board" | "task";
 
 type Step =
   | { kind: "search" }
@@ -61,18 +63,29 @@ const categoryIcons: Record<SearchCategory, IconComponent> = {
 type CommandPaletteProps = {
   isOpen: boolean;
   onClose: () => void;
+  initialAction?: ProjectAction;
 };
 
 type IconRowProps = {
   icon: IconComponent;
+  hint?: string[];
   children: ReactNode;
 };
 
-function IconRow({ icon: Icon, children }: IconRowProps) {
+function IconRow({ icon: Icon, hint, children }: IconRowProps) {
+  const hasHint = hint !== undefined;
+
   return (
     <>
       <Icon aria-hidden="true" className="size-4.5 shrink-0 text-fg-muted" />
       <span className="min-w-0 flex-1 truncate text-body text-fg">{children}</span>
+      {hasHint && (
+        <span aria-hidden="true" className="flex shrink-0 items-center gap-1">
+          {hint.map((key) => (
+            <Kbd key={key}>{key}</Kbd>
+          ))}
+        </span>
+      )}
     </>
   );
 }
@@ -110,13 +123,21 @@ function Kbd({ children }: { children: ReactNode }) {
   );
 }
 
-function PaletteDialog({ onClose }: { onClose: () => void }) {
+function PaletteDialog({
+  onClose,
+  initialAction,
+}: {
+  onClose: () => void;
+  initialAction: ProjectAction | undefined;
+}) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const openHit = useOpenSearchHit();
   const listboxId = useId();
   const createTask = useCreateTask();
-  const [step, setStep] = useState<Step>({ kind: "search" });
+  const [step, setStep] = useState<Step>(
+    initialAction === undefined ? { kind: "search" } : { kind: "project", action: initialAction },
+  );
   const [query, setQuery] = useState("");
   const [rawActiveIndex, setRawActiveIndex] = useState(0);
 
@@ -148,25 +169,30 @@ function PaletteDialog({ onClose }: { onClose: () => void }) {
     onClose();
   }
 
-  const quickActions: { id: string; label: string; run: () => void }[] = [
+  const isMac = isMacPlatform();
+  const quickActions: { id: string; label: string; combo: string; run: () => void }[] = [
     {
       id: "new-task",
       label: t("search.actions.newTask"),
+      combo: creationShortcuts.newTask,
       run: () => goTo({ kind: "project", action: "task" }),
     },
     {
       id: "new-project",
       label: t("search.actions.newProject"),
+      combo: creationShortcuts.newProject,
       run: () => runAndClose(() => void navigate({ to: "/projects", search: { new: 1 } })),
     },
     {
       id: "new-board",
       label: t("search.actions.newBoard"),
+      combo: creationShortcuts.newBoard,
       run: () => goTo({ kind: "project", action: "board" }),
     },
     {
       id: "new-note",
       label: t("search.actions.newNote"),
+      combo: creationShortcuts.newNote,
       run: () => runAndClose(() => void navigate({ to: "/notes", search: { new: 1 } })),
     },
   ];
@@ -181,7 +207,11 @@ function PaletteDialog({ onClose }: { onClose: () => void }) {
       label: t("search.actions.title"),
       items: matchingActions.map((action) => ({
         id: action.id,
-        content: <IconRow icon={PlusIcon}>{action.label}</IconRow>,
+        content: (
+          <IconRow icon={PlusIcon} hint={formatHotkey(action.combo, isMac)}>
+            {action.label}
+          </IconRow>
+        ),
         onSelect: action.run,
       })),
     };
@@ -414,10 +444,10 @@ function PaletteDialog({ onClose }: { onClose: () => void }) {
   );
 }
 
-export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
+export function CommandPalette({ isOpen, onClose, initialAction }: CommandPaletteProps) {
   if (!isOpen) {
     return null;
   }
 
-  return <PaletteDialog onClose={onClose} />;
+  return <PaletteDialog onClose={onClose} initialAction={initialAction} />;
 }

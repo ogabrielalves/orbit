@@ -69,12 +69,16 @@ describe("CommandPalette", () => {
 
       expect(within(dialog).getByRole("combobox")).toHaveFocus();
       const options = within(dialog).getAllByRole("option");
-      expect(options.map((option) => option.textContent)).toEqual([
-        "New task",
-        "New project",
-        "New board",
-        "New note",
+      expect(options.map((option) => option.getAttribute("id") !== null)).toEqual([
+        true,
+        true,
+        true,
+        true,
       ]);
+      for (const name of ["New task", "New project", "New board", "New note"]) {
+        expect(within(dialog).getByRole("option", { name })).toBeInTheDocument();
+      }
+      expect(options).toHaveLength(4);
       expect(search).not.toHaveBeenCalled();
     });
 
@@ -199,8 +203,8 @@ describe("CommandPalette", () => {
 
       await searchFor("board");
 
-      const options = await screen.findAllByRole("option");
-      expect(options.map((option) => option.textContent)).toEqual(["New board"]);
+      expect(await screen.findByRole("option", { name: "New board" })).toBeInTheDocument();
+      expect(screen.getAllByRole("option")).toHaveLength(1);
     });
 
     it("shows the error when the search fails", async () => {

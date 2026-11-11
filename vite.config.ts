@@ -2,7 +2,7 @@ import { fileURLToPath } from "node:url";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import svgr from "vite-plugin-svgr";
-import { defineConfig } from "vitest/config";
+import { configDefaults, defineConfig } from "vitest/config";
 
 const tauriDevHost = process.env.TAURI_DEV_HOST;
 const hasTauriDevHost = tauriDevHost !== undefined;
@@ -25,6 +25,7 @@ export default defineConfig({
     globals: false,
     setupFiles: ["./src/test/setup.ts"],
     include: ["src/**/*.test.{ts,tsx}"],
+    exclude: [...configDefaults.exclude, "e2e/**", "dist-e2e/**"],
     passWithNoTests: true,
     testTimeout: 15_000,
     css: false,

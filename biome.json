@@ -22,6 +22,7 @@
   },
   "linter": {
     "enabled": true,
+    "domains": { "playwright": "none" },
     "rules": {
       "preset": "recommended",
       "style": {
@@ -46,6 +47,10 @@
     }
   },
   "overrides": [
+    {
+      "includes": ["e2e/**"],
+      "linter": { "domains": { "playwright": "recommended" } }
+    },
     {
       "includes": ["*.config.ts"],
       "linter": {

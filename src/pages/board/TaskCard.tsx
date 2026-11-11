@@ -43,6 +43,7 @@ export function TaskCard({
     const isOwnEvent = event.target === event.currentTarget;
     const canOpen = isEnter && isOwnEvent && !isDragging && onOpen !== undefined;
     if (canOpen) {
+      event.preventDefault();
       onOpen();
     }
   }

@@ -8,6 +8,7 @@ import { ProjectTile } from "@/components/atoms/ProjectTile";
 import { DropdownMenu } from "@/components/molecules/DropdownMenu";
 import { formatRelativeTime, formatShortDate } from "@/lib/dates";
 import { resolveProjectColor } from "@/modules/projects/colors";
+import { FavoriteToggle } from "@/pages/favorites/FavoriteToggle";
 
 type ProjectDetailHeaderProps = {
   project: Project;
@@ -67,6 +68,7 @@ export function ProjectDetailHeader({
         </div>
       </div>
       <div className="flex items-center gap-2">
+        <FavoriteToggle entityType="project" entityId={project.id} name={project.name} />
         <Button variant="secondary" onClick={onEdit}>
           {t("projects.detail.edit")}
         </Button>

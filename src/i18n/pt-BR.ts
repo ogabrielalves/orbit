@@ -767,6 +767,38 @@ export const ptBR = {
       taskCreated: "Tarefa criada em {{project}}",
     },
   },
+  favorites: {
+    toggle: {
+      add: "Adicionar aos favoritos",
+      remove: "Remover dos favoritos",
+    },
+    groups: {
+      project: "Projetos",
+      board: "Quadros",
+      task: "Tarefas",
+      note: "Notas",
+      folder: "Pastas",
+    },
+    count_one: "{{count}} favorito",
+    count_other: "{{count}} favoritos",
+    loadError: "Não foi possível carregar os favoritos",
+    empty: {
+      title: "Nenhum favorito ainda",
+      description:
+        "Marque a estrela em um projeto, quadro, tarefa, nota ou pasta para achá-lo aqui.",
+    },
+    archivedBadge: "Arquivado",
+    reorder: "Reordenar {{title}}",
+    sidebarEmpty: "Seus favoritos aparecem aqui",
+    dnd: {
+      instructions:
+        "Para reordenar, pressione espaço, use as setas e pressione espaço de novo para soltar.",
+      picked: "{{title}} selecionado.",
+      over: "{{title}} está sobre {{over}}.",
+      dropped: "{{title}} solto sobre {{over}}.",
+      cancelled: "Reordenação cancelada. {{title}} voltou à posição original.",
+    },
+  },
   greeting: {
     morning: "Bom dia",
     afternoon: "Boa tarde",

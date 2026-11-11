@@ -8,6 +8,7 @@ import MoreIcon from "@/assets/icons/linha/mais-opcoes.svg?react";
 import NewFolderIcon from "@/assets/icons/linha/nova-pasta.svg?react";
 import { IconButton } from "@/components/atoms/IconButton";
 import { DropdownMenu } from "@/components/molecules/DropdownMenu";
+import { useIsFavorite, useToggleFavorite } from "@/modules/favorites/queries";
 import { DragHandle } from "@/pages/notes/DragHandle";
 import type { FolderNode } from "@/pages/notes/folderModel";
 import { getAncestorPaths } from "@/pages/notes/folderModel";
@@ -67,6 +68,9 @@ function FolderRow({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const { path, name, noteCount } = node.entry;
+  const favoriteReference = { entityType: "folder" as const, entityId: path };
+  const isFavorite = useIsFavorite(favoriteReference);
+  const toggleFavorite = useToggleFavorite();
   const drop = useFolderDropState(path, name);
   const drag = useDraggable({
     id: `${FOLDER_DRAG_PREFIX}${path}`,
@@ -99,6 +103,11 @@ function FolderRow({
       },
     ],
     [
+      {
+        id: "favorite",
+        label: t(isFavorite ? "favorites.toggle.remove" : "favorites.toggle.add"),
+        onSelect: () => toggleFavorite.mutate(favoriteReference),
+      },
       {
         id: "rename",
         label: t("notes.folders.menu.rename"),

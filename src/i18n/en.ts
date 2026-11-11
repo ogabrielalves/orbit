@@ -765,6 +765,36 @@ export const en: Widen<typeof ptBR> = {
       taskCreated: "Task created in {{project}}",
     },
   },
+  favorites: {
+    toggle: {
+      add: "Add to favorites",
+      remove: "Remove from favorites",
+    },
+    groups: {
+      project: "Projects",
+      board: "Boards",
+      task: "Tasks",
+      note: "Notes",
+      folder: "Folders",
+    },
+    count_one: "{{count}} favorite",
+    count_other: "{{count}} favorites",
+    loadError: "Could not load the favorites",
+    empty: {
+      title: "No favorites yet",
+      description: "Star a project, board, task, note or folder to find it here.",
+    },
+    archivedBadge: "Archived",
+    reorder: "Reorder {{title}}",
+    sidebarEmpty: "Your favorites show up here",
+    dnd: {
+      instructions: "To reorder, press space, use the arrow keys and press space again to drop it.",
+      picked: "{{title}} picked up.",
+      over: "{{title}} is over {{over}}.",
+      dropped: "{{title}} dropped over {{over}}.",
+      cancelled: "Reordering cancelled. {{title}} returned to its original position.",
+    },
+  },
   greeting: {
     morning: "Good morning",
     afternoon: "Good afternoon",

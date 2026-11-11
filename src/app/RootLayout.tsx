@@ -10,6 +10,7 @@ import { useHotkey } from "@/hooks/useHotkey";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useUiStore } from "@/hooks/useUiStore";
 import { mediaQueries } from "@/lib/breakpoints";
+import { useFavorites } from "@/modules/favorites/queries";
 import { useVaultEvents } from "@/modules/notes/useVaultEvents";
 import { useOnboardingGuard, WELCOME_PATH } from "@/modules/settings/useOnboardingGuard";
 import { useSyncLanguage } from "@/modules/settings/useSyncLanguage";
@@ -35,6 +36,7 @@ export function RootLayout() {
   useHotkey("mod+\\", handleToggleSidebar);
   useHotkey("mod+k", () => setIsPaletteOpen((isOpen) => !isOpen));
 
+  const favoritesQuery = useFavorites();
   const gate = useOnboardingGuard();
   const pathname = useLocation({ select: (location) => location.pathname });
   const isWelcome = pathname === WELCOME_PATH;
@@ -61,7 +63,7 @@ export function RootLayout() {
       isCollapsed={isSidebarCollapsed}
       canToggle={isDesktop}
       onToggle={handleToggleSidebar}
-      favorites={[]}
+      favorites={favoritesQuery.data ?? []}
     />
   ) : null;
 

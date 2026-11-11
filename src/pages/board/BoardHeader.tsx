@@ -8,6 +8,7 @@ import { Button } from "@/components/atoms/Button";
 import { IconButton } from "@/components/atoms/IconButton";
 import { DropdownMenu } from "@/components/molecules/DropdownMenu";
 import { MAX_COLUMNS_PER_BOARD } from "@/modules/boards/limits";
+import { FavoriteToggle } from "@/pages/favorites/FavoriteToggle";
 
 type BoardHeaderProps = {
   board: Board;
@@ -53,6 +54,7 @@ export function BoardHeader({
           )}
         </div>
         <div className="flex items-center gap-2">
+          <FavoriteToggle entityType="board" entityId={board.id} name={board.name} />
           <Button icon={PlusIcon} onClick={onNewColumn} disabled={isAtColumnLimit}>
             {t("boards.newColumn")}
           </Button>

@@ -9,21 +9,20 @@ import GraphIcon from "@/assets/icons/linha/grafo.svg?react";
 import ProjectsIcon from "@/assets/icons/linha/projetos.svg?react";
 import CollapseIcon from "@/assets/icons/linha/recolher-menu.svg?react";
 import logoUrl from "@/assets/logo/orbit-logo-animado.svg";
+import type { FavoriteEntry } from "@/bindings";
 import { Tooltip } from "@/components/atoms/Tooltip";
 import { NavItem } from "@/components/molecules/NavItem";
-
-export type SidebarFavorite = {
-  id: string;
-  name: string;
-  color: string;
-};
+import { favoriteTypeIcons } from "@/lib/entityIcons";
+import { FavoriteLink } from "@/pages/favorites/FavoriteLink";
 
 type SidebarProps = {
   isCollapsed: boolean;
   canToggle: boolean;
   onToggle: () => void;
-  favorites: SidebarFavorite[];
+  favorites: FavoriteEntry[];
 };
+
+const MAX_SIDEBAR_FAVORITES = 8;
 
 const mainNavItems = [
   { to: "/", icon: DashboardIcon, labelKey: "nav.dashboard" },
@@ -38,7 +37,10 @@ export function Sidebar({ isCollapsed, canToggle, onToggle, favorites }: Sidebar
   const { t } = useTranslation();
 
   const isExpanded = !isCollapsed;
-  const hasFavorites = favorites.length > 0;
+  const visibleFavorites = favorites
+    .filter((favorite) => !favorite.isArchived)
+    .slice(0, MAX_SIDEBAR_FAVORITES);
+  const hasFavorites = visibleFavorites.length > 0;
   const widthClass = isCollapsed ? "w-(--sidebar-width-collapsed)" : "w-(--sidebar-width)";
   const headerAlignmentClass = isCollapsed ? "justify-center" : "justify-between";
   const toggleLabel = isCollapsed ? t("sidebar.expand") : t("sidebar.collapse");
@@ -93,24 +95,28 @@ export function Sidebar({ isCollapsed, canToggle, onToggle, favorites }: Sidebar
             )}
             {isCollapsed && <div className="h-px w-full bg-border" />}
           </div>
-          {favorites.map((favorite) => (
-            <Tooltip key={favorite.id} label={favorite.name} side="right" isDisabled={isExpanded}>
-              <Link
-                to="/projects/$projectId"
-                params={{ projectId: favorite.id }}
-                className="flex h-8.5 items-center gap-3 rounded-md px-2.5 text-body text-fg-secondary transition-colors hover:bg-surface-muted"
+          {visibleFavorites.map((favorite) => {
+            const Icon = favoriteTypeIcons[favorite.entityType];
+
+            return (
+              <Tooltip
+                key={`${favorite.entityType}:${favorite.entityId}`}
+                label={favorite.title}
+                side="right"
+                isDisabled={isExpanded}
               >
-                <span
-                  aria-hidden="true"
-                  style={{ backgroundColor: favorite.color }}
-                  className="inline-flex size-4.5 shrink-0 items-center justify-center rounded-xs text-micro font-bold text-fg-on-primary"
+                <FavoriteLink
+                  entry={favorite}
+                  className={`flex h-8.5 items-center gap-3 rounded-md px-2.5 text-body text-fg-secondary transition-colors hover:bg-surface-muted ${isCollapsed ? "justify-center" : ""}`}
                 >
-                  {favorite.name.charAt(0).toUpperCase()}
-                </span>
-                <span className={isCollapsed ? "sr-only" : "flex-1 truncate"}>{favorite.name}</span>
-              </Link>
-            </Tooltip>
-          ))}
+                  <Icon aria-hidden="true" className="size-4.5 shrink-0" />
+                  <span className={isCollapsed ? "sr-only" : "flex-1 truncate"}>
+                    {favorite.title}
+                  </span>
+                </FavoriteLink>
+              </Tooltip>
+            );
+          })}
         </>
       )}
 

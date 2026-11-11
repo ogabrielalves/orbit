@@ -7,6 +7,7 @@ import { ProjectTile } from "@/components/atoms/ProjectTile";
 import { DropdownMenu } from "@/components/molecules/DropdownMenu";
 import { formatRelativeTime, formatShortDate } from "@/lib/dates";
 import { resolveProjectColor } from "@/modules/projects/colors";
+import { FavoriteToggle } from "@/pages/favorites/FavoriteToggle";
 
 type ProjectCardProps = {
   project: Project;
@@ -60,7 +61,8 @@ export function ProjectCard({ project, onEdit, onArchive, onRestore, onDelete }:
             {t(`projects.statusName.${project.status}`)}
           </span>
         </div>
-        <div className="relative z-10">
+        <div className="relative z-10 flex items-center">
+          <FavoriteToggle entityType="project" entityId={project.id} name={project.name} />
           <DropdownMenu
             trigger={
               <IconButton

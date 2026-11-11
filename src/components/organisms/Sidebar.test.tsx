@@ -1,13 +1,30 @@
 import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { Sidebar, type SidebarFavorite } from "@/components/organisms/Sidebar";
+import type { FavoriteEntry } from "@/bindings";
+import { Sidebar } from "@/components/organisms/Sidebar";
 import { i18next } from "@/i18n";
 import { renderWithRouter } from "@/test/renderWithRouter";
 
-const favorites: SidebarFavorite[] = [
-  { id: "p1", name: "Website", color: "rgb(59, 79, 228)" },
-  { id: "p2", name: "Thesis", color: "rgb(14, 138, 130)" },
+function favorite(overrides: Partial<FavoriteEntry>): FavoriteEntry {
+  return {
+    entityType: "project",
+    entityId: "p1",
+    title: "Website",
+    context: null,
+    projectId: null,
+    boardId: null,
+    parentTaskId: null,
+    path: null,
+    isArchived: false,
+    createdAt: "2026-11-08T12:00:00Z",
+    ...overrides,
+  };
+}
+
+const favorites: FavoriteEntry[] = [
+  favorite({ entityId: "p1", title: "Website" }),
+  favorite({ entityId: "p2", title: "Thesis" }),
 ];
 
 function renderSidebar(props: Partial<React.ComponentProps<typeof Sidebar>> = {}) {
@@ -47,16 +64,76 @@ describe("Sidebar", () => {
     expect(screen.getAllByText("Favorites")).toHaveLength(1);
   });
 
-  it("lists favorite projects with their initial", async () => {
+  it("lists the favorites with a link to each one", async () => {
     renderSidebar({ favorites });
     const sidebar = await screen.findByRole("navigation", { name: "Main navigation" });
 
     const link = within(sidebar).getByRole("link", { name: "Website" });
 
     expect(link).toHaveAttribute("href", "/projects/p1");
-    expect(within(link).getByText("W")).toBeInTheDocument();
     expect(within(sidebar).getByRole("link", { name: "Thesis" })).toBeInTheDocument();
     expect(screen.getAllByText("Favorites")).toHaveLength(2);
+  });
+
+  it("links each kind of favorite to its page", async () => {
+    renderSidebar({
+      favorites: [
+        favorite({ entityType: "board", entityId: "b1", title: "Sprint" }),
+        favorite({ entityType: "task", entityId: "t1", title: "Fix bug", boardId: "b1" }),
+        favorite({ entityType: "task", entityId: "t2", title: "Someday" }),
+        favorite({
+          entityType: "task",
+          entityId: "s1",
+          title: "Sub",
+          boardId: "b1",
+          parentTaskId: "t1",
+        }),
+        favorite({ entityType: "note", entityId: "n1", title: "Ideas" }),
+        favorite({ entityType: "folder", entityId: "work", title: "Work", path: "work" }),
+      ],
+    });
+    const sidebar = await screen.findByRole("navigation", { name: "Main navigation" });
+
+    expect(within(sidebar).getByRole("link", { name: "Sprint" })).toHaveAttribute(
+      "href",
+      "/boards/b1",
+    );
+    expect(within(sidebar).getByRole("link", { name: "Fix bug" })).toHaveAttribute(
+      "href",
+      "/boards/b1?task=t1",
+    );
+    expect(within(sidebar).getByRole("link", { name: "Someday" })).toHaveAttribute(
+      "href",
+      "/backlog?task=t2",
+    );
+    expect(within(sidebar).getByRole("link", { name: "Sub" })).toHaveAttribute(
+      "href",
+      "/boards/b1?task=t1",
+    );
+    expect(within(sidebar).getByRole("link", { name: "Ideas" })).toHaveAttribute(
+      "href",
+      "/notes/n1",
+    );
+    expect(within(sidebar).getByRole("link", { name: "Work" })).toHaveAttribute(
+      "href",
+      "/notes?folder=work",
+    );
+  });
+
+  it("hides archived favorites and shows at most eight", async () => {
+    renderSidebar({
+      favorites: [
+        favorite({ entityId: "old", title: "Old one", isArchived: true }),
+        ...Array.from({ length: 10 }, (_, index) =>
+          favorite({ entityId: `p${index}`, title: `Project ${index}` }),
+        ),
+      ],
+    });
+    const sidebar = await screen.findByRole("navigation", { name: "Main navigation" });
+
+    expect(within(sidebar).queryByRole("link", { name: "Old one" })).not.toBeInTheDocument();
+    expect(within(sidebar).getByRole("link", { name: "Project 7" })).toBeInTheDocument();
+    expect(within(sidebar).queryByRole("link", { name: "Project 8" })).not.toBeInTheDocument();
   });
 
   it("calls onToggle when the collapse button is clicked", async () => {

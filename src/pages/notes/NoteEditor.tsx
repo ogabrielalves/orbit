@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/atoms/Skeleton";
 import { DropdownMenu } from "@/components/molecules/DropdownMenu";
 import { ConfirmDialog } from "@/components/organisms/ConfirmDialog";
 import { useDeleteNote, useNotes } from "@/modules/notes/queries";
+import { FavoriteToggle } from "@/pages/favorites/FavoriteToggle";
 import { SaveIndicator } from "@/pages/notes/editor/SaveIndicator";
 import { useNoteAutosave } from "@/pages/notes/editor/useNoteAutosave";
 import { useSaveImage } from "@/pages/notes/images/useSaveImage";
@@ -130,6 +131,7 @@ export function NoteEditor({ note, folder, onReload }: NoteEditorProps) {
             onRetry={() => void autosave.saveNow()}
             onResolve={() => setIsConflictDismissed(false)}
           />
+          <FavoriteToggle entityType="note" entityId={note.id} name={note.title} />
           <DropdownMenu
             trigger={
               <IconButton icon={MoreIcon} size="sm" label={t("notes.editor.menu.actions")} />

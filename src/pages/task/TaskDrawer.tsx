@@ -12,6 +12,7 @@ import { Drawer } from "@/components/organisms/Drawer";
 import { getErrorMessageKey } from "@/lib/appError";
 import { buildCopyTitle } from "@/modules/tasks/form";
 import { useArchiveTask, useDuplicateTask, useRestoreTask, useTask } from "@/modules/tasks/queries";
+import { FavoriteToggle } from "@/pages/favorites/FavoriteToggle";
 import { TaskAttachments } from "@/pages/task/TaskAttachments";
 import { TaskChecklist } from "@/pages/task/TaskChecklist";
 import { TaskComments } from "@/pages/task/TaskComments";
@@ -69,37 +70,40 @@ export function TaskDrawer({ taskId, onClose }: TaskDrawerProps) {
   }
 
   const actionsMenu = hasTask ? (
-    <DropdownMenu
-      trigger={<IconButton icon={MoreIcon} label={t("tasks.detail.actions")} />}
-      sections={[
-        [
-          {
-            id: "duplicate",
-            label: t("tasks.detail.duplicate"),
-            onSelect: () => handleDuplicate(task),
-          },
-          isArchived
-            ? {
-                id: "restore",
-                label: t("tasks.detail.restore"),
-                onSelect: () => handleRestore(task),
-              }
-            : {
-                id: "archive",
-                label: t("tasks.detail.archive"),
-                onSelect: () => handleArchive(task),
-              },
-        ],
-        [
-          {
-            id: "delete",
-            label: t("tasks.detail.delete"),
-            isDanger: true,
-            onSelect: () => setIsDeleting(true),
-          },
-        ],
-      ]}
-    />
+    <>
+      <FavoriteToggle entityType="task" entityId={task.id} name={task.title} />
+      <DropdownMenu
+        trigger={<IconButton icon={MoreIcon} label={t("tasks.detail.actions")} />}
+        sections={[
+          [
+            {
+              id: "duplicate",
+              label: t("tasks.detail.duplicate"),
+              onSelect: () => handleDuplicate(task),
+            },
+            isArchived
+              ? {
+                  id: "restore",
+                  label: t("tasks.detail.restore"),
+                  onSelect: () => handleRestore(task),
+                }
+              : {
+                  id: "archive",
+                  label: t("tasks.detail.archive"),
+                  onSelect: () => handleArchive(task),
+                },
+          ],
+          [
+            {
+              id: "delete",
+              label: t("tasks.detail.delete"),
+              isDanger: true,
+              onSelect: () => setIsDeleting(true),
+            },
+          ],
+        ]}
+      />
+    </>
   ) : undefined;
 
   return (

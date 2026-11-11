@@ -148,6 +148,7 @@ export function createAppRouter(history?: RouterHistory) {
     history,
     defaultPendingComponent: RoutePending,
     defaultPendingMs: 120,
+    defaultPreload: "intent",
   });
 }
 

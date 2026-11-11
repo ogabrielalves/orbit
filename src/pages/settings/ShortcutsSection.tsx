@@ -1,11 +1,16 @@
 import { useTranslation } from "react-i18next";
 import { formatHotkey } from "@/lib/formatHotkey";
+import { creationShortcuts } from "@/lib/shortcuts";
 import { SettingsSection } from "@/pages/settings/SettingsSection";
 
 const shortcuts = [
   { combo: "mod+k", labelKey: "settings.shortcuts.search" },
   { combo: "mod+\\", labelKey: "settings.shortcuts.sidebar" },
   { combo: "mod+enter", labelKey: "settings.shortcuts.submit" },
+  { combo: creationShortcuts.newProject, labelKey: "settings.shortcuts.newProject" },
+  { combo: creationShortcuts.newTask, labelKey: "settings.shortcuts.newTask" },
+  { combo: creationShortcuts.newBoard, labelKey: "settings.shortcuts.newBoard" },
+  { combo: creationShortcuts.newNote, labelKey: "settings.shortcuts.newNote" },
 ] as const;
 
 export function ShortcutsSection() {

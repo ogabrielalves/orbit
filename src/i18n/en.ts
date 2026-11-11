@@ -921,6 +921,10 @@ export const en: Widen<typeof ptBR> = {
       search: "Open search",
       sidebar: "Collapse or expand the menu",
       submit: "Save a form",
+      newProject: "New project",
+      newTask: "New task",
+      newBoard: "New board",
+      newNote: "New note",
     },
   },
   common: {

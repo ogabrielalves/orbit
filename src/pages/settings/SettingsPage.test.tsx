@@ -485,6 +485,10 @@ describe("settings page", () => {
         "Open searchCtrlK",
         "Collapse or expand the menuCtrl\\",
         "Save a formCtrlEnter",
+        "New projectCtrlShiftP",
+        "New taskCtrlShiftT",
+        "New boardCtrlShiftB",
+        "New noteCtrlShiftN",
       ]);
     });
   });
@@ -498,6 +502,7 @@ describe("settings page", () => {
       expect(screen.getByRole("heading", { name: "Backup" })).toBeInTheDocument();
       expect(screen.getByRole("heading", { name: "Atalhos do teclado" })).toBeInTheDocument();
       expect(screen.getByRole("button", { name: "Reconstruir índice" })).toBeInTheDocument();
+      expect(screen.getByText("Nova tarefa")).toBeInTheDocument();
     });
   });
 });

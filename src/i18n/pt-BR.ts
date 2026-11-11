@@ -925,6 +925,10 @@ export const ptBR = {
       search: "Abrir a busca",
       sidebar: "Recolher ou expandir o menu",
       submit: "Salvar um formulário",
+      newProject: "Novo projeto",
+      newTask: "Nova tarefa",
+      newBoard: "Novo quadro",
+      newNote: "Nova nota",
     },
   },
   common: {

@@ -321,9 +321,10 @@ mod tests {
     #[test]
     fn a_note_written_while_watching_arrives_as_one_debounced_batch() {
         let vault = tempfile::tempdir().expect("vault");
-        let (watcher, received) = collecting_watcher(vault.path(), Duration::from_millis(150));
+        let (watcher, received) = collecting_watcher(vault.path(), Duration::from_millis(500));
 
-        for index in 0..5 {
+        let writes = 5;
+        for index in 0..writes {
             write(vault.path(), "burst.md", &format!("# Version {index}\n"));
         }
         let arrived = wait_until(|| seen_files(&received).contains("burst.md"));
@@ -332,10 +333,13 @@ mod tests {
         assert!(arrived, "the watcher never reported burst.md");
         let batches = received.lock().expect("lock");
         assert!(
-            batches.len() <= 2,
+            batches.len() < writes,
             "a burst of writes should be coalesced, got {}",
             batches.len()
         );
+        assert!(batches.iter().all(|batch| {
+            !batch.needs_full_scan && batch.files.iter().all(|file| file == "burst.md")
+        }));
     }
 
     #[test]

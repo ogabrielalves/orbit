@@ -27,6 +27,8 @@ import StrikeIcon from "@/assets/icons/editor/tachado.svg?react";
 import Heading1Icon from "@/assets/icons/editor/titulo-1.svg?react";
 import Heading2Icon from "@/assets/icons/editor/titulo-2.svg?react";
 import Heading3Icon from "@/assets/icons/editor/titulo-3.svg?react";
+import { Tooltip } from "@/components/atoms/Tooltip";
+import { formatShortcut } from "@/lib/shortcuts";
 
 type ToolbarActionId =
   | "heading1"
@@ -129,6 +131,12 @@ const actionGroups: ToolbarAction[][] = [
   ],
 ];
 
+const toolbarShortcuts: Partial<Record<ToolbarActionId, string>> = {
+  bold: "mod+b",
+  italic: "mod+i",
+  code: "mod+e",
+};
+
 export function EditorToolbar({ editorRef }: EditorToolbarProps) {
   const { t } = useTranslation();
 
@@ -152,19 +160,21 @@ export function EditorToolbar({ editorRef }: EditorToolbarProps) {
           {group.map((action) => {
             const Icon = action.icon;
             const label = t(`notes.editor.toolbar.${action.id}`);
+            const combo = toolbarShortcuts[action.id];
+            const shortcut = combo === undefined ? undefined : formatShortcut(combo);
 
             return (
-              <button
-                key={action.id}
-                type="button"
-                aria-label={label}
-                title={label}
-                onMouseDown={(event) => event.preventDefault()}
-                onClick={() => handleRun(action)}
-                className="inline-flex size-8 items-center justify-center rounded-md text-fg-secondary transition-colors hover:bg-surface hover:text-fg"
-              >
-                <Icon aria-hidden="true" className="size-4.5" />
-              </button>
+              <Tooltip key={action.id} label={label} shortcut={shortcut} labelsTrigger>
+                <button
+                  type="button"
+                  aria-label={label}
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => handleRun(action)}
+                  className="inline-flex size-8 items-center justify-center rounded-md text-fg-secondary transition-colors hover:bg-surface hover:text-fg"
+                >
+                  <Icon aria-hidden="true" className="size-4.5" />
+                </button>
+              </Tooltip>
             );
           })}
         </div>

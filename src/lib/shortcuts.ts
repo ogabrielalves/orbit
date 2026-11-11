@@ -1,3 +1,5 @@
+import { formatHotkey } from "@/lib/formatHotkey";
+
 export const creationShortcuts = {
   newProject: "mod+shift+p",
   newTask: "mod+shift+t",
@@ -11,4 +13,10 @@ export function isMacPlatform(): boolean {
 
 export function isDialogOpen(): boolean {
   return document.querySelector('[role="dialog"], [role="alertdialog"]') !== null;
+}
+
+export function formatShortcut(combo: string): string {
+  const isMac = isMacPlatform();
+  const keys = formatHotkey(combo, isMac);
+  return keys.join(isMac ? "" : "+");
 }

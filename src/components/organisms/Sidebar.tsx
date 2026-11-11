@@ -13,6 +13,7 @@ import type { FavoriteEntry } from "@/bindings";
 import { Tooltip } from "@/components/atoms/Tooltip";
 import { NavItem } from "@/components/molecules/NavItem";
 import { favoriteTypeIcons } from "@/lib/entityIcons";
+import { formatShortcut } from "@/lib/shortcuts";
 import { FavoriteLink } from "@/pages/favorites/FavoriteLink";
 
 type SidebarProps = {
@@ -46,7 +47,7 @@ export function Sidebar({ isCollapsed, canToggle, onToggle, favorites }: Sidebar
   const toggleLabel = isCollapsed ? t("sidebar.expand") : t("sidebar.collapse");
 
   const collapseToggle = canToggle ? (
-    <Tooltip label={toggleLabel} shortcut="Ctrl+\" side="right">
+    <Tooltip label={toggleLabel} shortcut={formatShortcut("mod+\\")} side="right">
       <button
         type="button"
         aria-label={toggleLabel}
@@ -64,14 +65,16 @@ export function Sidebar({ isCollapsed, canToggle, onToggle, favorites }: Sidebar
       className={`sticky top-0 flex h-screen shrink-0 flex-col gap-1.5 overflow-y-auto border-r border-border bg-surface px-3 py-4 ${widthClass}`}
     >
       <div className={`flex items-center gap-2 px-1 pb-3 ${headerAlignmentClass}`}>
-        <Link to="/" aria-label={t("app.name")} className="flex items-center gap-2.5">
-          <img src={logoUrl} alt="" className="size-7.5" />
-          {isExpanded && (
-            <span className="font-display text-heading-2 font-bold tracking-tight text-fg">
-              {t("app.wordmark")}
-            </span>
-          )}
-        </Link>
+        <Tooltip label={t("app.name")} side="right" isDisabled={isExpanded} labelsTrigger>
+          <Link to="/" aria-label={t("app.name")} className="flex items-center gap-2.5">
+            <img src={logoUrl} alt="" className="size-7.5" />
+            {isExpanded && (
+              <span className="font-display text-heading-2 font-bold tracking-tight text-fg">
+                {t("app.wordmark")}
+              </span>
+            )}
+          </Link>
+        </Tooltip>
         {isExpanded && collapseToggle}
       </div>
 

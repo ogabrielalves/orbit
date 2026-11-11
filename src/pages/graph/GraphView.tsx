@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { type MouseEvent, type PointerEvent, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { Graph } from "@/bindings";
+import { Tooltip } from "@/components/atoms/Tooltip";
 import { createSimulation, getNeighborIds } from "@/modules/graph/layout";
 import {
   fitViewport,
@@ -319,30 +320,36 @@ function GraphCanvas({ graph, width, height, label, centerId, folder }: GraphVie
         </g>
       </svg>
       <div className="absolute top-3 right-3 flex flex-col gap-1 rounded-lg border border-border bg-surface p-1 shadow-sm">
-        <button
-          type="button"
-          aria-label={t("graph.zoomIn")}
-          onClick={() => zoomFromCenter(ZOOM_STEP)}
-          className="flex size-8 items-center justify-center rounded-md text-heading-3 text-fg-secondary hover:bg-surface-muted"
-        >
-          +
-        </button>
-        <button
-          type="button"
-          aria-label={t("graph.zoomOut")}
-          onClick={() => zoomFromCenter(1 / ZOOM_STEP)}
-          className="flex size-8 items-center justify-center rounded-md text-heading-3 text-fg-secondary hover:bg-surface-muted"
-        >
-          −
-        </button>
-        <button
-          type="button"
-          aria-label={t("graph.fit")}
-          onClick={fitToContent}
-          className="flex size-8 items-center justify-center rounded-md text-caption font-semibold text-fg-secondary hover:bg-surface-muted"
-        >
-          {t("graph.fitShort")}
-        </button>
+        <Tooltip label={t("graph.zoomIn")} side="left" labelsTrigger>
+          <button
+            type="button"
+            aria-label={t("graph.zoomIn")}
+            onClick={() => zoomFromCenter(ZOOM_STEP)}
+            className="flex size-8 items-center justify-center rounded-md text-heading-3 text-fg-secondary hover:bg-surface-muted"
+          >
+            +
+          </button>
+        </Tooltip>
+        <Tooltip label={t("graph.zoomOut")} side="left" labelsTrigger>
+          <button
+            type="button"
+            aria-label={t("graph.zoomOut")}
+            onClick={() => zoomFromCenter(1 / ZOOM_STEP)}
+            className="flex size-8 items-center justify-center rounded-md text-heading-3 text-fg-secondary hover:bg-surface-muted"
+          >
+            −
+          </button>
+        </Tooltip>
+        <Tooltip label={t("graph.fit")} side="left" labelsTrigger>
+          <button
+            type="button"
+            aria-label={t("graph.fit")}
+            onClick={fitToContent}
+            className="flex size-8 items-center justify-center rounded-md text-caption font-semibold text-fg-secondary hover:bg-surface-muted"
+          >
+            {t("graph.fitShort")}
+          </button>
+        </Tooltip>
       </div>
     </section>
   );

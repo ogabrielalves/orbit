@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import DragIcon from "@/assets/icons/linha/arrastar.svg?react";
 import type { FavoriteEntry } from "@/bindings";
 import { Badge } from "@/components/atoms/Badge";
+import { Tooltip } from "@/components/atoms/Tooltip";
 import { favoriteTypeIcons } from "@/lib/entityIcons";
 import { favoriteKey } from "@/modules/favorites/favorites";
 import { FavoriteLink } from "@/pages/favorites/FavoriteLink";
@@ -35,16 +36,18 @@ export function FavoriteRow({ entry }: FavoriteRowProps) {
       style={{ transform: CSS.Transform.toString(transform), transition }}
       className={`flex items-center gap-2 rounded-xl border border-border bg-surface px-3 py-2.5 ${draggingClass}`}
     >
-      <button
-        type="button"
-        ref={setActivatorNodeRef}
-        {...attributes}
-        {...listeners}
-        aria-label={t("favorites.reorder", { title: entry.title })}
-        className="flex size-6 shrink-0 cursor-grab items-center justify-center rounded-sm text-fg-subtle hover:text-fg-muted active:cursor-grabbing"
-      >
-        <DragIcon aria-hidden="true" className="size-4" />
-      </button>
+      <Tooltip label={t("favorites.reorder", { title: entry.title })} labelsTrigger>
+        <button
+          type="button"
+          ref={setActivatorNodeRef}
+          {...attributes}
+          {...listeners}
+          aria-label={t("favorites.reorder", { title: entry.title })}
+          className="flex size-6 shrink-0 cursor-grab items-center justify-center rounded-sm text-fg-subtle hover:text-fg-muted active:cursor-grabbing"
+        >
+          <DragIcon aria-hidden="true" className="size-4" />
+        </button>
+      </Tooltip>
       <Icon aria-hidden="true" className="size-4.5 shrink-0 text-fg-muted" />
       <div className="flex min-w-0 flex-1 flex-col">
         <FavoriteLink

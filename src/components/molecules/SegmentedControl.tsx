@@ -1,4 +1,5 @@
 import { type ComponentType, type SVGProps, useId } from "react";
+import { Tooltip } from "@/components/atoms/Tooltip";
 
 type SegmentedVariant = "pill" | "bordered";
 
@@ -28,6 +29,51 @@ const optionClasses: Record<SegmentedVariant, string> = {
     "flex h-9 w-9.5 cursor-pointer items-center justify-center text-fg-muted transition-colors has-checked:bg-surface-muted has-checked:text-fg has-focus-visible:shadow-focus",
 };
 
+type SegmentedItemProps<TValue extends string> = {
+  option: SegmentedOption<TValue>;
+  groupName: string;
+  variant: SegmentedVariant;
+  isSelected: boolean;
+  isIconOnly: boolean;
+  onChange: (value: TValue) => void;
+};
+
+function SegmentedItem<TValue extends string>({
+  option,
+  groupName,
+  variant,
+  isSelected,
+  isIconOnly,
+  onChange,
+}: SegmentedItemProps<TValue>) {
+  const Icon = option.icon;
+  const hasIcon = Icon !== undefined;
+  const labelClass = isIconOnly ? "sr-only" : "";
+
+  const item = (
+    <label className={optionClasses[variant]}>
+      <input
+        type="radio"
+        name={groupName}
+        value={option.value}
+        checked={isSelected}
+        onChange={() => onChange(option.value)}
+        className="sr-only focus-visible:shadow-none"
+      />
+      {hasIcon && <Icon aria-hidden="true" className="size-4 shrink-0" />}
+      <span className={labelClass}>{option.label}</span>
+    </label>
+  );
+
+  return isIconOnly ? (
+    <Tooltip label={option.label} labelsTrigger>
+      {item}
+    </Tooltip>
+  ) : (
+    item
+  );
+}
+
 export function SegmentedControl<TValue extends string>({
   label,
   options,
@@ -37,34 +83,20 @@ export function SegmentedControl<TValue extends string>({
   isIconOnly = false,
 }: SegmentedControlProps<TValue>) {
   const groupName = useId();
-  const labelClass = isIconOnly ? "sr-only" : "";
 
   return (
     <div role="radiogroup" aria-label={label} className={groupClasses[variant]}>
-      {options.map((option) => {
-        const Icon = option.icon;
-        const hasIcon = Icon !== undefined;
-        const isSelected = option.value === value;
-
-        return (
-          <label
-            key={option.value}
-            title={isIconOnly ? option.label : undefined}
-            className={optionClasses[variant]}
-          >
-            <input
-              type="radio"
-              name={groupName}
-              value={option.value}
-              checked={isSelected}
-              onChange={() => onChange(option.value)}
-              className="sr-only focus-visible:shadow-none"
-            />
-            {hasIcon && <Icon aria-hidden="true" className="size-4 shrink-0" />}
-            <span className={labelClass}>{option.label}</span>
-          </label>
-        );
-      })}
+      {options.map((option) => (
+        <SegmentedItem
+          key={option.value}
+          option={option}
+          groupName={groupName}
+          variant={variant}
+          isSelected={option.value === value}
+          isIconOnly={isIconOnly}
+          onChange={onChange}
+        />
+      ))}
     </div>
   );
 }

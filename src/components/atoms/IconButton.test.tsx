@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import CloseIcon from "@/assets/icons/linha/fechar.svg?react";
 import { IconButton } from "@/components/atoms/IconButton";
+import { findTooltipText } from "@/test/tooltip";
 
 describe("IconButton", () => {
   it("is named by its label", () => {
@@ -39,6 +40,44 @@ describe("IconButton", () => {
     const { container } = render(<IconButton icon={CloseIcon} label="Close" />);
 
     expect(container.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
+  });
+
+  it("shows its label in a tooltip on hover", async () => {
+    render(<IconButton icon={CloseIcon} label="Close" />);
+
+    await userEvent.hover(screen.getByRole("button", { name: "Close" }));
+
+    expect(await findTooltipText()).toContain("Close");
+  });
+
+  it("shows its label in a tooltip on keyboard focus and hides it with Escape", async () => {
+    render(<IconButton icon={CloseIcon} label="Close" />);
+
+    await userEvent.tab();
+    expect(await findTooltipText()).toContain("Close");
+
+    await userEvent.keyboard("{Escape}");
+    expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
+  });
+
+  it("keeps a single accessible name and no native title", async () => {
+    render(<IconButton icon={CloseIcon} label="Close" />);
+    const button = screen.getByRole("button", { name: "Close" });
+
+    await userEvent.tab();
+    await screen.findByRole("tooltip");
+
+    expect(button).not.toHaveAttribute("title");
+    expect(button).toHaveAccessibleDescription("");
+    expect(screen.getAllByRole("button", { name: "Close" })).toHaveLength(1);
+  });
+
+  it("shows the shortcut in the tooltip", async () => {
+    render(<IconButton icon={CloseIcon} label="Close" shortcut="Esc" />);
+
+    await userEvent.hover(screen.getByRole("button", { name: "Close" }));
+
+    expect(await findTooltipText()).toContain("Esc");
   });
 
   it("supports the small and medium sizes", () => {

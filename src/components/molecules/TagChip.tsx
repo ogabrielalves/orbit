@@ -1,4 +1,5 @@
 import CloseIcon from "@/assets/icons/linha/fechar.svg?react";
+import { Tooltip } from "@/components/atoms/Tooltip";
 import { resolveProjectColor } from "@/modules/projects/colors";
 
 type TagChipProps = {
@@ -20,14 +21,16 @@ export function TagChip({ name, color, removeLabel, onRemove }: TagChipProps) {
       />
       <span className="truncate">{name}</span>
       {canRemove && (
-        <button
-          type="button"
-          aria-label={removeLabel}
-          onClick={onRemove}
-          className="-mr-1 flex size-4 shrink-0 items-center justify-center rounded-full text-fg-muted transition-colors hover:bg-border hover:text-fg"
-        >
-          <CloseIcon aria-hidden="true" className="size-3" />
-        </button>
+        <Tooltip label={removeLabel} labelsTrigger>
+          <button
+            type="button"
+            aria-label={removeLabel}
+            onClick={onRemove}
+            className="-mr-1 flex size-4 shrink-0 items-center justify-center rounded-full text-fg-muted transition-colors hover:bg-border hover:text-fg"
+          >
+            <CloseIcon aria-hidden="true" className="size-3" />
+          </button>
+        </Tooltip>
       )}
     </span>
   );

@@ -7,6 +7,7 @@ import PlusIcon from "@/assets/icons/linha/mais.svg?react";
 import MoreIcon from "@/assets/icons/linha/mais-opcoes.svg?react";
 import NewFolderIcon from "@/assets/icons/linha/nova-pasta.svg?react";
 import { IconButton } from "@/components/atoms/IconButton";
+import { Tooltip } from "@/components/atoms/Tooltip";
 import { DropdownMenu } from "@/components/molecules/DropdownMenu";
 import { useIsFavorite, useToggleFavorite } from "@/modules/favorites/queries";
 import { DragHandle } from "@/pages/notes/DragHandle";
@@ -86,6 +87,7 @@ function FolderRow({
   const dragClass = drag.isDragging ? "opacity-50" : "";
   const rowClass = `${selectedClass} ${dropClass} ${dragClass}`;
   const chevronClass = isExpanded ? "" : "-rotate-90";
+  const toggleLabel = t(isExpanded ? "notes.folders.collapse" : "notes.folders.expand", { name });
 
   const sections = [
     [
@@ -134,18 +136,20 @@ function FolderRow({
         className={`group flex items-center gap-0.5 rounded-md pr-1 ${rowClass}`}
       >
         {hasChildren ? (
-          <button
-            type="button"
-            aria-expanded={isExpanded}
-            aria-label={t(isExpanded ? "notes.folders.collapse" : "notes.folders.expand", { name })}
-            onClick={() => onToggle(path)}
-            className="flex size-6 shrink-0 items-center justify-center text-fg-muted"
-          >
-            <ChevronIcon
-              aria-hidden="true"
-              className={`size-3.5 transition-transform ${chevronClass}`}
-            />
-          </button>
+          <Tooltip label={toggleLabel} labelsTrigger>
+            <button
+              type="button"
+              aria-expanded={isExpanded}
+              aria-label={toggleLabel}
+              onClick={() => onToggle(path)}
+              className="flex size-6 shrink-0 items-center justify-center text-fg-muted"
+            >
+              <ChevronIcon
+                aria-hidden="true"
+                className={`size-3.5 transition-transform ${chevronClass}`}
+              />
+            </button>
+          </Tooltip>
         ) : (
           <span aria-hidden="true" className="size-6 shrink-0" />
         )}

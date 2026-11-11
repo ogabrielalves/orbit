@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { commands, type Graph, type GraphNode } from "@/bindings";
 import { i18next } from "@/i18n";
 import { renderApp } from "@/test/renderApp";
+import { findTooltipText } from "@/test/tooltip";
 
 const getGraph = vi.mocked(commands.getGraph);
 
@@ -227,6 +228,15 @@ describe("GraphPage", () => {
       expect(fitted.scale).toBeCloseTo(initial.scale);
       expect(fitted.x).toBeCloseTo(initial.x);
       expect(fitted.y).toBeCloseTo(initial.y);
+    });
+
+    it("explains the zoom buttons with tooltips", async () => {
+      renderApp("/graph");
+      await screen.findByRole("link", { name: "Alpha" });
+
+      await userEvent.hover(screen.getByRole("button", { name: "Zoom in" }));
+
+      expect(await findTooltipText()).toContain("Zoom in");
     });
 
     it("zooms with the mouse wheel", async () => {

@@ -21,6 +21,7 @@ import MoreIcon from "@/assets/icons/linha/mais-opcoes.svg?react";
 import { Button } from "@/components/atoms/Button";
 import { IconButton } from "@/components/atoms/IconButton";
 import { Input } from "@/components/atoms/Input";
+import { Tooltip } from "@/components/atoms/Tooltip";
 import { DropdownMenu } from "@/components/molecules/DropdownMenu";
 import { getReorder, type Reorder } from "@/lib/reorder";
 
@@ -120,16 +121,18 @@ function CheckListRow({ kind, entry, maxLength, onToggle, onRename, onDelete }: 
       style={{ transform: CSS.Transform.toString(transform), transition }}
       className={`flex items-center gap-2 rounded-md py-1 ${draggingClass}`}
     >
-      <button
-        type="button"
-        ref={setActivatorNodeRef}
-        {...attributes}
-        {...listeners}
-        aria-label={t(`tasks.${kind}.reorder`, { text: entry.text })}
-        className="flex size-6 shrink-0 cursor-grab items-center justify-center rounded-sm text-fg-subtle hover:text-fg-muted active:cursor-grabbing"
-      >
-        <DragIcon aria-hidden="true" className="size-4" />
-      </button>
+      <Tooltip label={t(`tasks.${kind}.reorder`, { text: entry.text })} labelsTrigger>
+        <button
+          type="button"
+          ref={setActivatorNodeRef}
+          {...attributes}
+          {...listeners}
+          aria-label={t(`tasks.${kind}.reorder`, { text: entry.text })}
+          className="flex size-6 shrink-0 cursor-grab items-center justify-center rounded-sm text-fg-subtle hover:text-fg-muted active:cursor-grabbing"
+        >
+          <DragIcon aria-hidden="true" className="size-4" />
+        </button>
+      </Tooltip>
       {isRenaming ? (
         <Input
           ref={renameRef}

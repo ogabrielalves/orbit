@@ -49,6 +49,7 @@ vi.mock("@/bindings", () => ({
     moveFolder: vi.fn(),
     deleteFolder: vi.fn(),
     listNotes: vi.fn().mockResolvedValue({ status: "ok", data: [] }),
+    listRecentNotes: vi.fn().mockResolvedValue({ status: "ok", data: [] }),
     getNote: vi.fn(),
     createNote: vi.fn(),
     saveNote: vi.fn(),

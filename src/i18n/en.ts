@@ -434,6 +434,15 @@ export const en: Widen<typeof ptBR> = {
       },
       loadError: "Could not load the projects",
     },
+    recentNotes: {
+      title: "Recent notes",
+      viewAll: "All",
+      empty: {
+        title: "No notes yet",
+        description: "The notes you create will appear here.",
+      },
+      loadError: "Could not load the notes",
+    },
   },
   activity: {
     title: "Recent activity",

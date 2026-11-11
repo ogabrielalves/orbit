@@ -435,6 +435,15 @@ export const ptBR = {
       },
       loadError: "Não foi possível carregar os projetos",
     },
+    recentNotes: {
+      title: "Notas recentes",
+      viewAll: "Todas",
+      empty: {
+        title: "Nenhuma nota ainda",
+        description: "As notas que você criar aparecerão aqui.",
+      },
+      loadError: "Não foi possível carregar as notas",
+    },
   },
   activity: {
     title: "Atividade recente",

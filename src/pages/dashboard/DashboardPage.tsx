@@ -10,6 +10,7 @@ import { useProjectForm } from "@/modules/projects/useProjectForm";
 import { useSettings } from "@/modules/settings/queries";
 import { ActiveProjectsCard } from "@/pages/dashboard/ActiveProjectsCard";
 import { RecentActivityCard } from "@/pages/dashboard/RecentActivityCard";
+import { RecentNotesCard } from "@/pages/dashboard/RecentNotesCard";
 import { SummaryStrip } from "@/pages/dashboard/SummaryStrip";
 import { UpcomingDeadlinesCard } from "@/pages/dashboard/UpcomingDeadlinesCard";
 
@@ -41,7 +42,10 @@ export function DashboardPage() {
       <div className="flex flex-col gap-6">
         <SummaryStrip today={today} />
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.75fr)_minmax(0,1fr)]">
-          <ActiveProjectsCard />
+          <div className="flex flex-col gap-6">
+            <ActiveProjectsCard />
+            <RecentNotesCard />
+          </div>
           <div className="flex flex-col gap-6">
             <UpcomingDeadlinesCard today={today} now={now} />
             <RecentActivityCard />

@@ -10,6 +10,7 @@ import { DropdownMenu } from "@/components/molecules/DropdownMenu";
 import { ConfirmDialog } from "@/components/organisms/ConfirmDialog";
 import { useDeleteNote, useNotes } from "@/modules/notes/queries";
 import { FavoriteToggle } from "@/pages/favorites/FavoriteToggle";
+import { LocalGraphPanel } from "@/pages/graph/LocalGraphPanel";
 import { SaveIndicator } from "@/pages/notes/editor/SaveIndicator";
 import { useNoteAutosave } from "@/pages/notes/editor/useNoteAutosave";
 import { useSaveImage } from "@/pages/notes/images/useSaveImage";
@@ -151,6 +152,7 @@ export function NoteEditor({ note, folder, onReload }: NoteEditorProps) {
         />
       </Suspense>
       <BacklinksPanel noteId={note.id} folder={folder} onCreateLink={linkNavigation.offerCreate} />
+      <LocalGraphPanel noteId={note.id} folder={folder} />
       {isConflictDialogOpen && (
         <ConfirmDialog
           isOpen

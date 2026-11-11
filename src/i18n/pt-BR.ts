@@ -767,6 +767,32 @@ export const ptBR = {
       taskCreated: "Tarefa criada em {{project}}",
     },
   },
+  graph: {
+    summary: "{{notes}} notas · {{links}} links",
+    includeUnresolved: "Mostrar links sem nota",
+    hint: "Arraste para mover, role para dar zoom, clique em uma nota para abri-la.",
+    canvasLabel: "Grafo de notas",
+    unresolvedNode: "{{title}} (nota ainda não criada)",
+    currentNode: "{{title}} (nota aberta)",
+    zoomIn: "Aproximar",
+    zoomOut: "Afastar",
+    fit: "Ajustar à tela",
+    fitShort: "Ajustar",
+    loadError: "Não foi possível carregar o grafo",
+    empty: {
+      title: "Nenhuma nota para mostrar",
+      description: "Crie notas e ligue-as com [[links]] para ver o grafo.",
+    },
+    local: {
+      title: "Grafo local",
+      depthLabel: "Profundidade do grafo local",
+      depth_one: "{{count}} nível",
+      depth_other: "{{count}} níveis",
+      canvasLabel: "Grafo local da nota",
+      loadError: "Não foi possível carregar o grafo local",
+      empty: "Esta nota ainda não se conecta a outras.",
+    },
+  },
   favorites: {
     toggle: {
       add: "Adicionar aos favoritos",

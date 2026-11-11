@@ -765,6 +765,32 @@ export const en: Widen<typeof ptBR> = {
       taskCreated: "Task created in {{project}}",
     },
   },
+  graph: {
+    summary: "{{notes}} notes · {{links}} links",
+    includeUnresolved: "Show links without a note",
+    hint: "Drag to move, scroll to zoom, click a note to open it.",
+    canvasLabel: "Notes graph",
+    unresolvedNode: "{{title}} (note not created yet)",
+    currentNode: "{{title}} (current note)",
+    zoomIn: "Zoom in",
+    zoomOut: "Zoom out",
+    fit: "Fit to screen",
+    fitShort: "Fit",
+    loadError: "Could not load the graph",
+    empty: {
+      title: "No notes to show",
+      description: "Create notes and connect them with [[links]] to see the graph.",
+    },
+    local: {
+      title: "Local graph",
+      depthLabel: "Local graph depth",
+      depth_one: "{{count}} level",
+      depth_other: "{{count}} levels",
+      canvasLabel: "Local graph of the note",
+      loadError: "Could not load the local graph",
+      empty: "This note is not connected to other notes yet.",
+    },
+  },
   favorites: {
     toggle: {
       add: "Add to favorites",

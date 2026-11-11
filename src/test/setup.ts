@@ -109,6 +109,8 @@ vi.mock("@/bindings", () => ({
     moveTask: vi.fn(),
     sendTaskToBoard: vi.fn(),
     sendTaskToBacklog: vi.fn(),
+    getGraph: vi.fn().mockResolvedValue({ status: "ok", data: { nodes: [], edges: [] } }),
+    getLocalGraph: vi.fn().mockResolvedValue({ status: "ok", data: { nodes: [], edges: [] } }),
     listFavorites: vi.fn().mockResolvedValue({ status: "ok", data: [] }),
     toggleFavorite: vi.fn(),
     moveFavorite: vi.fn(),

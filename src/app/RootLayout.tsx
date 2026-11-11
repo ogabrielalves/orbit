@@ -1,6 +1,8 @@
 import { Outlet, useMatches } from "@tanstack/react-router";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { WindowCloseGuard } from "@/app/WindowCloseGuard";
+import { SearchTrigger } from "@/components/molecules/SearchTrigger";
 import { Sidebar } from "@/components/organisms/Sidebar";
 import { Topbar } from "@/components/organisms/Topbar";
 import { AppShell } from "@/components/templates/AppShell";
@@ -10,6 +12,7 @@ import { useUiStore } from "@/hooks/useUiStore";
 import { mediaQueries } from "@/lib/breakpoints";
 import { useVaultEvents } from "@/modules/notes/useVaultEvents";
 import { useSyncLanguage } from "@/modules/settings/useSyncLanguage";
+import { CommandPalette } from "@/pages/search/CommandPalette";
 
 export function RootLayout() {
   const { t } = useTranslation();
@@ -20,6 +23,7 @@ export function RootLayout() {
   const isDesktop = useMediaQuery(mediaQueries.desktop);
   const isCollapsedByUser = useUiStore((state) => state.isSidebarCollapsed);
   const toggleSidebar = useUiStore((state) => state.toggleSidebar);
+  const [isPaletteOpen, setIsPaletteOpen] = useState(false);
 
   function handleToggleSidebar() {
     if (isDesktop) {
@@ -28,6 +32,7 @@ export function RootLayout() {
   }
 
   useHotkey("mod+\\", handleToggleSidebar);
+  useHotkey("mod+k", () => setIsPaletteOpen((isOpen) => !isOpen));
 
   const isSidebarCollapsed = !isDesktop || isCollapsedByUser;
 
@@ -47,9 +52,24 @@ export function RootLayout() {
   ) : null;
 
   return (
-    <AppShell sidebar={sidebar} topbar={<Topbar breadcrumb={breadcrumb} />}>
+    <AppShell
+      sidebar={sidebar}
+      topbar={
+        <Topbar
+          breadcrumb={breadcrumb}
+          actions={
+            <SearchTrigger
+              label={t("topbar.searchPlaceholder")}
+              shortcut="Ctrl K"
+              onClick={() => setIsPaletteOpen(true)}
+            />
+          }
+        />
+      }
+    >
       <Outlet />
       <WindowCloseGuard />
+      <CommandPalette isOpen={isPaletteOpen} onClose={() => setIsPaletteOpen(false)} />
     </AppShell>
   );
 }

@@ -1,5 +1,5 @@
-import { Link, useNavigate, useParams } from "@tanstack/react-router";
-import { useState } from "react";
+import { Link, useNavigate, useParams, useSearch } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import BackIcon from "@/assets/icons/linha/voltar.svg?react";
 import { ErrorState } from "@/components/molecules/ErrorState";
@@ -21,7 +21,8 @@ import { ProjectStats } from "@/pages/projects/ProjectStats";
 export function ProjectDetailPage() {
   const { t } = useTranslation();
   const { projectId } = useParams({ from: "/projects/$projectId" });
-  const navigate = useNavigate();
+  const search = useSearch({ from: "/projects/$projectId" });
+  const navigate = useNavigate({ from: "/projects/$projectId" });
   const [isDeleted, setIsDeleted] = useState(false);
   const detailsQuery = useProject(projectId, !isDeleted);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -39,6 +40,18 @@ export function ProjectDetailPage() {
   const hasDetails = details !== undefined;
   const isConfirmOpen = confirmKind !== null;
   const isDeleteConfirm = confirmKind === "delete";
+  const isNewRequested = search.new === 1;
+  const canCreateBoard = hasDetails && details.project.archivedAt === null;
+
+  useEffect(() => {
+    if (!isNewRequested || !hasDetails) {
+      return;
+    }
+    if (canCreateBoard) {
+      setIsBoardFormOpen(true);
+    }
+    void navigate({ search: (previous) => ({ ...previous, new: undefined }), replace: true });
+  }, [isNewRequested, hasDetails, canCreateBoard, navigate]);
 
   function handleDeleted() {
     setIsDeleted(true);
@@ -79,7 +92,7 @@ export function ProjectDetailPage() {
           />
           <ProjectBoards
             boards={details.boards}
-            canCreate={details.project.archivedAt === null}
+            canCreate={canCreateBoard}
             onCreate={() => setIsBoardFormOpen(true)}
           />
           {isBoardFormOpen && (

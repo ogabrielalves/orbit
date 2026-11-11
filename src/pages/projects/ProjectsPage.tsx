@@ -1,5 +1,5 @@
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import PlusIcon from "@/assets/icons/linha/mais.svg?react";
 import type { Project } from "@/bindings";
@@ -50,6 +50,15 @@ export function ProjectsPage() {
   const isArchivedScope = filters.scope === "archived";
   const isFormOpen = formState !== null;
   const isConfirmOpen = confirmState !== null;
+  const isNewRequested = search.new === 1;
+
+  useEffect(() => {
+    if (!isNewRequested) {
+      return;
+    }
+    setFormState({ project: undefined });
+    void navigate({ search: (previous) => ({ ...previous, new: undefined }), replace: true });
+  }, [isNewRequested, navigate]);
 
   function handleFiltersChange(patch: ProjectsSearch) {
     void navigate({ search: (previous) => ({ ...previous, ...patch }), replace: true });

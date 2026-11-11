@@ -1,3 +1,5 @@
+import { type NewParam, parseNewParam } from "@/lib/newParam";
+
 export const projectStatusFilters = ["all", "active", "paused", "completed"] as const;
 export const projectScopes = ["active", "archived"] as const;
 export const projectSorts = ["updated", "name", "created"] as const;
@@ -14,9 +16,10 @@ export type ProjectsSearch = {
   scope?: ProjectScope;
   sort?: ProjectSort;
   view?: ProjectView;
+  new?: NewParam;
 };
 
-export type ProjectsFilters = Required<ProjectsSearch>;
+export type ProjectsFilters = Required<Omit<ProjectsSearch, "new">>;
 
 function pickOption<TOption extends string>(
   options: readonly TOption[],
@@ -38,6 +41,7 @@ export function parseProjectsSearch(raw: Record<string, unknown>): ProjectsSearc
     scope: pickOption(projectScopes, raw.scope),
     sort: pickOption(projectSorts, raw.sort),
     view: pickOption(projectViews, raw.view),
+    new: parseNewParam(raw.new),
   };
 }
 

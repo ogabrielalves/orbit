@@ -1,6 +1,6 @@
 import { DndContext, DragOverlay } from "@dnd-kit/core";
 import { useNavigate, useParams, useSearch } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Skeleton } from "@/components/atoms/Skeleton";
 import { ErrorState } from "@/components/molecules/ErrorState";
@@ -25,7 +25,7 @@ type NoteFormState = { folderPath: string | null } | null;
 export function NotesWorkspace() {
   const { t, i18n } = useTranslation();
   const { noteId } = useParams({ strict: false });
-  const { folder } = useSearch({ strict: false });
+  const { folder, new: newParam } = useSearch({ strict: false });
   const navigate = useNavigate();
   const foldersQuery = useFolders();
   const [folderForm, setFolderForm] = useState<FolderFormTarget | null>(null);
@@ -44,6 +44,19 @@ export function NotesWorkspace() {
   const moveDnd = useNoteMoveDnd({ selectedPath, onSelectedPathChange: selectFolder });
   const activeName = moveDnd.activeSource?.name;
   const hasActiveSource = activeName !== undefined;
+  const isNewRequested = newParam === 1;
+
+  useEffect(() => {
+    if (!isNewRequested) {
+      return;
+    }
+    setNoteForm({ folderPath: folder ?? null });
+    void navigate({
+      to: ".",
+      search: (previous) => ({ ...previous, new: undefined }),
+      replace: true,
+    });
+  }, [isNewRequested, folder, navigate]);
 
   function selectFolder(path: string) {
     void navigate({ to: "/notes", search: { folder: path === "" ? undefined : path } });
